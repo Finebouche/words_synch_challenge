@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(to right, #a1c4fd, #fbc2f7);
+}
+
+.game-container {
+    text-align: center;
+}
+
+.emoji-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+}
+
+.emoji {
+    font-size: 3em;
+    margin-right: 20px;
+}
+
+#playerInputs input {
+    margin: 10px;
+    padding: 5px;
+}
+
+#gameStatus {
+    margin-top: 20px;
+    font-size: 1.2em;
+}
+
+#selections select, #selections button {
+    margin: 10px;
+    padding: 5px;
+}
+
+#gameInput input {
+    margin: 10px;
+    padding: 5px;
+    /* Add styles to match the previous document */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#conversationArea {
+    text-align: left;
+    margin-top: 20px;
+}
+
+.message {
+    background-color: #e0e0e0;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 10px;
+    display: inline-block; /* or use 'flex' for more control */
+}
+
+.emoji {
+    /* existing emoji styles */
+}

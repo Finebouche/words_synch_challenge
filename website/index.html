@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Synchronization Challenge</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Word Synchronization Challenge</h1>
+        <div class="emoji-text">
+            <span class="emoji">&#x1F916;</span> <!-- Robot head emoji -->
+            <p>We are going to play a game. At initial step we each produce a random word. Then at each round we produce a new word that hasn't been previously produced by both players. The goal is to produce the same word, at which point the game ends.</p>
+        </div>
+        <div id="selections">
+            <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <!-- Add other languages -->
+            </select>
+            <select id="llmSelect">
+                <option value="gpt3">GPT-3</option>
+                <option value="gpt4">GPT-4</option>
+                <!-- Add other models -->
+            </select>
+            <button id="startGame">Start Game</button>
+        </div>
+        <div id="conversationArea">
+            <!-- Conversation messages will appear here -->
+        </div>
+        <div id="gameInput"  style="display: none;">
+            <input type="text" id="gameWord" placeholder="Enter your word...">
+            <button id="submitWord">Submit</button> 
+        </div>
+        <div id="gameStatus"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
