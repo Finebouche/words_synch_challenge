@@ -1,0 +1,3 @@
+/website/backend/node_modules/
+/website/backend/package-lock.json
+.DS_Store
