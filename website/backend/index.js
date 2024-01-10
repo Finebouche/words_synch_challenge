@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = 3000;
+var PORT = process.env.PORT || 3000;
 
 // Serve static files from a specific directory (e.g., 'public')
 app.use(express.static('../frontend'));
@@ -22,3 +22,5 @@ app.get('/getRandomWord', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+module.exports = app;
