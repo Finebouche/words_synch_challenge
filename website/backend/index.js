@@ -19,7 +19,7 @@ app.get('/getRandomWord', (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
+app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
