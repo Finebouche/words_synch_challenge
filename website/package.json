@@ -3,7 +3,7 @@
     "express": "^4.18.2"
   },
   "scripts": {
-    "start": "node backend/index.js",
+    "start": "node app/index.js",
     "build": "npm install && npm run start"
   }
 }
