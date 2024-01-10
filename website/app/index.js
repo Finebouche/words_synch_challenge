@@ -1,14 +1,12 @@
-const express = require('express');
-const app = express();
-var PORT = process.env.PORT || 3000;
+import http from 'http';
+var app = require('./config').default();
 
-// Serve static files from a specific directory (e.g., 'public')
-app.use(express.static('../frontend'));
+// Serve static files from public directory
+app.use(express.static('/public'));
+app.use(express.json());
 
 // Array of random words
 const randomWords = ['apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew'];
-
-app.use(express.json());
 
 // Endpoint to get a random word
 app.get('/getRandomWord', (req, res) => {
@@ -19,8 +17,8 @@ app.get('/getRandomWord', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+http.createServer(app).listen(app.get('port'), () => {
+    console.log("Express Server Runing on port"+ app.get('port'));
 });
 
-module.exports = app;
+export default app;
