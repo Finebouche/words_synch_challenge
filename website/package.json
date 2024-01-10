@@ -2,5 +2,5 @@
   "dependencies": {
     "express": "^4.18.2"
   },
-  "main": "app/index.js"
+  "main": "index.js"
 }
