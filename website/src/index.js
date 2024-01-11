@@ -1,6 +1,6 @@
 const app = require('./app');
-const port = 4000
+const port = process.env.PORT || 4000;
 
-// Start the server
-app.listen(port, () => console.log(`The server is listening on port ${port}`))
-
+app.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+});
