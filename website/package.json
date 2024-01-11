@@ -3,7 +3,7 @@
     "express": "^4.18.2"
   },
   "scripts": {
-    "start": "npm run src/index.js"
+    "start": "node src/index.js"
   }  
 
 }
