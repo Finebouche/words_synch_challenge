@@ -1,0 +1,17 @@
+{
+    "gameTitle": "Word Synchronization Challenge",
+    "gameDescription": "We are going to play a game. At initial step we each produce a random word. Then at each round we produce a new word that hasn't been previously produced by both players. The goal is to produce the same word, at which point the game ends.",
+    "enterYourWord": "Enter your word...",
+    "startGame": "Start Game",
+    "submitWord": "Submit",
+    "errorMessage": "",
+    "language-option": "Select Language",
+    "language-option-en": "English",
+    "language-option-es": "Español",
+    "language-option-fr": "Français",
+    "llm-option": "Select a LLM",
+    "errorMessageEmpty": "Please enter a word",
+    "errorMessageUsed": "Word has already been used",
+    "errorMessageNotExist": "Word does not exist"
+}
+

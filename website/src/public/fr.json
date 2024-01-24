@@ -1,0 +1,16 @@
+{
+    "gameTitle": "Défi de Synchronisation de Mots",
+    "gameDescription": "Nous allons jouer à un jeu. Au début, nous produisons chacun un mot aléatoire. Puis, à chaque tour, nous produisons un nouveau mot qui n'a pas été précédemment produit par les deux joueurs. Le but est de produire le même mot, auquel cas le jeu se termine.",
+    "enterYourWord": "Entrez votre mot...",
+    "startGame": "Commencer le Jeu",
+    "submitWord": "Soumettre",
+    "errorMessage": "",
+    "language-option": "Sélectionnez la Langue",
+    "language-option-en": "Anglais",
+    "language-option-es": "Espagnol",
+    "language-option-fr": "Français",
+    "llm-option": "Sélectionnez un LLM",
+    "errorMessageEmpty": "Veuillez saisir un mot",
+    "errorMessageUsed": "Le mot a déjà été utilisé",
+    "errorMessageNotExist": "Le mot n'existe pas"
+}

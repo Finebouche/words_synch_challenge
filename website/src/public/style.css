@@ -11,27 +11,32 @@ body {
     text-align: center;
 }
 
-.emoji-text {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: left;
-}
 
-.emoji {
-    font-size: 3em;
-    margin-right: 20px;
-}
 
-#playerInputs input {
-    margin: 10px;
-    padding: 5px;
+/* LANGAGE SELECTION STYLES */
+.language-selection {
+    position: fixed;
+    top: 10px;
+    right: 10px; 
+    cursor: pointer;
 }
+.language-selection div {
+    background-color: #f0f0f0; 
+    padding: 5px 10px;    
+    border-radius: 5px;      
+    margin-bottom: 5px; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+}
+/* Styling for when hovering over the language options */
+.language-selection div:hover {
+    background-color: #e0e0e0; 
+}
+/* Hide the language options by default */
+#languageOptions {
+    display: none;
+}
+/* END LANGAGE SELECTION STYLES */
 
-#gameStatus {
-    margin-top: 20px;
-    font-size: 1.2em;
-}
 
 #selections select, #selections button {
     margin: 10px;
@@ -41,25 +46,101 @@ body {
 #gameInput input {
     margin: 10px;
     padding: 5px;
-    /* Add styles to match the previous document */
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+#gameStatus {
+    margin-top: 20px;
+    font-size: 1.2em;
+}
+
+#errorMesssage {
+    color: red;
+    font-weight: bold;
+}
+
+
+
+/* BEGIN CONVERSATION STYLES */
 #conversationArea {
-    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Align children in the center */    
     margin-top: 20px;
 }
 
-.message {
+
+.bubbleContainer {
+    display: flex;
+    justify-content: space-between; /* Space out bubbles */
+    align-items: flex-end; /* Align bubbles at the bottom */
+    max-width: 600px; /* Adjust as needed */
+    width: 100%; /* Take full width of the parent */
+    margin-bottom: 20px; /* Space above the input area */
+}
+
+.bubble {
+    --r: 25px; /* the radius */
+    --t: 30px; /* the size of the tail */
+    max-width: 300px;
+    padding: calc(2*var(--r)/3);
+    -webkit-mask: 
+      radial-gradient(var(--t) at var(--_d) 0,#0000 98%,#000 102%) 
+        var(--_d) 100%/calc(100% - var(--r)) var(--t) no-repeat,
+      conic-gradient(at var(--r) var(--r),#000 75%,#0000 0) 
+        calc(var(--r)/-2) calc(var(--r)/-2) padding-box, 
+      radial-gradient(50% 50%,#000 98%,#0000 101%) 
+        0 0/var(--r) var(--r) space padding-box;
     background-color: #e0e0e0;
-    margin: 5px;
-    padding: 10px;
-    border-radius: 10px;
-    display: inline-block; /* or use 'flex' for more control */
+    color: #fff;
+    position: relative; /* Add this line */
+    flex-shrink: 0; /* Add this line */
+}
+
+.left {
+    --_d: 0%;
+    border-left: var(--t) solid #0000;
+    margin-right: var(--t);
+    place-self: start;
+    justify-content: flex-start; /* Add this line */
+}
+.right {
+    --_d: 100%;
+    border-right: var(--t) solid #0000;
+    margin-left: var(--t);
+    place-self: end;
+    justify-content: flex-end; /* Add this line */
+}
+
+.message {
+    display: flex;
+    align-items: flex-end; /* Add this line */
+}
+
+.message:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 30px; /* Adjust as needed */
+    border-width: 10px;
+    border-style: solid;
+    border-color: #e0e0e0 transparent transparent transparent;
+    /* Creates the triangle shape */
 }
 
 .emoji {
-    /* existing emoji styles */
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    margin-bottom: -10px; /* Adjust as needed */
+}
+/* END CONVERSATION STYLES */
+
+
+#previousWordsArea {
+    margin-top: 20px;
+    font-style: italic;
+    color: #666;
 }

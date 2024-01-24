@@ -1,0 +1,16 @@
+{
+    "gameTitle": "Desafío de Sincronización de Palabras",
+    "gameDescription": "Vamos a jugar un juego. En el paso inicial, cada uno produce una palabra al azar. Luego, en cada ronda producimos una nueva palabra que no haya sido previamente producida por ambos jugadores. El objetivo es producir la misma palabra, momento en el cual el juego termina.",
+    "enterYourWord": "Introduce tu palabra...",
+    "startGame": "Comenzar Juego",
+    "submitWord": "Enviar",
+    "errorMessage": "",
+    "language-option": "Seleccionar Idioma",
+    "language-option-en": "Inglés",
+    "language-option-es": "Español",
+    "language-option-fr": "Francés",
+    "llm-option": "Seleccionar un LLM",
+    "errorMessageEmpty": "Por favor, introduce una palabra",
+    "errorMessageUsed": "La palabra ya ha sido utilizada",
+    "errorMessageNotExist": "La palabra no existe"
+}
