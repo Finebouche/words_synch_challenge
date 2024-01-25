@@ -31,8 +31,8 @@
             <p data-translate="gameDescription">We are going to play a game. At initial step we each produce a random word. Then at each round we produce a new word that hasn't been previously produced by both players. The goal is to produce the same word, at which point the game ends.</p>
         </div>
         <div id="selectedInfo" style="display: none;">
-            <div id="selectedLanguage">Language: </div>
-            <div id="selectedModel">Model: </div>
+            <div id="selectedLanguage"></div>
+            <div id="selectedModel"></div>
         </div>
         <div id="selections">
             <select id="languageSelect">
@@ -44,10 +44,9 @@
             </select>
             <select id="llmSelect" style="display:none">
                 <option value="" data-translate="llm-option">Select a LLM</option>
-                <option value="gpt2">GPT-2</option>
-                <option value="mistralai/Mistral-7B-v0.1">Mistral 7B</option>
-                <!-- Add other models -->
+                <!-- Options will be added here by JavaScript -->
             </select>
+            
             <button id="startGame" style="display:none" data-translate="startGame">Start Game</button>
         </div>        
         <div id="conversationArea">

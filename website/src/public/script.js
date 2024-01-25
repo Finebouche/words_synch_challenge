@@ -91,17 +91,58 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+var MODELS = []
+document.addEventListener('DOMContentLoaded', function() {
+    const languageSelect = document.getElementById('languageSelect');
+    const modelSelect = document.getElementById('llmSelect');
+
+    fetch('/available-models')
+        .then(response => response.json())
+        .then(availableModels => {
+            MODELS = availableModels;
+            updateModelOptions(); // Populate models for the default language
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
+        });
+
+    languageSelect.addEventListener('change', updateModelOptions);
+
+    function updateModelOptions() {
+        const selectedLanguage = languageSelect.value;
+        modelSelect.innerHTML = ''; // Clear existing options
+
+        // Add the default "Select a LLM" option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select a LLM';
+        defaultOption.setAttribute('data-translate', 'llm-option');
+        modelSelect.appendChild(defaultOption);
+
+        // Add options based on the selected language
+        MODELS.forEach(model => {
+            if (model.langages.includes(selectedLanguage)) {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.textContent = model.name;
+                modelSelect.appendChild(option);
+            }
+        });
+    }
+});
+
 document.getElementById('startGame').addEventListener('click', function () {
     // Get selected language and model
     var selectedLanguage = document.getElementById('languageSelect').value;
-    var selectedModel = document.getElementById('llmSelect').value;
+    var selectedModelName = document.getElementById('llmSelect').value;
 
     // Get the corresponding flag emoji for the selected language
     var flagEmoji = languageFlags[selectedLanguage];
 
     // Update the text of the paragraphs to show the selections with the flag emoji
     document.getElementById('selectedLanguage').textContent = "Language: " + flagEmoji + " " + selectedLanguage;
-    document.getElementById('selectedModel').textContent = "Model: " + selectedModel;
+    var selectedModel = MODELS.find(model => model.name === selectedModelName);
+    document.getElementById('selectedModel').textContent = "Model: " + selectedModel.name + " (" + selectedModel.type + ")";
 
     // Hide the selections and show the selected information and show the game input
     document.getElementById('selections').style.display = 'none';
@@ -194,7 +235,8 @@ document.getElementById('submitWord').addEventListener('click', async function (
         return;
     } else {
         errorMessageElement.style.display = 'none';
-        var selectedModel = document.getElementById('llmSelect').value;
+        var selectedModelName = document.getElementById('llmSelect').value;
+        var selectedModel = MODELS.find(model => model.name === selectedModelName);
 
         const response = fetch('/query-model', {
             method: 'POST',
@@ -206,13 +248,14 @@ document.getElementById('submitWord').addEventListener('click', async function (
         })
             .then(response => response.json())
             .then(data => {
-                let randomWord = data.randomWord;
+                console.log(data)
+                let llm_word = data;
                 // Add word to array
-                past_words_array.push(randomWord);
+                past_words_array.push(llm_word);
                 past_words_array.push(word);
 
                 // Update conversation area with the latest random word
-                document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message left"><span class="emoji">&#x1F60A;</span><span class="bubble">${word}</span></div><div class="message right"><span class="bubble">${randomWord}</span><span class="emoji">&#x1F916;</span></div></div>`;
+                document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message left"><span class="emoji">&#x1F60A;</span><span class="bubble">${word}</span></div><div class="message right"><span class="bubble">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
 
 
                 // Clear the input field
