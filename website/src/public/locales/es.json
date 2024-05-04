@@ -1,6 +1,11 @@
 {
-    "gameTitle": "Desafío de Sincronización de Palabras",
-    "gameDescription": "Vamos a jugar un juego. En el paso inicial, cada uno produce una palabra al azar. Luego, en cada ronda producimos una nueva palabra que no haya sido previamente producida por ambos jugadores. El objetivo es producir la misma palabra, momento en el cual el juego termina.",
+    "gameTitle": "Desafío Sincronización de Palabras",
+    "gameDescription": [
+        "Vamos a jugar a un juego",
+        "Al principio, cada uno de nosotros produce una palabra al azar",
+        "Luego, en cada turno, producimos una nueva palabra que no haya sido producida previamente por ninguno de los jugadores.",
+        "El objetivo es producir la misma palabra, en cuyo caso el juego termina."
+    ],
     "enterYourWord": "Introduce tu palabra...",
     "startGame": "Comenzar Juego",
     "submitWord": "Enviar",

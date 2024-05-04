@@ -29,6 +29,16 @@ body {
     cursor: pointer;
 }
 
+@media (max-width: 600px) {
+    .language-selector #currentLanguage, .language-option {
+        font-size: 0; /* Hides the text by setting font size to 0 */
+    }
+    .language-selector #currentLanguage span, .language-option span {
+        font-size: 16px; /* Reset the font size for the emoji */
+    }
+}
+
+
 /* Styling for when hovering over the language options */
 .language-selector:hover {
     background-color: #e0e0e0; 
@@ -135,6 +145,21 @@ body {
     display: flex;
     justify-content: center; /* Space out bubbles */
 }
+
+.game-description .message {
+    width: 100%; /* Full width to stack on small screens */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: bottom;
+    justify-content: center;
+}
+
+.game-description .message .bubble{
+    width: 70%; /* Full width to stack on small screens */
+}
+
+
 .game-description-list ul {
     list-style-type: none;
     margin: 0;
