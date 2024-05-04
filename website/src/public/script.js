@@ -3,31 +3,60 @@
 // Function to get the translation of a key
 var translations; // Global variable for translations
 
+async function loadLanguage(lang) {
+    const response = await fetch(`locales/${lang}.json`);
+    translations = await response.json();
+
+    document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        const translation = translations[key];
+
+        if (Array.isArray(translation)) {
+            el.innerHTML = ''; // Clear the current list
+            if (translation.length > 0) {
+                const p = document.createElement('p');
+                p.textContent = translation[0];
+                el.appendChild(p);
+            }
+
+            var ul = document.createElement('ul');
+            el.appendChild(ul);
+            // Start from the second element (index 1) since the first is already processed
+            translation.slice(1).forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                ul.appendChild(li);
+            });
+        } else if (translation) {
+            el.textContent = translation;
+        }
+
+        if (el.placeholder && translation) {
+            el.placeholder = translation; // For input placeholders
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var closeButton = document.getElementById('errorBanner').querySelector('button');
+    if (closeButton) {
+        closeButton.addEventListener('click', function () {
+            document.getElementById('errorBanner').style.display = 'none';
+        });
+    }
+});
+
+
 document.querySelectorAll('.language-option').forEach(function (element) {
     element.addEventListener('click', function () {
         const selectedLang = this.getAttribute('data-lang');
-        changeLanguage(selectedLang);
+        loadLanguage(selectedLang);
 
         // Update current language display
         document.getElementById('currentLanguage').innerHTML = this.innerHTML;
         document.getElementById('languageOptions').style.display = 'none';
     });
 });
-
-async function changeLanguage(lang) {
-    const response = await fetch(`${lang}.json`);
-    translations = await response.json();
-
-    document.querySelectorAll('[data-translate]').forEach(el => {
-        const key = el.getAttribute('data-translate');
-        if (translations[key]) {
-            el.textContent = translations[key];
-        }
-        if (el.placeholder && translations[key]) {
-            el.placeholder = translations[key]; // For input placeholders
-        }
-    });
-}
 
 document.getElementById('currentLanguage').addEventListener('click', function () {
     var languageOptions = document.getElementById('languageOptions');
@@ -46,7 +75,7 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    changeLanguage('en'); // Default to English or use browser's language setting
+    loadLanguage('en'); // Default to English or use browser's language setting
 });
 
 function getTranslation(key) {
@@ -66,8 +95,6 @@ var languageFlags = {
     'fr': '🇫🇷', // Flag for French
     // Add more mappings as needed
 };
-
-
 document.addEventListener('DOMContentLoaded', function () {
     var languageSelect = document.getElementById('languageSelect');
     var llmSelect = document.getElementById('llmSelect');
@@ -157,10 +184,17 @@ document.getElementById('startGame').addEventListener('click', function () {
         body: JSON.stringify({ model: selectedModel }) // Send the selected model to the server
     })
         .then(response => {
+            console.log("Model is loading. Please wait.");
             if (response.status === 503) {
-                console.log("Model is loading. Please wait.");
+                console.log("Model is not available. Take another one");
+                document.getElementById('errorBanner').style.display = 'block'; // Show the banner
+                document.getElementById('selections').style.display = 'block';
+                document.getElementById('languageSelect').value = '';
+                document.getElementById('llmSelect').value = '';
+                document.getElementById('submitWord').disabled = true;
             } else {
                 console.log("Model is ready.");
+                document.getElementById('submitWord').disabled = false;
             }
         })
         .catch(error => {
@@ -204,6 +238,8 @@ var past_words_array = []; // Array to store the words
 
 document.getElementById('submitWord').addEventListener('click', async function (event) {
     event.preventDefault(); // Prevent form submission
+    var submitButton = document.getElementById('submitWord');
+    submitButton.disabled = true; // Disable the submit button
     var word = document.getElementById('gameWord').value.trim();
     var errorMessageElement = document.getElementById('errorMessage');
     var selectedLanguage = document.getElementById('languageSelect').value;
@@ -235,38 +271,36 @@ document.getElementById('submitWord').addEventListener('click', async function (
         return;
     } else {
         errorMessageElement.style.display = 'none';
-        var selectedModelName = document.getElementById('llmSelect').value;
-        var selectedModel = MODELS.find(model => model.name === selectedModelName);
-
-        const response = fetch('/query-model', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({model: selectedModel, previous_words: past_words_array}) // Send the selected model and current words to the server
-
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data)
-                let llm_word = data;
-                // Add word to array
-                past_words_array.push(llm_word);
-                past_words_array.push(word);
-
-                // Update conversation area with the latest random word
-                document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message left"><span class="emoji">&#x1F60A;</span><span class="bubble">${word}</span></div><div class="message right"><span class="bubble">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
-
-
-                // Clear the input field
-                document.getElementById('gameWord').value = '';
-
-                // Update previous words area
-                updatePreviousWordsArea();
-            })
-            .catch(error => {
-                console.error('Error fetching random word:', error);
-            });
     }
 
+    var selectedModelName = document.getElementById('llmSelect').value;
+    var selectedModel = MODELS.find(model => model.name === selectedModelName);
+
+    const response = fetch('/query-model', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: selectedModel, previous_words: past_words_array}) // Send the selected model and current words to the server
+
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data)
+        let llm_word = data;
+        // Add word to array
+        past_words_array.push(llm_word);
+        past_words_array.push(word);
+
+        // Update conversation area with the latest random word
+        document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
+
+
+        // Clear the input field
+        document.getElementById('gameWord').value = '';
+
+        // Update previous words area
+        updatePreviousWordsArea();
+    })
+    .catch(error => {console.error('Error fetching random word:', error);})
+    .finally(() => {submitButton.disabled = false;}); // Enable the submit button
+    
 });

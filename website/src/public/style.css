@@ -9,31 +9,38 @@ body {
 
 .game-container {
     text-align: center;
+    width: 90%;
+    max-width: 800px; /* Set a max-width for larger screens */
+    margin: auto; /* Center container on the page */
 }
-
 
 
 /* LANGAGE SELECTION STYLES */
-.language-selection {
-    position: fixed;
-    top: 10px;
-    right: 10px; 
+.language-selector {
+    background-color: #f0f0f0; ; /* Use a contrasting color */
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px; /* Rounded edges */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    position: absolute;
+    top: 20px;
+    right: 20px;
     cursor: pointer;
 }
-.language-selection div {
-    background-color: #f0f0f0; 
-    padding: 5px 10px;    
-    border-radius: 5px;      
-    margin-bottom: 5px; 
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-}
+
 /* Styling for when hovering over the language options */
-.language-selection div:hover {
+.language-selector:hover {
     background-color: #e0e0e0; 
 }
-/* Hide the language options by default */
+
 #languageOptions {
     display: none;
+
+}
+.language-option {
+    padding-top: 5px;       
+    cursor: pointer;
 }
 /* END LANGAGE SELECTION STYLES */
 
@@ -61,7 +68,55 @@ body {
     font-weight: bold;
 }
 
+#submitWord {
+    /* Restyled to be more prominent */
+    background-color: #6246ea; /* Use a contrasting color */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
 
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+}
+
+#submitWord:hover {
+    background-color: #4034a0; /* Darken color on hover */
+}
+
+#submitWord:disabled {
+    background-color: #a0a2ab; /* Change to a muted color */
+    color: #cccccc; /* Lighter text color */
+    cursor: not-allowed; /* Change cursor to indicate it's not clickable */
+    opacity: 0.6; /* Optional: make it semi-transparent */
+    pointer-events: none; /* Prevents any interaction with the button */
+}
+
+#errorBanner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: red;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    z-index: 1000; /* Ensures the banner stays on top of other content */
+    display: none; /* Hidden by default */
+}
+
+#errorBanner button {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
 
 /* BEGIN CONVERSATION STYLES */
 #conversationArea {
@@ -71,6 +126,29 @@ body {
     margin-top: 20px;
 }
 
+.game-description {
+    display: flex;
+    justify-content: center; /* Space out bubbles */
+}
+.game-description-list ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.game-description-list li {
+    margin-bottom: 5px;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.game-description-list li::before {
+    content: '•'; /* Custom bullet symbol */
+    position: absolute; 
+    left: 10px; /* Align the pseudo-element to the left */
+    font-size: 1em; /* Adjust size as needed */
+    line-height: 1; /* Aligns bullet properly with the text */
+}
 
 .bubbleContainer {
     display: flex;
@@ -82,58 +160,56 @@ body {
 }
 
 .bubble {
-    --r: 25px; /* the radius */
-    --t: 30px; /* the size of the tail */
-    max-width: 300px;
-    padding: calc(2*var(--r)/3);
-    -webkit-mask: 
-      radial-gradient(var(--t) at var(--_d) 0,#0000 98%,#000 102%) 
-        var(--_d) 100%/calc(100% - var(--r)) var(--t) no-repeat,
-      conic-gradient(at var(--r) var(--r),#000 75%,#0000 0) 
-        calc(var(--r)/-2) calc(var(--r)/-2) padding-box, 
-      radial-gradient(50% 50%,#000 98%,#0000 101%) 
-        0 0/var(--r) var(--r) space padding-box;
+    border-radius: 10px;
+    max-width: 400px;
+    padding: 15px;
     background-color: #e0e0e0;
-    color: #fff;
-    position: relative; /* Add this line */
-    flex-shrink: 0; /* Add this line */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    color: #000000;
+    position: relative; 
+    flex-shrink: 0; 
+}
+    
+.left {
+    place-self: start;
+    justify-content: flex-start; 
 }
 
-.left {
-    --_d: 0%;
-    border-left: var(--t) solid #0000;
-    margin-right: var(--t);
-    place-self: start;
-    justify-content: flex-start; /* Add this line */
-}
+.left:after {
+    content: "";
+    position: absolute;
+    bottom: 0%;
+    left: -5px;
+    border-width: 10px;  /* Adjusts the size of the tail */
+    border-style: solid;
+    border-color: transparent transparent #e0e0e0; transparent;
+    }
+
 .right {
-    --_d: 100%;
-    border-right: var(--t) solid #0000;
-    margin-left: var(--t);
     place-self: end;
-    justify-content: flex-end; /* Add this line */
+    justify-content: flex-end; 
 }
+
+.right:after {
+    content: "";
+    position: absolute;
+    bottom: 0%;
+    right: -5px;
+    border-width: 10px;  /* Adjusts the size of the tail */
+    border-style: solid;
+    border-color: transparent transparent #e0e0e0; transparent;
+    }
 
 .message {
     display: flex;
-    align-items: flex-end; /* Add this line */
-}
-
-.message:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 30px; /* Adjust as needed */
-    border-width: 10px;
-    border-style: solid;
-    border-color: #e0e0e0 transparent transparent transparent;
-    /* Creates the triangle shape */
+    align-items: flex-end;
 }
 
 .emoji {
     display: inline-block;
     vertical-align: middle;
     margin-right: 10px;
+    margin-left: 10px;
     margin-bottom: -10px; /* Adjust as needed */
 }
 /* END CONVERSATION STYLES */

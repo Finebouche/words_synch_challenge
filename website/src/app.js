@@ -75,32 +75,43 @@ app.post('/query-model', async (req, res) => {
 
     // Check if the model name is valid
     const modelNames = availableModels.map(model => model.name);
-    if (!modelNames.includes(model.name)) {
+    if (!model || typeof model.name !== 'string' || !modelNames.includes(model.name)) {
         return res.status(400).send("Invalid model name");
     }
 
-
     const RULE_TOKEN = "We are playing a game where at each round we say an word. The goal is to produce the same word based on previous words at which point the game ends. "
-    let WORDS = "We are currently at round 1, please give me your first word and I will give you mine."
 
+    // Example of gameplay
+    const EXAMPLE = "\n\nExample of gameplay:\n" + 
+    "Round 1:\n" +
+    "Player 1: 'apple'\n" +
+    "Player 2: 'banana'\n\n" +
+    "Round 2:\n" +
+    "Past words: 'apple', 'banana'  Please give your word for the current round.\n" +
+    "Player 1: 'cherry'\n" +
+    "Player 2: 'date'\n\n" +
+    "(Game continues until both players choose the same word.)";
+    
+    let WORDS = "Round 1 : please give your first word.\n"
     if (Array.isArray(past_words_array) && past_words_array.length > 0) {
-        WORDS = `Here are the words that have been played so far and that we cannot use anymore : ${past_words_array.join(', ')}. Please give me your word for the current round and I will give you mine.`
+        let round = Math.floor(past_words_array.length / 2) + 1; // Assuming each round consists of two words
+        WORDS = `Round ${round} : Past words, forbidden to use: ${past_words_array.join(', ')}. Please give your word for the current round.\n`;
     }
 
     console.log(model.type)
     let token;
     let parameters;
     if (model.type === 'text2text-generation') {
-        token = RULE_TOKEN + WORDS
+        token = RULE_TOKEN + EXAMPLE + WORDS
     }
 
     if (model.type === 'text-generation') {
-        token = "Player 1 : " + RULE_TOKEN + WORDS + "\nPlayer 2 : I choose the word :"
+        token = RULE_TOKEN + EXAMPLE + WORDS + "Player 1 : '"
         parameters = {return_full_text:false, max_new_tokens: 20 }
     }
 
     if (model.type === 'fill-mask') {
-        token = "Player 1 : " + RULE_TOKEN + WORDS + "\nPlayer 2 : I choose the word :  " + model.mask_token +  "."
+        token = RULE_TOKEN + EXAMPLE + WORDS + "Player 1 : '" + model.mask_token +  "'\n."
     }
     try {
         const response = await axios.post(

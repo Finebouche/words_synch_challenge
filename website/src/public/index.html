@@ -8,8 +8,9 @@
 </head>
 <body>
     <div class="game-container">
+        <div id="errorBanner">Model cannot load, please pick another <button>✖</button></div>
         <h1 data-translate="gameTitle">Word Synchronization Challenge</h1>
-        <div class="language-selection">
+        <div class="language-selector">
             <div id="currentLanguage">
                 <span role="img" aria-label="English">&#x1F1FA;&#x1F1F8;</span> English
             </div>
@@ -26,9 +27,10 @@
             </div>
         </div>
 
-        <div class="emoji-text">
-            <span class="emoji">&#x1F916;</span> <!-- Robot head emoji -->
-            <p data-translate="gameDescription">We are going to play a game. At initial step we each produce a random word. Then at each round we produce a new word that hasn't been previously produced by both players. The goal is to produce the same word, at which point the game ends.</p>
+        <div class="game-description">
+            <div class="message">
+                <span class="bubble right game-description-list" data-translate="gameDescription"></span><span class="emoji">&#x1F916;</span>
+            </div>
         </div>
         <div id="selectedInfo" style="display: none;">
             <div id="selectedLanguage"></div>
@@ -56,11 +58,11 @@
             <form>
                 <input type="text" id="gameWord" placeholder="Enter your word..." data-translate="enterYourWord">
                 <div id="errorMessage" style="color: red; display: none;" data-translate="errorMessage"></div>
-                <button id="submitWord" data-translate="submitWord">Submit</button>
+                <button id="submitWord" data-translate="submitWord" disabled>Submit</button>
             </form>
         </div>
         <div id="gameStatus"></div>
-        <div id="previousWordsArea"></div> <!-- New element for previous words -->
+        <div id="previousWordsArea"></div> 
     </div>
     <script type="module" src="script.js"></script>
 </body>
