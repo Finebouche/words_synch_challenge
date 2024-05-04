@@ -248,6 +248,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
     if (word === '') {
         errorMessageElement.textContent = getTranslation('errorMessageEmpty');
         errorMessageElement.style.display = 'block';
+        submitButton.disabled = false;
         return;
     } else {
         errorMessageElement.style.display = 'none';
@@ -257,6 +258,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
     if (past_words_array.includes(word)) {
         errorMessageElement.textContent = getTranslation('errorMessageUsed');
         errorMessageElement.style.display = 'block';
+        submitButton.disabled = false;
         return;
     }
     else {
@@ -268,6 +270,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
     if (!wordExists) {
         errorMessageElement.textContent = getTranslation('errorMessageNotExist');
         errorMessageElement.style.display = 'block';
+        submitButton.disabled = false;
         return;
     } else {
         errorMessageElement.style.display = 'none';
