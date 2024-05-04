@@ -183,7 +183,7 @@ document.getElementById('startGame').addEventListener('click', function () {
     })
         .then(response => {
             console.log("Model is loading. Please wait.");
-            if (response.status === 503 || response.status === 500) {
+            if (response.status === 504 || response.status === 503 || response.status === 500) {
                 console.log("Model is not available. Take another one");
                 document.getElementById('errorBanner').style.display = 'block'; // Show the banner
                 document.getElementById('llmSelect').value = '';
