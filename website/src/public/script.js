@@ -90,9 +90,9 @@ function getTranslation(key) {
 
 // GAME START
 var languageFlags = {
-    'en': '🇬🇧', // Flag for English
-    'es': '🇪🇸', // Flag for Spanish
-    'fr': '🇫🇷', // Flag for French
+    'en': '🇬🇧',
+    'es': '🇪🇸',
+    'fr': '🇫🇷',
     // Add more mappings as needed
 };
 document.addEventListener('DOMContentLoaded', function () {
@@ -172,9 +172,7 @@ document.getElementById('startGame').addEventListener('click', function () {
     document.getElementById('selectedModel').textContent = "Model: " + selectedModel.name + " (" + selectedModel.type + ")";
 
     // Hide the selections and show the selected information and show the game input
-    document.getElementById('selections').style.display = 'none';
-    document.getElementById('selectedInfo').style.display = 'block';
-    document.getElementById('gameInput').style.display = 'block';
+
 
     fetch('/initialize-model', {
         method: 'POST',
@@ -185,15 +183,17 @@ document.getElementById('startGame').addEventListener('click', function () {
     })
         .then(response => {
             console.log("Model is loading. Please wait.");
-            if (response.status === 503) {
+            if (response.status === 503 || response.status === 500) {
                 console.log("Model is not available. Take another one");
                 document.getElementById('errorBanner').style.display = 'block'; // Show the banner
-                document.getElementById('selections').style.display = 'block';
-                document.getElementById('languageSelect').value = '';
                 document.getElementById('llmSelect').value = '';
                 document.getElementById('submitWord').disabled = true;
+                document.getElementById('startGame').style.display = 'none';
             } else {
                 console.log("Model is ready.");
+                document.getElementById('selections').style.display = 'none';
+                document.getElementById('selectedInfo').style.display = 'block';
+                document.getElementById('gameInput').style.display = 'block';
                 document.getElementById('submitWord').disabled = false;
             }
         })

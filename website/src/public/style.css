@@ -96,25 +96,30 @@ body {
 
 #errorBanner {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+    top: 10px; /* Move it down a bit from the top */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Align center */
+    width: auto; /* Auto width based on content */
+    max-width: 600px; /* Maximum width */
     background-color: red;
     color: white;
     text-align: center;
-    padding: 10px;
-    z-index: 1000; /* Ensures the banner stays on top of other content */
+    padding: 10px 30px; /* Adjust padding for better appearance */
+    border-radius: 5px; /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Soft shadow for floating effect */
+    z-index: 1000;
     display: none; /* Hidden by default */
 }
 
 #errorBanner button {
     position: absolute;
-    right: 20px;
-    top: 10px;
+    right: 2px; /* Align to the right of the banner */
+    top: 0px; /* Align to the top of the banner */
     border: none;
     background: transparent;
     color: white;
-    font-size: 20px;
+    font-size: 15px;
+    font-style: normal;
     cursor: pointer;
 }
 
