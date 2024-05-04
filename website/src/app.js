@@ -71,7 +71,7 @@ app.post('/initialize-model', async (req, res) => {
 
 app.post('/query-model', async (req, res) => {
     const past_words_array = req.body.previous_words;
-    const model = req.body.model; // Retrieve the model from the request body
+    const model = req.body.model;
 
     // Check if the model name is valid
     const modelNames = availableModels.map(model => model.name);
@@ -79,39 +79,55 @@ app.post('/query-model', async (req, res) => {
         return res.status(400).send("Invalid model name");
     }
 
+    // Template for new rounds
+    const createRoundTemplate = (roundNumber, pastWords) => {
+        return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;
+    };
+
     const RULE_TOKEN = "We are playing a game where at each round we say an word. The goal is to produce the same word based on previous words at which point the game ends. "
+    let ROUND_ONE = "Round 1 ! New game, please give your first word.\n"
+    let CURRENT_ROUND_COUNT = ROUND_ONE
+    if (Array.isArray(past_words_array) && past_words_array.length > 0) {
+        let round = Math.floor(past_words_array.length / 2) + 1;
+        CURRENT_ROUND_COUNT = createRoundTemplate(round, past_words_array);
+    }
 
     // Example of gameplay
-    const EXAMPLE = "\n\nExample of gameplay:\n" + 
-    "Round 1:\n" +
-    "Player 1: 'apple'\n" +
-    "Player 2: 'banana'\n\n" +
-    "Round 2:\n" +
-    "Past words: 'apple', 'banana'  Please give your word for the current round.\n" +
-    "Player 1: 'cherry'\n" +
-    "Player 2: 'date'\n\n" +
-    "(Game continues until both players choose the same word.)";
+    const EXAMPLE = "\n\nExample of gameplays:\n" + 
+    RULE_TOKEN + 
+    ROUND_ONE +
+    "Player 1: 'Apple'\n" +
+    "Player 2: 'Banana'\n\n" +
+    createRoundTemplate(2, ['Apple','Banana']) +
+    "Player 1: 'Fruit'\n" +
+    "Player 2: 'Green'\n\n";
     
-    let WORDS = "Round 1 : please give your first word.\n"
+
+    // Construct the rounds history based on past words
+    let interactionHistory = RULE_TOKEN + ROUND_ONE
     if (Array.isArray(past_words_array) && past_words_array.length > 0) {
-        let round = Math.floor(past_words_array.length / 2) + 1; // Assuming each round consists of two words
-        WORDS = `Round ${round} : Past words, forbidden to use: ${past_words_array.join(', ')}. Please give your word for the current round.\n`;
+        for (let i = 0; i < past_words_array.length; i++) {
+            if (i % 2 === 0) {  // Start a new round every two words
+                interactionHistory += createRoundTemplate(Math.floor(i / 2) + 2, past_words_array.slice(0, i));
+            interactionHistory += `Player ${i % 2 + 1}: '${past_words_array[i]}'\n`;
+            }
+        }
     }
 
     console.log(model.type)
     let token;
     let parameters;
     if (model.type === 'text2text-generation') {
-        token = RULE_TOKEN + EXAMPLE + WORDS
+        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT
     }
 
     if (model.type === 'text-generation') {
-        token = RULE_TOKEN + EXAMPLE + WORDS + "Player 1 : '"
+        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '"
         parameters = {return_full_text:false, max_new_tokens: 20 }
     }
 
     if (model.type === 'fill-mask') {
-        token = RULE_TOKEN + EXAMPLE + WORDS + "Player 1 : '" + model.mask_token +  "'\n."
+        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '" + model.mask_token +  "'\n."
     }
     try {
         const response = await axios.post(
