@@ -19,12 +19,10 @@ const availableModels = [
     { name: 'FacebookAI/xlm-roberta-base', type: 'fill-mask' , langages : ['es', 'en','fr'], mask_token: '<mask>'},
     // Add other models here
 ];
-
 // Endpoint to get available models
 app.get('/available-models', (req, res) => {
     res.json(availableModels);
 });
-
 
 const API_TOKEN = "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";
 
@@ -93,15 +91,30 @@ app.post('/query-model', async (req, res) => {
     }
 
     // Example of gameplay
-    const EXAMPLE = "\n\nExample of gameplays:\n" + 
+    const EXAMPLES = "\n\nExample of gameplay 1:\n" + 
     RULE_TOKEN + 
     ROUND_ONE +
     "Player 1: 'Apple'\n" +
     "Player 2: 'Banana'\n\n" +
     createRoundTemplate(2, ['Apple','Banana']) +
     "Player 1: 'Fruit'\n" +
-    "Player 2: 'Green'\n\n";
-    
+    "Player 2: 'Green'\n\n" +
+    createRoundTemplate(3, ['Apple','Banana', 'Fruit', 'Green']) +
+    "Player 1: 'Vegetable'\n" +
+    "Player 2: 'Vegetable'\n\n" + 
+    "The game ends as both players said 'Vegetable'.\n\n" +
+    "\n\nExample of gameplay 2:\n" + 
+    RULE_TOKEN + 
+    ROUND_ONE +
+    "Player 1: 'House'\n" +
+    "Player 2: 'Mountain'\n\n" +
+    createRoundTemplate(2, ['House','Mountain']) +
+    "Player 1: 'Monastery'\n" +
+    "Player 2: 'Cave'\n\n" +
+    createRoundTemplate(3, ['House','Mountain', 'Monastery', 'Cave']) +
+    "Player 1: 'Secret'\n" +
+    "Player 2: 'Monastery'\n\n" + 
+    "The game is lost as Player 2 gave a previously given word.\n\n";
 
     // Construct the rounds history based on past words
     let interactionHistory = RULE_TOKEN + ROUND_ONE
@@ -118,16 +131,16 @@ app.post('/query-model', async (req, res) => {
     let token;
     let parameters;
     if (model.type === 'text2text-generation') {
-        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT
+        token = EXAMPLES + interactionHistory + CURRENT_ROUND_COUNT
     }
 
     if (model.type === 'text-generation') {
-        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '"
+        token = EXAMPLES + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '"
         parameters = {return_full_text:false, max_new_tokens: 20 }
     }
 
     if (model.type === 'fill-mask') {
-        token = EXAMPLE + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '" + model.mask_token +  "'\n."
+        token = EXAMPLES + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '" + model.mask_token +  "'\n."
     }
     try {
         const response = await axios.post(
