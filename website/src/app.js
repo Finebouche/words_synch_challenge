@@ -10,10 +10,9 @@ app.get("/", (req, res) => {
 });
 app.use(express.json());
 
-// List of available models
+// List of available models (has to be inferior to 5B parameters for the API to work)
 const availableModels = [
-    { name: 'gpt2', type: 'text-generation', langages : ['en', 'fr'] },
-    { name: 'mistralai/Mistral-7B-v0.1', type: 'text-generation', langages : ['en'] },
+    { name: 'openai-community/gpt2', type: 'text-generation', langages : ['en', 'fr'] },
     { name: 'google/flan-t5-large', type: 'text2text-generation' , langages : ['en'] },
     { name: 'bert-base-uncased', type: 'fill-mask' , langages : ['en'] , mask_token: '[MASK]'},
     { name: 'FacebookAI/xlm-roberta-base', type: 'fill-mask' , langages : ['es', 'en','fr'], mask_token: '<mask>'},
@@ -50,7 +49,7 @@ app.post('/initialize-model', async (req, res) => {
 
     try {
         const response = await axios.post(
-            `https://api-inference.huggingface.co/models/${model.name}`,
+            `https://api-inference.huggingface.co/models/${model.name}`, 
             { inputs: token },
             {
                 headers: { Authorization: `Bearer ${API_TOKEN}` }
@@ -68,6 +67,7 @@ app.post('/initialize-model', async (req, res) => {
 });
 
 app.post('/query-model', async (req, res) => {
+    // Doc at https://huggingface.co/docs/api-inference/detailed_parameters?code=js
     const past_words_array = req.body.previous_words;
     const model = req.body.model;
 
@@ -131,7 +131,7 @@ app.post('/query-model', async (req, res) => {
     let token;
     let parameters;
     if (model.type === 'text2text-generation') {
-        token = EXAMPLES + interactionHistory + CURRENT_ROUND_COUNT
+        token = EXAMPLES + interactionHistory + CURRENT_ROUND_COUNT + "Player 1 : '"
     }
 
     if (model.type === 'text-generation') {
