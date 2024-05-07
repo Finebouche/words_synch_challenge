@@ -15,7 +15,7 @@ body {
 }
 
 
-/* LANGAGE SELECTION STYLES */
+/* LOCAL LANGAGE SELECTION STYLES */
 .language-selector {
     background-color: #f0f0f0; ; /* Use a contrasting color */
     color: black;
@@ -38,8 +38,6 @@ body {
     }
 }
 
-
-/* Styling for when hovering over the language options */
 .language-selector:hover {
     background-color: #e0e0e0; 
 }
@@ -52,57 +50,9 @@ body {
     padding-top: 5px;       
     cursor: pointer;
 }
-/* END LANGAGE SELECTION STYLES */
+/* END LOCAL LANGAGE SELECTION STYLES */
 
 
-#selections select, #selections button {
-    margin: 10px;
-    padding: 5px;
-}
-
-#gameInput input {
-    margin: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-#gameStatus {
-    margin-top: 20px;
-    font-size: 1.2em;
-}
-
-#errorMesssage {
-    color: red;
-    font-weight: bold;
-}
-
-#submitWord {
-    /* Restyled to be more prominent */
-    background-color: #6246ea; /* Use a contrasting color */
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-
-    cursor: pointer;
-    font-weight: bold;
-    text-transform: uppercase;
-    transition: background-color 0.3s ease; /* Transition for hover effect */
-}
-
-#submitWord:hover {
-    background-color: #4034a0; /* Darken color on hover */
-}
-
-#submitWord:disabled {
-    background-color: #a0a2ab; /* Change to a muted color */
-    color: #cccccc; /* Lighter text color */
-    cursor: not-allowed; /* Change cursor to indicate it's not clickable */
-    opacity: 0.6; /* Optional: make it semi-transparent */
-    pointer-events: none; /* Prevents any interaction with the button */
-}
 
 #errorBanner {
     position: fixed;
@@ -137,17 +87,18 @@ body {
 #conversationArea {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Align children in the center */    
+    align-items: center;
     margin-top: 20px;
 }
 
 .game-description {
     display: flex;
-    justify-content: center; /* Space out bubbles */
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
 .game-description .message {
-    width: 100%; /* Full width to stack on small screens */
+    width: 100%;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -156,7 +107,7 @@ body {
 }
 
 .game-description .message .bubble{
-    width: 70%; /* Full width to stack on small screens */
+    width: 70%;
 }
 
 
@@ -245,8 +196,62 @@ body {
 /* END CONVERSATION STYLES */
 
 
+
+/* BEGIN GAME STYLES */
+#selections select, #selections button {
+    margin: 10px;
+    padding: 5px;
+}
+
+#gameInput input {
+    margin: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#gameStatus {
+    margin-top: 20px;   
+    font-size: 1.2em;
+}
+
+#errorMesssage {
+    color: red;
+    font-weight: bold;
+}
+
+#submitWord {
+    /* Restyled to be more prominent */
+    background-color: #6246ea; /* Use a contrasting color */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+}
+
+#submitWord:hover {
+    background-color: #4034a0; /* Darken color on hover */
+}
+
+
+#submitWord:disabled {
+    background-color: #a0a2ab; /* Change to a muted color */
+    color: #cccccc; /* Lighter text color */
+    cursor: not-allowed; /* Change cursor to indicate it's not clickable */
+    opacity: 0.6; /* Optional: make it semi-transparent */
+    pointer-events: none; /* Prevents any interaction with the button */
+}
+
+
 #previousWordsArea {
     margin-top: 20px;
     font-style: italic;
     color: #666;
 }
+/* END GAME STYLES */

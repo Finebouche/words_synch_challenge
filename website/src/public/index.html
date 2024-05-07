@@ -32,10 +32,6 @@
                 <span class="bubble right game-description-list" data-translate="gameDescription"></span><span class="emoji">&#x1F916;</span>
             </div>
         </div>
-        <div id="selectedInfo" style="display: none;">
-            <div id="selectedLanguage"></div>
-            <div id="selectedModel"></div>
-        </div>
         <div id="selections">
             <select id="languageSelect">
                 <option value="" data-translate="language-option">Select Language</option>
@@ -50,7 +46,12 @@
             </select>
             
             <button id="startGame" style="display:none" data-translate="startGame">Start Game</button>
-        </div>        
+        </div>  
+        <div class="game-description" id="selectedInfo" style="display: none;">
+            <div class="message">
+                <span class="bubble right" id="selectedContent"></span><span class="emoji">&#x1F916;</span>
+            </div>
+        </div>
         <div id="conversationArea">
             <!-- Conversation messages will appear here -->
         </div>

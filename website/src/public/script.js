@@ -89,10 +89,10 @@ function getTranslation(key) {
 
 
 // GAME START
-var languageFlags = {
-    'en': '🇬🇧',
-    'es': '🇪🇸',
-    'fr': '🇫🇷',
+var languageNames = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
     // Add more mappings as needed
 };
 document.addEventListener('DOMContentLoaded', function () {
@@ -164,15 +164,11 @@ document.getElementById('startGame').addEventListener('click', function () {
     var selectedModelName = document.getElementById('llmSelect').value;
 
     // Get the corresponding flag emoji for the selected language
-    var flagEmoji = languageFlags[selectedLanguage];
+    var langageName = languageNames[selectedLanguage];
 
     // Update the text of the paragraphs to show the selections with the flag emoji
-    document.getElementById('selectedLanguage').textContent = "Language: " + flagEmoji + " " + selectedLanguage;
     var selectedModel = MODELS.find(model => model.name === selectedModelName);
-    document.getElementById('selectedModel').textContent = "Model: " + selectedModel.name + " (" + selectedModel.type + ")";
-
-    // Hide the selections and show the selected information and show the game input
-
+    document.getElementById('selectedContent').textContent = "Bzz... bzz... model " + selectedModel.name + " loaded, you can play with me in " + langageName  + "...";
 
     fetch('/initialize-model', {
         method: 'POST',
