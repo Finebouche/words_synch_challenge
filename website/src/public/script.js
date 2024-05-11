@@ -1,3 +1,95 @@
+
+document.addEventListener('DOMContentLoaded', function () {
+    var closeButton = document.getElementById('errorBanner').querySelector('button');
+    if (closeButton) {
+        closeButton.addEventListener('click', function () {
+            document.getElementById('errorBanner').style.display = 'none';
+        });
+    }
+});
+// USER OPTIONS
+
+function generatePlayerID() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length: 8 }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
+}
+var playerId = generatePlayerID();
+var pseudonym = '';
+console.log('Player ID:', playerId);
+
+document.getElementById('loginPlayer').addEventListener('click', function() {
+    const userId = document.getElementById('userIdInput').value;
+    fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ playerId: userId })
+    })
+    .then(response => {
+        if (response.status === 404) {
+            console.log("User not found.");
+            document.getElementById('errorBanner').style.display = 'flex'; // Show the banner
+            document.getElementById('llmSelect').value = '';
+            document.getElementById('submitWord').disabled = true;
+            document.getElementById('startGame').style.display = 'none';
+            return null; // Stop further processing
+        } else {
+            console.log("User found.");
+            document.querySelector('.loggedin').style.display = 'flex';
+            document.querySelector('.loggedout').style.display = 'none';
+            return response.json()
+        }
+    })    
+    .then(data => {
+        pseudonym = data.pseudonym;
+        playerId = data.playerId;   
+        document.getElementById('pseudonymInput').textContent = pseudonym;
+        document.getElementById('userId').textContent = playerId;
+        const currentUserDiv = document.getElementById('currentUser');
+        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + (pseudonym || userId);
+    });
+});
+
+document.getElementById('createPlayer').addEventListener('click', function() {
+    fetch('/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ playerId: playerId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.querySelector('.loggedin').style.display = 'block';
+        document.querySelector('.loggedout').style.display = 'none';
+        const currentUserDiv = document.getElementById('currentUser');
+        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + playerId;
+    });
+});
+
+document.getElementById('pseudonymInput').addEventListener('change', function() {
+    const pseudo = this.value;
+    fetch('/update-pseudonym', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ playerId: playerId, pseudonym: pseudo })
+    }).then(response => response.json())
+    .then(data => {
+        console.log("hello");
+        pseudonym = data.pseudonym;
+        document.getElementById('userPseudonym').textContent = pseudonym;
+        const currentUserDiv = document.getElementById('currentUser');
+        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
+    });
+});
+
+document.getElementById('logoutPlayer').addEventListener('click', function() {
+    document.querySelector('.loggedin').style.display = 'none';
+    document.querySelector('.loggedout').style.display = 'block';
+    const currentUserDiv = document.getElementById('currentUser');
+    currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + 'Log In';
+});
+
+//END USER OPTIONS
+
+
 // LANGUAGE SELECTION
 
 // Function to get the translation of a key
@@ -37,16 +129,6 @@ async function loadLanguage(lang) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    var closeButton = document.getElementById('errorBanner').querySelector('button');
-    if (closeButton) {
-        closeButton.addEventListener('click', function () {
-            document.getElementById('errorBanner').style.display = 'none';
-        });
-    }
-});
-
-
 document.querySelectorAll('.language-option').forEach(function (element) {
     element.addEventListener('click', function () {
         const selectedLang = this.getAttribute('data-lang');
@@ -62,15 +144,26 @@ document.getElementById('currentLanguage').addEventListener('click', function ()
     var languageOptions = document.getElementById('languageOptions');
     languageOptions.style.display = languageOptions.style.display === 'block' ? 'none' : 'block';
 });
+// same thing for user options
+document.getElementById('currentUser').addEventListener('click', function () {
+    var userOptions = document.getElementById('userOptions');
+    userOptions.style.display = userOptions.style.display === 'block' ? 'none' : 'block';
+});
 
-// Close the language options if clicked outside
+// Close the language options when clicking outside
 document.addEventListener('click', function (event) {
     var languageOptions = document.getElementById('languageOptions');
     var currentLanguage = document.getElementById('currentLanguage');
+    var userOptions = document.getElementById('userOptions');
+    var currentUser = document.getElementById('currentUser');
 
     // Check if the click is outside the languageOptions and currentLanguage
     if (!currentLanguage.contains(event.target) && !languageOptions.contains(event.target)) {
         languageOptions.style.display = 'none';
+    }
+    // Check if the click is outside the userOptions
+    if (!userOptions.contains(event.target) && !currentUser.contains(event.target)) {
+        userOptions.style.display = 'none';
     }
 });
 
@@ -88,37 +181,6 @@ function getTranslation(key) {
 // END LANGUAGE SELECTION
 
 
-// GAME START
-var languageNames = {
-    'en': 'English',
-    'es': 'Spanish',
-    'fr': 'French',
-    // Add more mappings as needed
-};
-document.addEventListener('DOMContentLoaded', function () {
-    var languageSelect = document.getElementById('languageSelect');
-    var llmSelect = document.getElementById('llmSelect');
-    var startGameButton = document.getElementById('startGame');
-
-    languageSelect.addEventListener('change', function () {
-        if (this.value) {
-            llmSelect.style.display = '';
-        } else {
-            llmSelect.style.display = 'none';
-            startGameButton.style.display = 'none';
-        }
-    });
-
-    llmSelect.addEventListener('change', function () {
-        if (this.value) {
-            startGameButton.style.display = '';
-        } else {
-            startGameButton.style.display = 'none';
-        }
-    });
-});
-
-var MODELS = []
 document.addEventListener('DOMContentLoaded', function() {
     const languageSelect = document.getElementById('languageSelect');
     const modelSelect = document.getElementById('llmSelect');
@@ -158,6 +220,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+var languageNames = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    // Add more mappings as needed
+};
+document.addEventListener('DOMContentLoaded', function () {
+    var languageSelect = document.getElementById('languageSelect');
+    var llmSelect = document.getElementById('llmSelect');
+    var startGameButton = document.getElementById('startGame');
+
+    languageSelect.addEventListener('change', function () {
+        if (this.value) {
+            llmSelect.style.display = '';
+        } else {
+            llmSelect.style.display = 'none';
+            startGameButton.style.display = 'none';
+        }
+    });
+
+    llmSelect.addEventListener('change', function () {
+        if (this.value) {
+            startGameButton.style.display = '';
+        } else {
+            startGameButton.style.display = 'none';
+        }
+    });
+});
+
+// GAME LOGIC
+var MODELS = []
+var past_words_array = []; // Array to store the words
+var gameId
+
 document.getElementById('startGame').addEventListener('click', function () {
     // Get selected language and model
     var selectedLanguage = document.getElementById('languageSelect').value;
@@ -175,7 +271,7 @@ document.getElementById('startGame').addEventListener('click', function () {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: selectedModel }) // Send the selected model to the server
+        body: JSON.stringify({ model: selectedModel, player_id: playerId}) // Send the selected model to the server
     })
         .then(response => {
             console.log("Model is loading. Please wait.");
@@ -185,21 +281,24 @@ document.getElementById('startGame').addEventListener('click', function () {
                 document.getElementById('llmSelect').value = '';
                 document.getElementById('submitWord').disabled = true;
                 document.getElementById('startGame').style.display = 'none';
+                return null; // Stop further processing
             } else {
                 console.log("Model is ready.");
                 document.getElementById('selections').style.display = 'none';
                 document.getElementById('selectedInfo').style.display = 'block';
                 document.getElementById('gameInput').style.display = 'block';
                 document.getElementById('submitWord').disabled = false;
+                return response.json()
             }
+        })
+        .then(data => {
+            gameId = data.gameId;
         })
         .catch(error => {
             console.error('Error initializing model:', error);
         });
 });
-// END GAME START
 
-// GAME LOGIC
 async function checkWordExistence(word, language) {
     const endpoint = `https://${language}.wiktionary.org/w/api.php`;
     const params = new URLSearchParams({
@@ -229,8 +328,6 @@ function updatePreviousWordsArea() {
     let previousWordsSorted = past_words_array.slice().sort();
     document.getElementById('previousWordsArea').innerHTML = previousWordsSorted.join(', ');
 }
-
-var past_words_array = []; // Array to store the words
 
 document.getElementById('submitWord').addEventListener('click', async function (event) {
     event.preventDefault(); // Prevent form submission
@@ -278,8 +375,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
     const response = fetch('/query-model', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({model: selectedModel, previous_words: past_words_array}) // Send the selected model and current words to the server
-
+        body: JSON.stringify({model: selectedModel, game_id: gameId, previous_words: past_words_array, new_word: word})
     })
     .then(response => response.json())
     .then(data => {
@@ -303,3 +399,4 @@ document.getElementById('submitWord').addEventListener('click', async function (
     .finally(() => {submitButton.disabled = false;}); // Enable the submit button
     
 });
+// END GAME LOGIC

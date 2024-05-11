@@ -16,25 +16,39 @@ body {
 
 
 /* LOCAL LANGAGE SELECTION STYLES */
-.language-selector {
+
+.config-box {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    top: 20px;
+    right: 20px;
+}
+.selector {
     background-color: #f0f0f0; ; /* Use a contrasting color */
     color: black;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 8px;
     border-radius: 10px; /* Rounded edges */
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    position: absolute;
-    top: 20px;
-    right: 20px;
+    cursor: pointer;
+    margin: 0 5px;
+    min-width: 90px;
+}
+
+.option {
+    padding-top: 5px;       
     cursor: pointer;
 }
 
 @media (max-width: 600px) {
-    .language-selector #currentLanguage, .language-option {
+    .selector {
         font-size: 0; /* Hides the text by setting font size to 0 */
+        min-width: 0px;
     }
-    .language-selector #currentLanguage span, .language-option span {
+    .selector span {
         font-size: 16px; /* Reset the font size for the emoji */
+        min-width: 0px;
     }
 }
 
@@ -44,12 +58,16 @@ body {
 
 #languageOptions {
     display: none;
+}
 
+.user-option {
+    display: flex;
+    flex-direction: row;
+    flex-flow: row wrap;
+    justify-content: space-around;
+    max-width: 120px;
 }
-.language-option {
-    padding-top: 5px;       
-    cursor: pointer;
-}
+
 /* END LOCAL LANGAGE SELECTION STYLES */
 
 
@@ -192,6 +210,7 @@ body {
     margin-right: 10px;
     margin-left: 10px;
     margin-bottom: -10px; /* Adjust as needed */
+    font-size: 20px;
 }
 /* END CONVERSATION STYLES */
 
@@ -203,12 +222,16 @@ body {
     padding: 5px;
 }
 
-#gameInput input {
-    margin: 10px;
-    padding: 5px;
+input {
+    margin: 10px 0px;
+    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#userIdInput, #pseudonymInput{
+    width: 100%
 }
 
 #gameStatus {
@@ -221,26 +244,20 @@ body {
     font-weight: bold;
 }
 
-#submitWord {
-    /* Restyled to be more prominent */
+.button {
     background-color: #6246ea; /* Use a contrasting color */
     color: white;
     border: none;
-    padding: 10px 20px;
     border-radius: 5px;
-
     cursor: pointer;
-    font-weight: bold;
-    text-transform: uppercase;
     transition: background-color 0.3s ease; /* Transition for hover effect */
 }
 
-#submitWord:hover {
+.button:hover {
     background-color: #4034a0; /* Darken color on hover */
 }
 
-
-#submitWord:disabled {
+.button:disabled {
     background-color: #a0a2ab; /* Change to a muted color */
     color: #cccccc; /* Lighter text color */
     cursor: not-allowed; /* Change cursor to indicate it's not clickable */
@@ -248,6 +265,16 @@ body {
     pointer-events: none; /* Prevents any interaction with the button */
 }
 
+.small-button {
+    padding: 5px 8px;
+    margin: 0px 2px;
+}
+
+.big-button {
+    padding: 8px 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 
 #previousWordsArea {
     margin-top: 20px;
