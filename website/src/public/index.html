@@ -7,49 +7,56 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <div id="errorBanner" style="display: none;"><span>Model cannot load, please pick another</span><button>✖</button></div>
-        <h1 data-translate="gameTitle">Word Synchronization Challenge</h1>
-        <div class="config-box">
-            <div class="user-profile-selector selector">
-                <div id="currentUser">
-                    <span role="img" aria-label="User" data-translate="login">&#x1F464;</span> Log In
-                </div>
-                <div id="userOptions" style="display: none;">
-
-                    <div class="user-option loggedout">
-                        <input type="text" id="userIdInput" placeholder="Enter your ID" aria-label="User ID">
-                        <button id="loginPlayer" class="button small-button">Log in</button>
-                        <button id="createPlayer" class="button small-button">Create</button>
-                    </div>
-                    <div class="user-option loggedin" style="display: none;">
-                        <div id="Id">
-                            <span role="img" aria-label="User">&#x1F511;</span> <span id="userId"></span>
-                        </div>
-                        <input type="text" id="pseudonymInput" placeholder="Pseudonym" aria-label="Pseudonym">
-                        <button id="logoutPlayer" class="button small-button">Log out</button>
-                    </div>
-                </div>
+    <div class="config-box">
+        <div class="user-profile-selector selector">
+            <div id="currentUser">
+                <span role="img" aria-label="User" data-translate="login">&#x1F464;</span> Log In
             </div>
-            <div class="language-selector selector">
-                <div id="currentLanguage">
-                    <span role="img" aria-label="English">&#x1F1FA;&#x1F1F8;</span> English
+            <div id="userOptions" style="display: none;">
+                <div class="user-option" id="login">
+                    <input type="text" id="userIdInput" placeholder="Enter your ID" aria-label="User ID">
+                    <button id="loginPlayer" class="button small-button">Log in</button>
+                    <div id="horizontal-line"></div>
+                    <button id="createPlayer" class="button small-button yellow-button">Create</button>
                 </div>
-                <div id="languageOptions" style="display: none;">
-                    <div class="language-option option" data-lang="en">
-                        <span role="img" aria-label="English">&#x1F1FA;&#x1F1F8;</span> English
+                <div class="user-option" id="signin" style="display: none;">
+                    <div class="option">
+                        <span role="img">&#x1F464;</span><span id="newUserId"></span>
                     </div>
-                    <div class="language-option option" data-lang="es">
-                        <span role="img" aria-label="Spanish">&#x1F1EA;&#x1F1F8;</span> Español
+                    <button id="copyId" class="button small-button">Copy</button>
+                    <button id="copiedId" class="button small-button green-button" style="display: none;" disabled>Copied ✓</button>
+                    <button id="goLogin" class="button small-button" style="display: none;" disabled>Go Login</button>
+                </div>
+                <div class="user-option" id="parameters" style="display: none;">
+                    <div class="option">
+                        <span>&#x1F511;</span><span id="userId"></span>
                     </div>
-                    <div class="language-option option" data-lang="fr">
-                        <span role="img" aria-label="French">&#x1F1EB;&#x1F1F7;</span> Français
-                    </div>
+                    <input type="text" id="pseudonymInput" placeholder="Pseudonym" aria-label="Pseudonym">
+                    <button id="logoutPlayer" class="button small-button">Log out</button>
                 </div>
             </div>
         </div>
-        
+        <div class="language-selector selector">
+            <div id="currentLanguage">
+                <span>&#x1F1FA;&#x1F1F8;</span> English
+            </div>
+            <div id="languageOptions" style="display: none;">
+                <div class="option" data-lang="en">
+                    <span>&#x1F1FA;&#x1F1F8;</span> English
+                </div>
+                <div class="option" data-lang="es">
+                    <span>&#x1F1EA;&#x1F1F8;</span> Español
+                </div>
+                <div class="option" data-lang="fr">
+                    <span>&#x1F1EB;&#x1F1F7;</span> Français
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="game-container">
+        <div id="errorBanner" style="display: none;"><span>Model cannot load, please pick another</span><button>✖</button></div>
+        <h1 data-translate="gameTitle">Word Synchronization Challenge</h1>
         <div class="game-description">
             <div class="message">
                 <span class="bubble right game-description-list" data-translate="gameDescription"></span><span class="emoji">&#x1F916;</span>
@@ -86,7 +93,8 @@
             </form>
         </div>
         <div id="gameStatus"></div>
-        <div id="previousWordsArea"></div> 
+        <div id="previousWordsArea"></div>
+
     </div>
     <script type="module" src="script.js"></script>
 </body>

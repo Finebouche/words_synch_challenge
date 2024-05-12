@@ -18,6 +18,7 @@ body {
 /* LOCAL LANGAGE SELECTION STYLES */
 
 .config-box {
+    text-align: center;
     position: absolute;
     display: flex;
     align-items: flex-start;
@@ -56,17 +57,31 @@ body {
     background-color: #e0e0e0; 
 }
 
-#languageOptions {
-    display: none;
-}
-
 .user-option {
     display: flex;
-    flex-direction: row;
     flex-flow: row wrap;
     justify-content: space-around;
     max-width: 120px;
 }
+
+#horizontal-line {
+    width: 100%;
+}
+
+#horizontal-line::after {
+    content: "";             /* Required for pseudo-elements */
+    display: block;
+    height: 2px;             /* Line thickness */
+    background-color: #000;  /* Line color, change as needed */
+    margin: 10px 0;          /* Space above and below the line */
+}
+
+.small-button {
+    padding: 5px 8px;
+    margin: 0px 2px;
+    width: 100%;
+}
+
 
 /* END LOCAL LANGAGE SELECTION STYLES */
 
@@ -257,6 +272,15 @@ input {
     background-color: #4034a0; /* Darken color on hover */
 }
 
+.yellow-button {
+    background-color: #ffd524; 
+    color: black;
+}
+.yellow-button:hover {
+    background-color: #edc10e;
+    color: black;
+}
+
 .button:disabled {
     background-color: #a0a2ab; /* Change to a muted color */
     color: #cccccc; /* Lighter text color */
@@ -265,9 +289,10 @@ input {
     pointer-events: none; /* Prevents any interaction with the button */
 }
 
-.small-button {
-    padding: 5px 8px;
-    margin: 0px 2px;
+.green-button:disabled  {
+    background-color: #4caf50; 
+    color: white;
+    opacity: 1;
 }
 
 .big-button {

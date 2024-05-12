@@ -61,7 +61,6 @@ app.post('/update-pseudonym', async (req, res) => {
             res.status(500).send('Server error');
         }
     }
-
 });
 
 // END USER AUTHENTICATION

@@ -34,8 +34,9 @@ document.getElementById('loginPlayer').addEventListener('click', function() {
             return null; // Stop further processing
         } else {
             console.log("User found.");
-            document.querySelector('.loggedin').style.display = 'flex';
-            document.querySelector('.loggedout').style.display = 'none';
+            document.getElementById('parameters').style.display = 'flex';
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('signin').style.display = 'none';
             return response.json()
         }
     })    
@@ -50,18 +51,36 @@ document.getElementById('loginPlayer').addEventListener('click', function() {
 });
 
 document.getElementById('createPlayer').addEventListener('click', function() {
-    fetch('/create', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ playerId: playerId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.querySelector('.loggedin').style.display = 'block';
-        document.querySelector('.loggedout').style.display = 'none';
-        const currentUserDiv = document.getElementById('currentUser');
-        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + playerId;
+    document.getElementById('parameters').style.display = 'none';
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('signin').style.display = 'flex';
+    document.getElementById('newUserId').textContent = playerId;
+});
+
+document.getElementById('copyId').addEventListener('click', function() {
+    navigator.clipboard.writeText(playerId).then(function() {
+        fetch('/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ playerId: playerId })
+        })
+        
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('copyId').style.display = 'none';
+            document.getElementById('copiedId').style.display = 'block';
+            document.getElementById('goLogin').style.display = 'block';
+            document.getElementById('goLogin').disabled = false;
+        });    
     });
+});
+
+
+document.getElementById('goLogin').addEventListener('click', function() {
+    document.getElementById('parameters').style.display = 'none';
+    document.getElementById('login').style.display = 'flex';
+    document.getElementById('signin').style.display = 'none';
+    document.getElementById('userId').textContent = playerId;
 });
 
 document.getElementById('pseudonymInput').addEventListener('change', function() {
@@ -70,27 +89,30 @@ document.getElementById('pseudonymInput').addEventListener('change', function() 
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ playerId: playerId, pseudonym: pseudo })
-    }).then(response => response.json())
-    .then(data => {
-        console.log("hello");
-        pseudonym = data.pseudonym;
-        document.getElementById('userPseudonym').textContent = pseudonym;
-        const currentUserDiv = document.getElementById('currentUser');
-        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
-    });
+    }).then(response => {
+        console.log("Model is loading. Please wait.");
+        if (response.status === 504 || response.status === 503 || response.status === 500) {
+            console.log("Problem when updating pseudonym.");
+        } else {
+            pseudonym = this.value;
+            const currentUserDiv = document.getElementById('currentUser');
+            currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
+        }
+    })
 });
 
 document.getElementById('logoutPlayer').addEventListener('click', function() {
-    document.querySelector('.loggedin').style.display = 'none';
-    document.querySelector('.loggedout').style.display = 'block';
+    document.getElementById('parameters').style.display = 'none';
+    document.getElementById('login').style.display = 'flex';
+    document.getElementById('signin').style.display = 'flex';
     const currentUserDiv = document.getElementById('currentUser');
     currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + 'Log In';
 });
 
-//END USER OPTIONS
+// END USER OPTIONS
 
 
-// LANGUAGE SELECTION
+// LANGUAGE OPTIONS
 
 // Function to get the translation of a key
 var translations; // Global variable for translations
@@ -178,7 +200,7 @@ function getTranslation(key) {
     return key; // Return the key itself if translation is not found
 }
 
-// END LANGUAGE SELECTION
+// END LANGUAGE OPTIONS
 
 
 document.addEventListener('DOMContentLoaded', function() {
