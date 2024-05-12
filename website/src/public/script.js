@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
     var closeButton = document.getElementById('errorBanner').querySelector('button');
     if (closeButton) {
@@ -7,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
 // USER OPTIONS
 document.getElementById('user-profile-selector').addEventListener('click', function () {
     var userOptions = document.getElementById('userOptions');
@@ -108,7 +108,7 @@ document.getElementById('pseudonymInput').addEventListener('change', function() 
 document.getElementById('logoutPlayer').addEventListener('click', function() {
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'flex';
-    document.getElementById('signin').style.display = 'flex';
+    document.getElementById('signin').style.display = 'none';
     const currentUserDiv = document.getElementById('currentUser');
     currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + 'Log In';
 });
@@ -177,7 +177,6 @@ document.querySelectorAll('#languageOption').forEach(function (element) {
 });
 
 
-// Close the language options when clicking outside
 document.addEventListener('click', function (event) {
     var currentUser = document.getElementById('user-profile-selector');
     var currentLanguage = document.getElementById('language-selector');
@@ -398,18 +397,101 @@ document.getElementById('submitWord').addEventListener('click', async function (
         past_words_array.push(llm_word);
         past_words_array.push(word);
 
-        // Update conversation area with the latest random word
+        // Create confetti if the words are the same
+        if (llm_word === word) {
+            win_game();
+            document.getElementById('gameRestart').style.display = 'block';
+            document.getElementById('gameInput').style.display = 'none';
+        }
+
         document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
-
-
-        // Clear the input field
-        document.getElementById('gameWord').value = '';
-
-        // Update previous words area
-        updatePreviousWordsArea();
+        document.getElementById('gameWord').value = ''; // Clear the input field
+        updatePreviousWordsArea(); // Update the list of previous words
     })
     .catch(error => {console.error('Error fetching random word:', error);})
     .finally(() => {submitButton.disabled = false;}); // Enable the submit button
     
 });
+
+document.getElementById('gameRestart').addEventListener('click', async function (event) {
+    // Clear previous words and conversation
+    document.getElementById('conversationArea').innerHTML = '';
+    document.getElementById('previousWordsArea').innerHTML = '';
+    document.getElementById('selectedContent').textContent = '';
+    document.getElementById('selectedInfo').style.display = 'none';
+    document.getElementById('gameWord').value = '';
+    past_words_array = [];
+    // set selection to default
+    document.getElementById('llmSelect').value = '';
+    document.getElementById('llmSelect').style.display = 'none';
+    document.getElementById('languageSelect').value = '';
+    document.getElementById('startGame').style.display = 'none';
+
+    document.getElementById('gameRestart').style.display = 'none';
+    document.getElementById('selections').style.display = 'block';
+
+    // Stop the confettis
+    const wrapper = document.getElementById('confetti-wrapper');
+    wrapper.innerHTML = '';
+});
 // END GAME LOGIC
+
+// CONFETTIS
+
+function create_confetti(i) {
+    const wrapper = document.getElementById('confetti-wrapper');
+
+    const width = Math.random() * 8;
+    const height = width * 0.4;
+    const colourIdx = Math.ceil(Math.random() * 3);
+    let colour;
+    switch (colourIdx) {
+        case 1:
+        colour = 'yellow';
+        break;
+        case 2:
+        colour = 'blue';
+        break;
+        default:
+        colour = 'red';
+    }
+    const confetti = document.createElement('div');
+    confetti.className = `confetti ${colour}`;
+    confetti.style.width = `${width}px`;
+    confetti.style.height = `${height}px`;
+    confetti.style.top = `${-Math.random() * 20}%`;
+    confetti.style.left = `${Math.random() * 100}%`;
+    confetti.style.opacity = Math.random() + 0.5;
+    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+    wrapper.appendChild(confetti);
+
+    drop(confetti);
+}
+  
+function drop(element) {
+    const endTop = 99;
+    const endLeft = Math.max(Math.min(parseInt(element.style.left) + (Math.random() - 0.5)* 30, 99), 0);
+    element.animate([
+        { top: element.style.top, left: element.style.left },
+        { top: `${endTop}%`, left: `${endLeft}%` }
+    ], {
+        duration: Math.random() * 2000 + 2000,
+        fill: 'forwards'
+    }).onfinish = function() {
+        reset(element);
+    };
+}
+  
+function reset(element) {
+    element.style.top = `${-Math.random() * 20}%`;
+    element.style.left = `${Math.random() * 100}%`;
+    drop(element);
+}
+
+function win_game() {
+for (let i = 0; i < 150; i++) {
+    create_confetti(i);
+}
+}
+// END CONFETTIS
+

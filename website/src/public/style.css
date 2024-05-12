@@ -5,6 +5,7 @@ body {
     align-items: center;
     height: 100vh;
     background: linear-gradient(to right, #a1c4fd, #fbc2f7);
+    margin: 0px;
 }
 
 .game-container {
@@ -85,7 +86,25 @@ body {
 
 /* END LOCAL LANGAGE SELECTION STYLES */
 
-
+#confetti-wrapper {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* This line disables mouse events on the confetti */
+    z-index: 10; /* Place it on top of everything */
+}
+.confetti {
+    position: absolute;
+}
+.red {
+    background-color: #d13447;
+}
+.yellow {
+    background-color: #ffbf00;
+}
+.blue {
+    background-color: #263672;
+}
 
 #errorBanner {
     position: fixed;

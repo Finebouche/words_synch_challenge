@@ -54,6 +54,9 @@
         </div>
     </div>
 
+
+    <div id="confetti-wrapper"></div>
+    
     <div class="game-container">
         <div id="errorBanner" style="display: none;"><span>Model cannot load, please pick another</span><button>✖</button></div>
         <h1 data-translate="gameTitle">Word Synchronization Challenge</h1>
@@ -91,6 +94,10 @@
                 <button class="button big-button" id="submitWord" data-translate="submitWord" disabled>Submit</button>
                 <div id="errorMessage" style="color: red; display: none;" data-translate="errorMessage"></div>
             </form>
+        </div>
+        <div id="gameRestart"  style="display: none;">
+            <span data-translate="winMessage">You won the game !</span>
+            <button class="button big-button" id="restartButton" data-translate="restart">Restart</button>
         </div>
         <div id="gameStatus"></div>
         <div id="previousWordsArea"></div>
