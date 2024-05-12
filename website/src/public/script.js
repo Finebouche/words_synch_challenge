@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 // USER OPTIONS
+document.getElementById('user-profile-selector').addEventListener('click', function () {
+    var userOptions = document.getElementById('userOptions');
+    userOptions.style.display = 'block';
+});
 
 function generatePlayerID() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -108,13 +112,24 @@ document.getElementById('logoutPlayer').addEventListener('click', function() {
     const currentUserDiv = document.getElementById('currentUser');
     currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + 'Log In';
 });
-
 // END USER OPTIONS
 
 
 // LANGUAGE OPTIONS
+document.getElementById('language-selector').addEventListener('click', function () {
+    var languageOptions = document.getElementById('languageOptions');
+    languageOptions.style.display = languageOptions.style.display === 'block' ? 'none' : 'block';
+});
 
-// Function to get the translation of a key
+function getTranslation(key) {
+    if (translations && key in translations) {
+        return translations[key];
+    }
+    return key; // Return the key itself if translation is not found
+}
+document.addEventListener('DOMContentLoaded', function () {
+    loadLanguage('en'); // Default to English or use browser's language setting
+});
 var translations; // Global variable for translations
 
 async function loadLanguage(lang) {
@@ -151,55 +166,31 @@ async function loadLanguage(lang) {
     });
 }
 
-document.querySelectorAll('.language-option').forEach(function (element) {
+document.querySelectorAll('#languageOption').forEach(function (element) {
     element.addEventListener('click', function () {
         const selectedLang = this.getAttribute('data-lang');
         loadLanguage(selectedLang);
 
         // Update current language display
         document.getElementById('currentLanguage').innerHTML = this.innerHTML;
-        document.getElementById('languageOptions').style.display = 'none';
     });
 });
 
-document.getElementById('currentLanguage').addEventListener('click', function () {
-    var languageOptions = document.getElementById('languageOptions');
-    languageOptions.style.display = languageOptions.style.display === 'block' ? 'none' : 'block';
-});
-// same thing for user options
-document.getElementById('currentUser').addEventListener('click', function () {
-    var userOptions = document.getElementById('userOptions');
-    userOptions.style.display = userOptions.style.display === 'block' ? 'none' : 'block';
-});
 
 // Close the language options when clicking outside
 document.addEventListener('click', function (event) {
-    var languageOptions = document.getElementById('languageOptions');
-    var currentLanguage = document.getElementById('currentLanguage');
-    var userOptions = document.getElementById('userOptions');
-    var currentUser = document.getElementById('currentUser');
+    var currentUser = document.getElementById('user-profile-selector');
+    var currentLanguage = document.getElementById('language-selector');
 
     // Check if the click is outside the languageOptions and currentLanguage
-    if (!currentLanguage.contains(event.target) && !languageOptions.contains(event.target)) {
+    if (!currentLanguage.contains(event.target)) {
         languageOptions.style.display = 'none';
     }
     // Check if the click is outside the userOptions
-    if (!userOptions.contains(event.target) && !currentUser.contains(event.target)) {
+    if (!currentUser.contains(event.target)) {
         userOptions.style.display = 'none';
     }
 });
-
-document.addEventListener('DOMContentLoaded', function () {
-    loadLanguage('en'); // Default to English or use browser's language setting
-});
-
-function getTranslation(key) {
-    if (translations && key in translations) {
-        return translations[key];
-    }
-    return key; // Return the key itself if translation is not found
-}
-
 // END LANGUAGE OPTIONS
 
 
