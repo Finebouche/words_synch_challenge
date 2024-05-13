@@ -232,16 +232,25 @@ app.post('/query-model', async (req, res) => {
         } else {
             llmWord = response.data[0].generated_text.match(/\b\w+\b/)?.[0];
         }
-
-        res.json(llmWord);
-
         console.log(response.data)
+
+          
+        if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 5) {
+            return res.json({llmWord: llmWord, status: "loses"});
+        }
+        else if (llmWord === newWord) {
+            return res.json({llmWord: llmWord, status: "wins"});
+        }
+        else {
+            res.json({llmWord: llmWord, status: "continue"});  
+        }
+
         const game = await Game.findByPk(gameId);
         const wordsArray = game.wordsArray ? JSON.parse(game.wordsArray) : [];
         wordsArray.push(llmWord);
         wordsArray.push(newWord);
-        await game.update({ wordsArray: JSON.stringify(wordsArray), roundCount: round });        
-
+        await game.update({ wordsArray: JSON.stringify(wordsArray), roundCount: round, gameWon: llmWord === newWord });      
+        
     } catch (error) {
         console.error("Error calling the Hugging Face API", error);
         res.status(500).send("Error calling the Hugging Face API");

@@ -57,6 +57,11 @@
 
     <div id="confetti-wrapper"></div>
     
+
+    <div class="rain-wrapper front-row""></div>
+    <div class="rain-wrapper back-row" ></div>
+
+
     <div class="game-container">
         <div id="errorBanner" style="display: none;"><span>Model cannot load, please pick another</span><button>✖</button></div>
         <h1 data-translate="gameTitle">Word Synchronization Challenge</h1>
@@ -88,15 +93,16 @@
         <div id="conversationArea">
             <!-- Conversation messages will appear here -->
         </div>
-        <div id="gameInput"  style="display: none;">
+        <div id="gameInput" style="display: none;">
             <form>
                 <input type="text" id="gameWord" placeholder="Enter your word..." data-translate="enterYourWord">
                 <button class="button big-button" id="submitWord" data-translate="submitWord" disabled>Submit</button>
                 <div id="errorMessage" style="color: red; display: none;" data-translate="errorMessage"></div>
             </form>
         </div>
-        <div id="gameRestart"  style="display: none;">
-            <span data-translate="winMessage">You won the game !</span>
+        <div id="gameRestart" style="display: none;">
+            <span id="lossMessage" data-translate="lossMessage" style="display: none;">You lost the game !</span>
+            <span id="winMessage" data-translate="winMessage" style="display: none;">You won the game !</span>
             <button class="button big-button" id="restartButton" data-translate="restart">Restart</button>
         </div>
         <div id="gameStatus"></div>

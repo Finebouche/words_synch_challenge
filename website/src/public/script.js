@@ -392,21 +392,26 @@ document.getElementById('submitWord').addEventListener('click', async function (
     .then(response => response.json())
     .then(data => {
         console.log(data)
-        let llm_word = data;
+        let llm_word = data.llmWord;
         // Add word to array
         past_words_array.push(llm_word);
         past_words_array.push(word);
-
-        // Create confetti if the words are the same
-        if (llm_word === word) {
-            win_game();
-            document.getElementById('gameRestart').style.display = 'block';
-            document.getElementById('gameInput').style.display = 'none';
-        }
-
         document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
         document.getElementById('gameWord').value = ''; // Clear the input field
         updatePreviousWordsArea(); // Update the list of previous words
+
+        if (data.status === 'loses') {
+            loose_game();
+            document.getElementById('gameRestart').style.display = 'block';
+            document.getElementById('lossMessage').style.display = 'block';
+            document.getElementById('gameInput').style.display = 'none';
+        }
+        else if (data.status === 'wins') {
+            win_game();
+            document.getElementById('gameRestart').style.display = 'block';
+            document.getElementById('winMessage').style.display = 'block';
+            document.getElementById('gameInput').style.display = 'none';
+        }
     })
     .catch(error => {console.error('Error fetching random word:', error);})
     .finally(() => {submitButton.disabled = false;}); // Enable the submit button
@@ -420,6 +425,8 @@ document.getElementById('gameRestart').addEventListener('click', async function 
     document.getElementById('selectedContent').textContent = '';
     document.getElementById('selectedInfo').style.display = 'none';
     document.getElementById('gameWord').value = '';
+    document.getElementById('winMessage').style.display = 'none';
+    document.getElementById('lossMessage').style.display = 'none';
     past_words_array = [];
     // set selection to default
     document.getElementById('llmSelect').value = '';
@@ -489,9 +496,37 @@ function reset(element) {
 }
 
 function win_game() {
-for (let i = 0; i < 150; i++) {
-    create_confetti(i);
-}
+    for (let i = 0; i < 150; i++) {
+        create_confetti(i);
+    }
 }
 // END CONFETTIS
 
+// RAIN ANIMATION
+function loose_game() {
+    // Clear out everything
+    document.querySelectorAll('.rain-wrapper').forEach(function(rainElement) {
+        rainElement.innerHTML = '';
+    });
+
+    var increment = 0;
+    var drops = "";
+    var backDrops = "";
+
+    while (increment < 95) {
+        // Couple of random numbers to use for various randomizations
+        // Random number between 98 and 1
+        var randoHundo = Math.floor(Math.random() * 98);
+        // Random number between 5 and 2
+        var randoFiver = Math.floor(Math.random() * 3 + 2);
+        // Increment
+        increment += randoFiver;
+        // Add in a new raindrop with various randomizations to certain CSS properties
+        drops = '<div class="drop" style="left: ' + increment + '%; bottom: ' + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"><div class="stem" style="animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"></div><div class="splat" style="animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"></div></div>';
+        backDrops = '<div class="drop" style="right: ' + increment + '%; bottom: ' + (randoFiver + randoFiver - 1 + 100) + '%; animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"><div class="stem" style="animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"></div><div class="splat" style="animation-delay: 0.' + randoHundo + 's; animation-duration: 0.5' + randoHundo + 's;"></div></div>';
+        document.querySelector('.rain-wrapper.front-row').innerHTML += drops;
+        document.querySelector('.rain-wrapper.back-row').innerHTML += backDrops;
+    }
+
+}
+// END RAIN ANIMATION
