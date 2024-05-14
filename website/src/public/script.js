@@ -440,6 +440,11 @@ document.getElementById('gameRestart').addEventListener('click', async function 
     // Stop the confettis
     const wrapper = document.getElementById('confetti-wrapper');
     wrapper.innerHTML = '';
+    // Stop the rain
+    document.querySelectorAll('.rain-wrapper').forEach(function(rainElement) {
+        rainElement.innerHTML = '';
+    });
+
 });
 // END GAME LOGIC
 
