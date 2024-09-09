@@ -5,13 +5,15 @@ from datetime import datetime
 # Set your OpenAI API key here
 openai.api_key = 'your-api-key'
 
+
 def create_round_template(round_number, past_words):
     return f"\nRound {round_number}! Past words, forbidden to use are {', '.join(past_words)}. Please give your word for the current round.\n"
 
+
 def get_openai_response(interaction_history):
     try:
-        response = openai.Completion.create(
-            engine="davinci",  # You can change this to gpt-3.5-turbo or another model
+        response = openai.completions.create(
+            model="davinci",  # You can change this to gpt-3.5-turbo or another model
             prompt=interaction_history,
             max_tokens=20,
             stop=None,
@@ -21,6 +23,7 @@ def get_openai_response(interaction_history):
     except Exception as e:
         print(f"Error with OpenAI API: {e}")
         return None
+
 
 def play_game():
     past_words = []
@@ -55,11 +58,13 @@ def play_game():
 
     return game_data
 
+
 def save_results_to_csv(results):
     with open('game_results.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Timestamp', 'Round', 'Bot 1 Word', 'Bot 2 Word'])
         writer.writerows(results)
+
 
 if __name__ == "__main__":
     results = play_game()
