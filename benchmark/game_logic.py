@@ -1,6 +1,7 @@
 import openai
 import csv
 from datetime import datetime
+import re
 
 # Get open_ai api key from open_ai_key.txt
 with open('open_ai_key.txt', 'r') as file:
@@ -10,16 +11,16 @@ def create_round_template(round_number, past_words):
     return f"\nRound {round_number}! Past words, forbidden to use are {', '.join(past_words)}. Please give your word for the current round.\n"
 
 
-def get_openai_response(interaction_history):
+def get_openai_response(interaction_history, allow_thinking=True):
     try:
-        response = openai.completions.create(
-            model="gpt-3.5-turbo",  # You can change this to gpt-3.5-turbo or another model
-            prompt=interaction_history,
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",  # You can change this to gpt-3.5-turbo or another model
+            messages=interaction_history,
             max_tokens=20,
             stop=None,
             temperature=0.7
         )
-        return response.choices[0].text.strip()
+        return re.sub(r'[^a-zA-Z]', "", response.choices[0].message.content)
     except Exception as e:
         print(f"Error with OpenAI API: {e}")
         return None
@@ -27,24 +28,33 @@ def get_openai_response(interaction_history):
 
 def play_game():
     past_words = []
-    rule_token = "We are playing a game where at each round we say a word. The goal is to produce the same word based on previous words at which point the game ends."
-    round_number = 1
     game_data = []
-    interaction_history = rule_token
+    round_number = 1
+    system_message = ("We are playing a game where at each round we say a word. The goal is to produce the same word "
+                      "based on previous words at which point the game ends.")
+
+    messages = [{"role": "system", "content": system_message}]
 
     while round_number <= 10:
-        if past_words:
-            interaction_history += create_round_template(round_number, past_words)
-        else:
-            interaction_history += "\nRound 1! New game, please give your first word.\n"
+        round_message = create_round_template(round_number,
+                                              past_words) if past_words else ("Round 1! New game, please give your "
+                                                                              "first word.")
 
-        interaction_history += f"Player 1: '"
-        bot1_word = get_openai_response(interaction_history)
-        interaction_history += f"{bot1_word}'\nPlayer 2: '"
-        bot2_word = get_openai_response(interaction_history)
-        interaction_history += f"{bot2_word}'\n"
+        # Update interaction history for Player 1
+        messages.append({"role": "user", "content": round_message + " Player 1: '"})
+        bot1_word = get_openai_response(messages)
+        messages[-1]["content"] += f"{bot1_word}'"
+
+        # Update interaction history for Player 2
+        messages.append({"role": "user", "content": f"Player 2: '"})
+        bot2_word = get_openai_response(messages)
+        messages[-1]["content"] += f"{bot2_word}'"
 
         if bot1_word is None or bot2_word is None:
+            break
+        ## Check if word was already used
+        if bot1_word in past_words or bot2_word in past_words:
+            print(f"Player 1 repeated a word in round {round_number}! Game over.")
             break
 
         past_words.extend([bot1_word, bot2_word])
