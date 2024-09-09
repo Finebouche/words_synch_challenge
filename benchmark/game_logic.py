@@ -2,9 +2,9 @@ import openai
 import csv
 from datetime import datetime
 
-# Set your OpenAI API key here
-openai.api_key = 'your-api-key'
-
+# Get open_ai api key from open_ai_key.txt
+with open('open_ai_key.txt', 'r') as file:
+    openai.api_key = file.read().replace('\n', '')
 
 def create_round_template(round_number, past_words):
     return f"\nRound {round_number}! Past words, forbidden to use are {', '.join(past_words)}. Please give your word for the current round.\n"
@@ -13,7 +13,7 @@ def create_round_template(round_number, past_words):
 def get_openai_response(interaction_history):
     try:
         response = openai.completions.create(
-            model="davinci",  # You can change this to gpt-3.5-turbo or another model
+            model="gpt-3.5-turbo",  # You can change this to gpt-3.5-turbo or another model
             prompt=interaction_history,
             max_tokens=20,
             stop=None,
