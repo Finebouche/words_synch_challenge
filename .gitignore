@@ -1,3 +1,5 @@
 **/node_modules/
 .DS_Store
 /website/word_sync.db
+.idea/
+.ipynb_checkpoints/
