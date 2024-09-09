@@ -1,0 +1,10 @@
+name: words_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12  # or any compatible version
+  - openai
+  - jupyter
+  - pandas
+  - pip:
+    - numpy

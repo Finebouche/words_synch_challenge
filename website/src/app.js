@@ -181,24 +181,32 @@ app.post('/query-model', async (req, res) => {
     "Player 1: 'Apple'\n" +
     "Player 2: 'Banana'\n\n" +
     createRoundTemplate(2, ['Apple','Banana']) +
+    "Player 1 (Thinking): 'Apple' and 'Banana' are both fruits. I'll abstract these to their category to see if we can align. 'Fruit' should work."+
     "Player 1: 'Fruit'\n" +
-    "Player 2: 'Green'\n\n" +
-    createRoundTemplate(3, ['Apple','Banana', 'Fruit', 'Green']) +
-    "Player 1: 'Vegetable'\n" +
-    "Player 2: 'Vegetable'\n\n" + 
-    "The game ends as both players said 'Vegetable'.\n\n" +
+    "Player 2 (Thinking): 'Apple' and 'Banana' can both be yellow, therefore I should say 'Yellow'."+
+    "Player 2: 'Yellow'\n\n" +
+    createRoundTemplate(3, ['Apple','Banana', 'Fruit', 'Yellow']) +
+    "Player 1 (Thinking): 'Yellow'... what’s a fruit that fits this color? 'Lemon' is perfect."+
+    "Player 1: 'Lemon'\n" +
+    "Player 2 (Thinking): 'Yellow' fruit... 'Lemon' is the first that comes to mind."+
+    "Player 2: 'Lemon'\n\n" + 
+    "The game is WON as both players said the same word: 'Vegetable'.\n\n" +
     "\n\nExample of gameplay 2:\n" + 
     RULE_TOKEN + 
     ROUND_ONE +
     "Player 1: 'House'\n" +
     "Player 2: 'Mountain'\n\n" +
     createRoundTemplate(2, ['House','Mountain']) +
+    "Player 1 (Thinking): 'House' suggests structure, 'Mountain' suggests a natural setting. A 'Monastery' often combines these ideas, nestled in mountains."+
     "Player 1: 'Monastery'\n" +
+    "Player 2 (Thinking): 'Mountain' makes me think of natural, secluded places. A 'Cave' fits this theme well."+
     "Player 2: 'Cave'\n\n" +
     createRoundTemplate(3, ['House','Mountain', 'Monastery', 'Cave']) +
+    "Player 1 (Thinking): 'Monastery' and 'Cave' both evoke a sense of secrecy or hidden qualities. I'll say 'Secret' to capture that essence."+
     "Player 1: 'Secret'\n" +
+    "Player 2 (Thinking): 'Secret' makes me think of something mystical or hidden. Wait, 'Monastery' fits this theme perfectly... "+
     "Player 2: 'Monastery'\n\n" + 
-    "The game is lost as Player 2 gave a previously given word.\n\n";
+    "The game is LOST as Player 2 gave a previously given word.\n\n";
 
     
     let token;
