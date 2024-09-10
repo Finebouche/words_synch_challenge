@@ -6,5 +6,9 @@ dependencies:
   - openai
   - jupyter
   - pandas
-  - pip:
-    - numpy
+  - scikit-learn
+  - matplotlib
+  - plotly
+  - numpy
+  - jupyter-dash
+  - pip

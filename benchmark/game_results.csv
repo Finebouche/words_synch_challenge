@@ -1,1 +1,11 @@
-Timestamp,Round,Bot 1 Word,Bot 2 Word
+Timestamp,Round,Status,Past words player 1,Past words player 2
+2024-09-10 15:22:05,11,"loses, too many rounds","['Octopus', 'Mountain', 'River', 'Starfish', 'Tree', 'Reef', 'Lagoon', 'Tide', 'Surf', 'Coast']","['Jungle', 'Pineapple', 'Galaxy', 'Forest', 'Coral', 'Island', 'Wave', 'Beach', 'Ocean', 'Seashell']"
+2024-09-10 15:22:12,5,wins,"['Iceberg', 'Marshmallow', 'Pineapple', 'Coconut', 'Brownie']","['Elephant', 'Galaxy', 'Chocolate', 'Cupcake', 'Brownie']"
+2024-09-10 15:22:16,3,wins,"['Jellybean', 'Banana', 'Cloudberry']","['Pickle', 'Nimbus', 'Cloudberry']"
+2024-09-10 15:22:31,9,wins,"['Cactus', 'Ocean', 'Pineapple', 'River', 'Sunflower', 'Meadow', 'Willow', 'Petal', 'Garden']","['Banana', 'Dragonfruit', 'Mountain', 'Forest', 'Lake', 'Tulip', 'Flower', 'Blossom', 'Garden']"
+2024-09-10 15:22:39,5,"loses, repeated word","['Pineapple', 'Galaxy', 'Chocolate', 'Ocean']","['Umbrella', 'Elephant', 'Rainbow', 'Coffee']"
+2024-09-10 15:22:42,2,wins,"['Octopus', 'Cactus']","['Turtle', 'Cactus']"
+2024-09-10 15:22:47,3,wins,"['Giraffe', 'Umbrella', 'Ocean']","['Pineapple', 'Clouds', 'Ocean']"
+2024-09-10 15:22:56,5,wins,"['Giraffe', 'Pineapple', 'Rainbow', 'Ocean', 'Sunflower']","['Jellyfish', 'Television', 'Cloud', 'Butterfly', 'Sunflower']"
+2024-09-10 15:23:04,5,wins,"['Cactus', 'Giraffe', 'Galaxy', 'Comet', 'Asteroid']","['Pineapple', 'Rainbow', 'Turtle', 'Meteor', 'Asteroid']"
+2024-09-10 15:23:10,4,wins,"['Lighthouse', 'Balloon', 'Coconut', 'Cookie']","['Octopus', 'Banana', 'Candy', 'Cookie']"
