@@ -27,17 +27,17 @@ def check_word_existence(word, language):
         return False  # Return False in case of an error
 
 
-def get_openai_response(interaction_history, seed=None, allow_thinking=True):
+def get_openai_response(model, interaction_history, seed=None, allow_thinking=True):
     try:
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",  # You can change this to gpt-3.5-turbo or another model
+            model=model,  # You can change this to gpt-3.5-turbo or another model
             messages=interaction_history,
             seed=seed,
             max_tokens=20,
             stop=None,
             temperature=1.2,
         )
-        print(response.choices[0].message.content)
+        #print(response.choices[0].message.content)
         return re.sub(r'[^a-zA-Z]', "", response.choices[0].message.content)
     except Exception as e:
         print(f"Error with OpenAI API: {e}")
@@ -52,7 +52,8 @@ def create_round_template(round_number, past_words, word):
                 f"give you mine.")
 
 
-def play_game():
+def play_game(model_1, model_2):
+    print(f"Playing a game between {model_1} and {model_2}...")
     past_words = []
     past_words_1 = []
     past_words_2 = []
@@ -67,15 +68,15 @@ def play_game():
     status = "loses, too many rounds"
     previous_bot1_word = None
     previous_bot2_word = None
-    while round_number <= 10:
+    while round_number <= 20:
         # Update interaction history for Player 1
         messages1.append({"role": "user", "content":  create_round_template(round_number, past_words, previous_bot2_word)})
-        bot1_word = get_openai_response(messages1)
+        bot1_word = get_openai_response(model_1, messages1)
         messages1.append({"role": "assistant", "content": f"{bot1_word}"})
 
         # Update interaction history for Player 2
         messages2.append({"role": "user", "content":  create_round_template(round_number, past_words, previous_bot1_word)})
-        bot2_word = get_openai_response(messages2)
+        bot2_word = get_openai_response(model_2, messages2)
         messages2.append({"role": "assistant", "content": f"{bot2_word}"})
 
         previous_bot1_word = bot1_word
@@ -107,7 +108,7 @@ def play_game():
 
         round_number += 1
 
-    game_data.append([datetime.now().strftime('%Y-%m-%d %H:%M:%S'), round_number, status, past_words_1, past_words_2])
+    game_data.append([datetime.now().strftime('%Y-%m-%d %H:%M:%S'), round_number, status, model_1, model_2, past_words_1, past_words_2])
     return game_data
 
 
@@ -119,7 +120,7 @@ def save_results_to_csv(results):
         # Optional: Only write headers if the file is newly created
         file.seek(0, 2)  # Move the cursor to the end of the file
         if file.tell() == 0:  # Check if the file is empty
-            writer.writerow(['Timestamp', 'Round', 'Status', 'Past words player 1', 'Past words player 2'])  # Write headers only if the file is empty
+            writer.writerow(['Timestamp', 'Final Round', 'Status', 'Model 1', 'Model 2', 'Past words player 1', 'Past words player 2'])  # Write headers only if the file is empty
 
         # Write the data rows
         writer.writerows(results)

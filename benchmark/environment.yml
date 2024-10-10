@@ -8,6 +8,7 @@ dependencies:
   - pandas
   - scikit-learn
   - matplotlib
+  - tqdm
   - plotly
   - numpy
   - jupyter-dash
