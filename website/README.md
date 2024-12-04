@@ -21,3 +21,4 @@ Pour mettre à jour le site en production, suivez les étapes suivantes :
 5. Installez les nouvelles dépendances : `npm install`
 6. Redémarrez le serveur pour appliquer les changements : `npm restart`
 7. Le site sera maintenant mis à jour et accessible aux utilisateurs.
+

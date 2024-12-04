@@ -6,10 +6,10 @@
 	<em>Sync Words, a fun benchmark for LLMs!</em>
 </p>
 <p align="center">
-	<img src="https://img.shields.io/github/license/Finebouche/words_synch_challenge?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
-	<img src="https://img.shields.io/github/last-commit/Finebouche/words_synch_challenge?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
-	<img src="https://img.shields.io/github/languages/top/Finebouche/words_synch_challenge?style=default&color=0080ff" alt="repo-top-language">
-	<img src="https://img.shields.io/github/languages/count/Finebouche/words_synch_challenge?style=default&color=0080ff" alt="repo-language-count">
+	<img src="https://img.shields.io/github/license/Finebouche/words_synch_challenge" alt="license">
+	<img src="https://img.shields.io/github/last-commit/Finebouche/words_synch_challenge" alt="last-commit">
+	<img src="https://img.shields.io/github/languages/top/Finebouche/words_synch_challenge" alt="repo-top-language">
+	<img src="https://img.shields.io/github/languages/count/Finebouche/words_synch_challenge" alt="repo-language-count">
 </p>
 <p align="center"><!-- default option, no dependency badges. -->
 </p>
@@ -21,7 +21,6 @@
 ## 🔗 Table of Contents
 
 - [📍 Overview](#-overview)
-- [👾 Features](#-features)
 - [🎗 License](#-license)
 - [🙌 Acknowledgments](#-acknowledgments)
 
@@ -33,17 +32,16 @@ The wordssynchchallenge project addresses the challenge of synchronizing word ch
 
 ---
 
-## 👾 Features
 
-|      |      Feature      | Summary       |
-| :--- |:-----------------:| :---          |
-| ⚙️  |    **Website**    | <ul><li>Utilizes a client-server model with a web application front-end and a backend for game logic and data management.</li><li>Integrates <code>OpenAI</code> API for AI-driven functionalities, enhancing game interactions and data processing.</li><li>Employs <code>Sequelize</code> for database management, ensuring robust data handling and integrity.</li></ul> |
-| 🔌 | **Python script** | <ul><li>Seamless integration with <code>OpenAI</code> for AI capabilities, leveraging API keys for secure access.</li><li>Utilizes <code>Hugging Face</code> API for model interactions, supporting advanced NLP tasks.</li><li>Database integration via <code>SQLite</code> managed by <code>Sequelize</code> ORM.</li></ul> |
+|      |    Subproject     | Summary                                                                                                                                                                                                                                                                                                                                                       |
+| :--- |:-----------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ⚙️  |    **Website**    | <ul><li>Utilizes a client-server model with a web application front-end and a backend for game logic and data management.</li><li>Integrates <code>OpenAI</code> and <code>Hugging Face</code> APIs for model interactions, enhancing game interactions</li><li>Database integration via <code>SQLite</code> managed by <code>Sequelize</code> ORM.</li></ul> |
+| 🔌 | **Data Analysis** | <ul><li>Dataset creation with <code>OpenAI</code> AI.</li><li>Visualisation via OpenAI embeding and pyplot</li></ul>                                                                                                                                                                                                                                          |
 
 
 ## 🎗 License
 
-This project is protected under the GNU GPLv3 License. For more details, refer to the [GNU GPLv3 License](https://choosealicense.com/licenses/lgpl-3.0/) file.
+This project is protected under the [MIT License ](https://choosealicense.com/licenses/mit/) License.
 
 ---
 
