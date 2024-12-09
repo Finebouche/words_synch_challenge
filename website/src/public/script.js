@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add options based on the selected language
         MODELS.forEach(model => {
-            if (model.langages.includes(selectedLanguage)) {
+            if (model.languages.includes(selectedLanguage)) {
                 const option = document.createElement('option');
                 option.value = model.name;
                 option.textContent = model.name;

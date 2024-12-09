@@ -1,6 +1,5 @@
-
-const { Sequelize, DataTypes } = require('sequelize');
-const { v4: uuidv4 } = require('uuid'); // Correctly import uuidv4
+import { Sequelize, DataTypes } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
 // Setup Sequelize connection
 const sequelize = new Sequelize({
@@ -66,4 +65,5 @@ const initDb = async () => {
   console.log('Database synced!');
 };
 
-module.exports = { initDb, Player, Game };
+export { initDb, Game, Player };
+export default sequelize;

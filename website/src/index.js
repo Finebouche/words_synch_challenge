@@ -1,14 +1,14 @@
-const app = require('./app');
-const port = process.env.PORT || 4000;
-const { initDb } = require('./database');
+import app from './app.js';
+import { initDb } from './database.js';
 
-// Somewhere in your server setup
-initDb().catch(err => {
+const port = process.env.PORT || 4000;
+
+// Initialize the database before starting the server
+initDb().then(() => {
+      app.listen(port, () => {
+        console.log(`Listening on port ${port}`);
+    });
+}).catch(err => {
   console.error('Failed to initialize database:', err);
   process.exit(1); // Exit if database initialization fails
-});
-
-
-app.listen(port, () => {
-    console.log(`Listening on port ${port}`);
 });
