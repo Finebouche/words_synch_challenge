@@ -269,6 +269,7 @@ async function openaicall(model, round, past_words_array, res) {
     // Initialize messages
     let messages = [];
     messages.push({role: "system", content: RULE_TOKEN});
+    messages.push({role: "system", content: "Round 1. New game, please give your first (really random) word and only that word."});
 
     function openAIRoundTemplate(round_number, past_words_array, word) {
         if (round === 1) {
@@ -281,8 +282,9 @@ async function openaicall(model, round, past_words_array, res) {
             )
         }
     }
+
     // If there are past words, reconstruct the conversation
-    if (past_words_array && past_words_array.length > 0) {
+    if (past_words_array && past_words_array.length > 0 && round > 1) {
         for (let i = 0; i < past_words_array.length; i++) {
             if (i % 2 === 0) {
                 // Bot's word (Player 1)
@@ -293,27 +295,17 @@ async function openaicall(model, round, past_words_array, res) {
             }
         }
     }
-
-    let lastBotWord = past_words_array.slice(-1)[0]
-    let lastPlayerWord = past_words_array.slice(-1)[0]
-
-    // Add the player's new word to messages
-    past_words_array.push(lastBotWord);
-    messages.push({role: "assistant", content: `'${lastBotWord}'`});
-
-    // Create the prompt for the model
-    const prompt = openAIRoundTemplate(round, past_words_array.slice(0, -1), lastPlayerWord);
-    messages.push({role: "user", content: prompt});
-
     try {
-        const response = await openaiClient.createChatCompletion({
+        console.log(messages)
+        const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,
             max_tokens: 20,
             temperature: 1.2,
         });
 
-        const llmWord = response.data.choices[0].message.content.trim();
+        const llmWord = response.choices[0].message.content.trim();
+        console.log(response.choices[0].message)
 
         // Simple regex to extract the word (remove any non-alphabetic characters)
         return llmWord.replace(/[^a-zA-Z]/g, "");
