@@ -9,7 +9,6 @@ import {fileURLToPath} from 'url';
 // load openai key from open_ai_key.txt
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const openaiKey = fs.readFileSync(path.join(__dirname, 'open_ai_key.txt'), 'utf8').trim();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || fs.readFileSync(path.join(__dirname, 'open_ai_key.txt'), 'utf8').trim();
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN || fs.readFileSync(path.join(__dirname, 'huggingface_api_token.txt'), 'utf8').trim();
