@@ -23,7 +23,7 @@ console.log('Player ID:', playerId);
 
 document.getElementById('loginPlayer').addEventListener('click', function() {
     const userId = document.getElementById('userIdInput').value;
-    fetch('/login', {
+    fetch('/auth/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ playerId: userId })
@@ -63,7 +63,7 @@ document.getElementById('createPlayer').addEventListener('click', function() {
 
 document.getElementById('copyId').addEventListener('click', function() {
     navigator.clipboard.writeText(playerId).then(function() {
-        fetch('/create', {
+        fetch('/auth/create', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ playerId: playerId })
@@ -89,7 +89,7 @@ document.getElementById('goLogin').addEventListener('click', function() {
 
 document.getElementById('pseudonymInput').addEventListener('change', function() {
     const pseudo = this.value;
-    fetch('/update-pseudonym', {
+    fetch('/auth/update-pseudonym', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ playerId: playerId, pseudonym: pseudo })
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const languageSelect = document.getElementById('languageSelect');
     const modelSelect = document.getElementById('llmSelect');
 
-    fetch('/available-models')
+    fetch('/model/available-models')
         .then(response => response.json())
         .then(availableModels => {
             MODELS = availableModels;
@@ -278,7 +278,7 @@ document.getElementById('startGame').addEventListener('click', function () {
     var selectedModel = MODELS.find(model => model.name === selectedModelName);
     document.getElementById('selectedContent').textContent = "Bzz... bzz... model " + selectedModel.name + " loaded, you can play with me in " + langageName  + "...";
 
-    fetch('/initialize-model', {
+    fetch('/model/initialize-model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -384,7 +384,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
     var selectedModelName = document.getElementById('llmSelect').value;
     var selectedModel = MODELS.find(model => model.name === selectedModelName);
 
-    const response = fetch('/query-model', {
+    const response = fetch('/model/query-model', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({model: selectedModel, game_id: gameId, previous_words: past_words_array, new_word: word})
