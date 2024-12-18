@@ -17,10 +17,7 @@ app.get("/", (req, res) => {
 
 app.use(express.json());
 
-// Mount the auth routes under /auth
 app.use('/auth', authRoutes);
-
-// Mount the model routes under /model
 app.use('/model', modelRoutes);
 
 export default app;

@@ -66,4 +66,5 @@ const initDb = async () => {
 };
 
 export { initDb, Game, Player };
+
 export default sequelize;
