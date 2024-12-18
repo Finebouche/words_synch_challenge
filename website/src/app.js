@@ -11,9 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const openaiKey = fs.readFileSync(path.join(__dirname, 'open_ai_key.txt'), 'utf8').trim();
 
-const app = express();
-const openaiClient = new OpenAI({apiKey: openaiKey});
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || fs.readFileSync(path.join(__dirname, 'open_ai_key.txt'), 'utf8').trim();
+const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
+const openaiClient = new OpenAI({apiKey: OPENAI_API_KEY});
 
+const app = express();
 // Serve all static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 app.get("/", (req, res) => {
@@ -90,7 +92,6 @@ app.get('/available-models', (req, res) => {
     res.json(availableModels);
 });
 
-const API_TOKEN = "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";
 
 app.post('/initialize-model', async (req, res) => {
     const model = req.body.model; // Retrieve the model from the request body
@@ -133,7 +134,7 @@ app.post('/initialize-model', async (req, res) => {
                     `https://api-inference.huggingface.co/models/${model.name}`,
                     { inputs: token },
                     {
-                        headers: { Authorization: `Bearer ${API_TOKEN}` }
+                        headers: { Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}` }
                     }
                 );
 
@@ -246,7 +247,7 @@ async function huggingfacecall(model, round, past_words_array, res) {
         const response = await axios.post(
             `https://api-inference.huggingface.co/models/${model.name}`,
             {inputs: token, parameters: parameters, options: {wait_for_model: true}},
-            {headers: {Authorization: `Bearer ${API_TOKEN}`},}
+            {headers: {Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}`},}
         );
 
         let llmWord
