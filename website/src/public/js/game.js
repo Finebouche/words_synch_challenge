@@ -216,19 +216,28 @@ async function checkWord(word, language) {
     }
 
     const endpoint = `https://${language}.wiktionary.org/w/api.php`;
-    const params = new URLSearchParams({
-        action: 'query',
-        format: 'json',
-        titles: word.toLowerCase(),
-        origin: '*'
-    });
 
-    const url = `${endpoint}?${params.toString()}`;
+    // Helper function to create parameters and make API request
+    async function fetchWordInfo(variant) {
+        const params = new URLSearchParams({
+            action: 'query',
+            format: 'json',
+            titles: variant,
+            origin: '*'
+        });
+        const url = `${endpoint}?${params.toString()}`;
+        const response = await fetch(url);
+        return response.json();
+    }
 
     try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (!data.query.pages['-1']) {
+        // Fetch with the word entirely in lowercase
+        const lowerCaseData = await fetchWordInfo(word.toLowerCase());
+        // Fetch with only the first letter capitalized
+        const firstCapData = await fetchWordInfo(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+
+        // Check for valid pages in response data
+        if (!lowerCaseData.query.pages['-1'] || !firstCapData.query.pages['-1']) {
             errorMessageElement.style.display = 'none';
             return true;
         } else {
