@@ -255,7 +255,7 @@ body {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: bottom;
+    align-items: flex-end;
     justify-content: center;
 }
 
@@ -316,7 +316,7 @@ body {
     left: -5px;
     border-width: 10px;  /* Adjusts the size of the tail */
     border-style: solid;
-    border-color: transparent transparent #e0e0e0; transparent;
+    border-color: transparent transparent #e0e0e0;
     }
 
 .right {
@@ -331,7 +331,7 @@ body {
     right: -5px;
     border-width: 10px;  /* Adjusts the size of the tail */
     border-style: solid;
-    border-color: transparent transparent #e0e0e0; transparent;
+    border-color: transparent transparent #e0e0e0;
     }
 
 .message {
@@ -352,7 +352,7 @@ body {
 
 
 /* BEGIN GAME STYLES */
-#selections select, #selections button {
+.selections select, .selections button {
     margin: 10px;
     padding: 5px;
 }

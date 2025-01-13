@@ -25,12 +25,20 @@ const Player = sequelize.define('Player', {
 const Game = sequelize.define('Game', {
   gameId: {
     type: DataTypes.UUID,
-    defaultValue: () => uuidv4(), 
+    defaultValue: () => uuidv4(),
     primaryKey: true
   },
-  playerId: {
-    type: DataTypes.INTEGER,
+  player1Id: {
+    type: DataTypes.STRING,
     allowNull: false,
+    references: {
+      model: 'Players',
+      key: 'playerId'
+    }
+  },
+  player2Id: {
+    type: DataTypes.STRING,
+    allowNull: true, // Nullable since a game might involve a bot
     references: {
       model: 'Players',
       key: 'playerId'
@@ -38,7 +46,12 @@ const Game = sequelize.define('Game', {
   },
   botId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true, // Nullable since a game might involve another human
+  },
+  language: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'en' // Defaulting to English; adjust based on your most common language if necessary
   },
   roundCount: {
     type: DataTypes.INTEGER,
@@ -57,8 +70,27 @@ const Game = sequelize.define('Game', {
   },
 });
 
-Player.hasMany(Game, {foreignKey: 'playerId'});
-Game.belongsTo(Player, {foreignKey: 'playerId'});
+Player.hasMany(Game, {
+  as: 'gamesAsPlayer1',
+  foreignKey: 'player1Id'
+});
+Player.hasMany(Game, {
+  as: 'gamesAsPlayer2',
+  foreignKey: 'player2Id'
+});
+Game.belongsTo(Player, {
+  as: 'player1',
+  foreignKey: 'player1Id'
+});
+Game.belongsTo(Player, {
+  as: 'player2',
+  foreignKey: 'player2Id'
+});
+Game.addHook('beforeValidate', (game, options) => {
+  if (game.player2Id && game.botId) {
+    throw new Error('A game cannot have both a second player and a bot.');
+  }
+});
 
 const initDb = async () => {
   await sequelize.sync(); // Sync models to the database

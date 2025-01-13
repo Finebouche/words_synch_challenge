@@ -73,7 +73,7 @@
                 <span class="bubble right game-description-list" data-translate="gameDescription"></span><span class="emoji">&#x1F916;</span>
             </div>
         </div>
-        <div id="selections">
+        <div id="game_mode">
             <select id="languageSelect">
                 <option value="" data-translate="language-option">Select Language</option>
                 <option value="en" data-translate="language-option-en">English</option>
@@ -81,13 +81,23 @@
                 <option value="fr" data-translate="language-option-fr">Français</option>
                 <!-- Add other languages -->
             </select>
+            <button class="button big-button" id="selectLLMGame" data-translate="selectLLMGame" style="display:none" >
+                Play with LLM
+            </button>
+            <button class="button big-button" id="selectHumanGame" data-translate="selectHumanGame" style="display:none" >
+                Play with Human
+            </button>
+        </div>
+        <div id="message-Human" style="display: none">
+            Waiting for a human player to join...
+        </div>
+        <div id="selections-LLM">
             <select id="llmSelect" style="display:none">
                 <option value="" data-translate="llm-option">Select a LLM</option>
                 <!-- Options will be added here by JavaScript -->
             </select>
-            
-            <button class="button big-button" id="startGame" style="display:none" data-translate="startGame">Start Game</button>
-        </div>  
+            <button class="button big-button" id="startLLMGame" style="display:none" data-translate="startGame">Start Game</button>
+        </div>
         <div class="game-description" id="selectedInfo" style="display: none;">
             <div class="message">
                 <span class="bubble right" id="selectedContent"></span><span class="emoji">&#x1F916;</span>
@@ -121,6 +131,9 @@
             <img src="https://static.netify.ai/logos/g/i/t/tvguho/icon.png?v=8" alt="GitHub Logo" style="height: 20px;">
         </a>
     </div>
-    <script type="module" src="script.js"></script>
-</body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/user.js"></script>
+    <script src="js/langage.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/game.js"></script></body>
 </html>

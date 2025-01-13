@@ -17,6 +17,7 @@
     "llm-option": "Select a LLM",
     "errorMessageEmpty": "Please enter a word",
     "errorMessageUsed": "Word has already been used",
-    "errorMessageNotExist": "Word does not exist"
+    "errorMessageNotExist": "Word does not exist",
+    "alreadySubmitted": "You've already submitted. Waiting for the other player..."
 }
 
