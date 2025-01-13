@@ -35,6 +35,7 @@ router.get('/available-models', (req, res) => {
 router.post('/initialize-model', async (req, res) => {
     const model = req.body.model; // Retrieve the model from the request body
     const playerId = req.body.player_id;
+    const language = req.body.language;
 
     const modelNames = availableModels.map(m => m.name);
     if (!modelNames.includes(model.name)) {
@@ -63,7 +64,8 @@ router.post('/initialize-model', async (req, res) => {
 
     const newGame = await Game.create({
         botId: model.name,
-        playerId: playerId,
+        player1Id: playerId,
+        language: language,
     });
 
     if (model.provider === "huggingface") {

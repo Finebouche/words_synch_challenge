@@ -161,7 +161,7 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: selectedModel, player_id: playerId}) // Send the selected model to the server
+        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage}) // Send the selected model to the server
     })
         .then(response => {
             console.log("Model is loading. Please wait.");
