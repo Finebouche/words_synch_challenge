@@ -298,15 +298,6 @@ document.getElementById('submitWord').addEventListener('click', async function (
     } else if (gameMode === 'human') {
         // =============== HUMAN VS HUMAN MODE ===============
 
-        let haveIPlayedThisRound = false;
-
-        if (haveIPlayedThisRound) {
-            let errorMessageElement = document.getElementById('errorMessage');
-            errorMessageElement.textContent = getTranslation('AlreadySubmitted');
-            errorMessageElement.style.display = 'block';
-            return;
-        }
-
         // Send to server
         console.log('Submitting word:', word, 'for game', gameId, 'as', myRole);
         socket.emit('submitWordHuman', {
@@ -316,8 +307,8 @@ document.getElementById('submitWord').addEventListener('click', async function (
         })
 
         // Once emitted, you can set `haveIPlayedThisRound = true` immediately:
-        haveIPlayedThisRound = true;
         submitButton.disabled = true;
+        socket.off('roundResult');
 
         // When the server says "roundResult", we display the word
         socket.on('roundResult', ({ yourWord, opponentWord, status }) => {
