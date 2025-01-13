@@ -142,7 +142,7 @@ export default function initPlayersSocket(server) {
         // The game is lost if the round is above 5
         if (gameObj.roundWords.length > 5) {
             status = "loses";
-        } else if (p1Word === p2Word) {
+        } else if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
           status = "wins"
         }
 

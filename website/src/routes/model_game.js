@@ -253,7 +253,7 @@ router.post('/query-model', async (req, res) => {
 
     if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 5) {
         return res.json({llmWord: llmWord, status: "loses"});
-    } else if (llmWord === newWord) {
+    } else if (llmWord.toLowerCase() === newWord.toLowerCase()) {
         return res.json({llmWord: llmWord, status: "wins"});
     } else {
         res.json({llmWord: llmWord, status: "continue"});
