@@ -357,6 +357,13 @@ body {
     padding: 5px;
 }
 
+.selectionContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
 input {
     margin: 10px 0px;
     padding: 8px;
@@ -386,6 +393,7 @@ input {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease; /* Transition for hover effect */
+    max-width: 150px;
 }
 
 .button:hover {
@@ -419,6 +427,7 @@ input {
     padding: 8px 20px;
     font-weight: bold;
     text-transform: uppercase;
+    margin: 10px;
 }
 
 #previousWordsArea {

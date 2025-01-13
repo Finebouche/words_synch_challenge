@@ -73,7 +73,7 @@
                 <span class="bubble right game-description-list" data-translate="gameDescription"></span><span class="emoji">&#x1F916;</span>
             </div>
         </div>
-        <div id="game_mode">
+        <div id="game-mode-selection" class="selectionContainer">
             <select id="languageSelect">
                 <option value="" data-translate="language-option">Select Language</option>
                 <option value="en" data-translate="language-option-en">English</option>
@@ -81,17 +81,17 @@
                 <option value="fr" data-translate="language-option-fr">Français</option>
                 <!-- Add other languages -->
             </select>
-            <button class="button big-button" id="selectLLMGame" data-translate="selectLLMGame" style="display:none" >
-                Play with LLM
+            <button class="button small-button" id="selectLLMGame" data-translate="selectLLMGame" style="display:none" >
+                Play with an LLM
             </button>
-            <button class="button big-button" id="selectHumanGame" data-translate="selectHumanGame" style="display:none" >
-                Play with Human
+            <button class="button small-button" id="selectHumanGame" data-translate="selectHumanGame" style="display:none" >
+                Play with someone
             </button>
         </div>
         <div id="message-Human" style="display: none">
             Waiting for a human player to join...
         </div>
-        <div id="selections-LLM">
+        <div id="selections-LLM" class="selectionContainer">
             <select id="llmSelect" style="display:none">
                 <option value="" data-translate="llm-option">Select a LLM</option>
                 <!-- Options will be added here by JavaScript -->
