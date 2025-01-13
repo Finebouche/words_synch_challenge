@@ -191,6 +191,8 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
 
 async function checkWord(word, language) {
     let errorMessageElement = document.getElementById('errorMessage');
+    let submitButton = document.getElementById('submitWord');
+    submitButton.disabled = true
 
     // check if the input is empty
     if (word === '') {
@@ -232,6 +234,7 @@ async function checkWord(word, language) {
         } else {
             errorMessageElement.textContent = getTranslation('errorMessageNotExist');
             errorMessageElement.style.display = 'block';
+            submitButton.disabled = false;
             return false;
         }
     } catch (error) {
@@ -255,7 +258,6 @@ document.getElementById('submitWord').addEventListener('click', async function (
     // check in the dictionary
     const wordExists = await checkWord(word, selectedLanguage);
     if (!wordExists) {
-        submitButton.disabled = false;
         return;
     }
 
@@ -307,7 +309,6 @@ document.getElementById('submitWord').addEventListener('click', async function (
         })
 
         // Once emitted, you can set `haveIPlayedThisRound = true` immediately:
-        submitButton.disabled = true;
         socket.off('roundResult');
 
         // When the server says "roundResult", we display the word
