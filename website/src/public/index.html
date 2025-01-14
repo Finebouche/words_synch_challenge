@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Synchronization Challenge</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style/selection.css">
+    <link rel="stylesheet" href="style/game.css">
 </head>
 <body>
     <div class="config-box">
@@ -17,7 +18,7 @@
                 <div class="user-option" id="login">
                     <input type="text" id="userIdInput" placeholder="Enter your ID" aria-label="User ID">
                     <button id="loginPlayer" class="button small-button">Log in</button>
-                    <div id="horizontal-line"></div>
+                    <div class="horizontal-line"></div>
                     <button id="createPlayer" class="button small-button yellow-button">Create</button>
                 </div>
                 <div class="user-option" id="signin" style="display: none;">
@@ -26,6 +27,7 @@
                     </div>
                     <button id="copyId" class="button small-button">Copy</button>
                     <button id="copiedId" class="button small-button green-button" style="display: none;" disabled>Copied ✓</button>
+                    <div class="horizontal-line"></div>
                     <button id="goLogin" class="button small-button" style="display: none;" disabled>Go Login</button>
                 </div>
                 <div class="user-option" id="parameters" style="display: none;">
@@ -33,6 +35,49 @@
                         <span>&#x1F511;</span><span id="userId"></span>
                     </div>
                     <input type="text" id="pseudonymInput" placeholder="Pseudonym" aria-label="Pseudonym">
+                    <!-- Age Group Selector -->
+                    <select id="ageGroupInput" aria-label="AgeGroup">
+                        <option value="" disabled selected>Age group</option>
+                        <option value="under-18">Under 18</option>
+                        <option value="18-24">18-24</option>
+                        <option value="25-34">25-34</option>
+                        <option value="35-44">35-44</option>
+                        <option value="45-54">45-54</option>
+                        <option value="55-64">55-64</option>
+                        <option value="65-plus">65+</option>
+                    </select>
+
+                    <!-- Gender Selector -->
+                    <select id="genderInput" aria-label="Gender">
+                        <option value="" disabled selected>Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="non-binary">Non-binary</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
+
+                    <!-- Region Selector -->
+                    <select id="regionInput" aria-label="Region">
+                        <option value="" disabled selected>Region</option>
+                        <option value="north-america">North America</option>
+                        <option value="south-america">South America</option>
+                        <option value="europe">Europe</option>
+                        <option value="asia">Asia</option>
+                        <option value="africa">Africa</option>
+                        <option value="australia">Australia</option>
+                        <option value="antarctica">Antarctica</option>
+                    </select>
+
+                    <!-- LLM Knowledge Selector -->
+                    <select id="llmKnowledgeInput" aria-label="LLMKnowledge">
+                        <option value="" disabled selected>Knowledge about LLMs ?</option>
+                        <option value="none">None</option>
+                        <option value="basic">Basic</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="expert">Expert</option>
+                    </select>
+                    <button id="updateProfile" class="button small-button">Update Profile</button>
+                    <div class="horizontal-line"></div>
                     <button id="logoutPlayer" class="button small-button">Log out</button>
                 </div>
             </div>

@@ -1,0 +1,198 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(to right, #a1c4fd, #fbc2f7);
+    margin: 0px;
+}
+
+
+/* LOCAL LANGAGE SELECTION STYLES */
+.config-box {
+    text-align: center;
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    top: 20px;
+    right: 20px;
+}
+.selector {
+    background-color: #f0f0f0; ; /* Use a contrasting color */
+    color: black;
+    border: none;
+    padding: 10px 8px;
+    border-radius: 10px; /* Rounded edges */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: pointer;
+    margin: 0 5px;
+    min-width: 90px;
+}
+
+.option {
+    padding-top: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.option span {
+    margin-right: 5px;  /* A bit of space between the icon and the text */
+}
+@media (max-width: 600px) {
+    .selector {
+        font-size: 0; /* Hides the text by setting font size to 0 */
+        min-width: 0px;
+    }
+    .selector span {
+        font-size: 16px; /* Reset the font size for the emoji */
+        min-width: 0px;
+    }
+}
+
+.selector:hover {
+    background-color: #e0e0e0; 
+}
+
+.user-option {
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: stretch;   /* Make selects/input/buttons fill container width */
+    padding: 15px;         /* Add padding inside the container */
+    max-width: 200px;      /* Increase width for better readability */
+}
+select {
+    margin: 5px 0;     /* Vertical spacing between fields */
+    padding: 6px 8px;  /* Slightly bigger padding for comfort */
+    font-size: 14px;   /* A readable font size */
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box; /* Make width calculations more intuitive */
+}
+input {
+    margin: 10px 0px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-sizing: border-box; /* Make width calculations more intuitive */
+}
+
+.selector input,
+.selector select {
+    width: 100%;
+}
+
+.button-container {
+    display: flex;
+    gap: 5px; /* Spacing between buttons */
+    margin-top: 10px;
+}
+
+.button-container .button {
+    flex: 1; /* Both buttons share available width equally */
+}
+
+.horizontal-line {
+    width: 100%;
+}
+.horizontal-line::after {
+    content: "";             /* Required for pseudo-elements */
+    display: block;
+    height: 2px;             /* Line thickness */
+    background-color: #000;  /* Line color, change as needed */
+    margin: 10px 0;          /* Space above and below the line */
+}
+
+.small-button {
+    padding: 5px 8px;
+    margin: 0px 2px;
+    width: 100%;
+}
+/* END LOCAL LANGAGE SELECTION STYLES */
+
+/* START GITHUB BUTTON STYLES */
+.github-button {
+    position: fixed; /* Positioning relative to the viewport */
+    bottom: 20px; /* 20px from the bottom */
+    right: 20px; /* 20px from the right */
+    width: 20px; /* Fixed width */
+    height: 15px; /* Fixed height */
+    display: flex; /* To center the icon inside the button */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    min-width: 0px;
+}
+/* END GITHUB BUTTON STYLES */
+
+/* BEGIN GAME STYLES */
+.selectionContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+
+#gameStatus {
+    margin-top: 20px;   
+    font-size: 1.2em;
+}
+
+#errorMesssage {
+    color: red;
+    font-weight: bold;
+}
+
+.button {
+    background-color: #6246ea; /* Use a contrasting color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+}
+.game-container .small-button {
+    max-width: 150px;
+}
+
+.button:hover {
+    background-color: #4034a0; /* Darken color on hover */
+}
+
+.yellow-button {
+    background-color: #ffd524; 
+    color: black;
+}
+.yellow-button:hover {
+    background-color: #edc10e;
+    color: black;
+}
+
+.button:disabled {
+    background-color: #a0a2ab; /* Change to a muted color */
+    color: #cccccc; /* Lighter text color */
+    cursor: not-allowed; /* Change cursor to indicate it's not clickable */
+    opacity: 0.6; /* Optional: make it semi-transparent */
+    pointer-events: none; /* Prevents any interaction with the button */
+}
+
+.green-button:disabled  {
+    background-color: #4caf50; 
+    color: white;
+    opacity: 1;
+}
+
+.big-button {
+    padding: 8px 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 10px;
+}
+
+#previousWordsArea {
+    margin-top: 20px;
+    font-style: italic;
+    color: #666;
+}
+/* END GAME STYLES */

@@ -79,22 +79,42 @@ document.getElementById('goLogin').addEventListener('click', function() {
     document.getElementById('userId').textContent = playerId;
 });
 
-document.getElementById('pseudonymInput').addEventListener('change', function() {
-    const pseudo = this.value;
-    fetch('/auth/update-pseudonym', {
+
+document.getElementById('updateProfile').addEventListener('click', function() {
+    const pseudonym = document.getElementById('pseudonymInput').value;
+    const ageGroup = document.getElementById('ageGroupInput').value;
+    const gender = document.getElementById('genderInput').value;
+    const region = document.getElementById('regionInput').value;
+    const llmKnowledge = document.getElementById('llmKnowledgeInput').value;
+
+    // Make a request to the new /auth/update-profile route
+    fetch('/auth/update-profile', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ playerId: playerId, pseudonym: pseudo })
-    }).then(response => {
-        console.log("Model is loading. Please wait.");
-        if (response.status === 504 || response.status === 503 || response.status === 500) {
-            console.log("Problem when updating pseudonym.");
-        } else {
-            pseudonym = this.value;
-            const currentUserDiv = document.getElementById('currentUser');
-            currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
-        }
+        body: JSON.stringify({
+            playerId: playerId,        // from your existing code
+            pseudonym: pseudonym || '',  // or undefined if empty
+            ageGroup: ageGroup || '',
+            gender: gender || '',
+            region: region || '',
+            llmKnowledge: llmKnowledge || ''
+        })
     })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Profile update failed');
+        }
+        return response.text();
+    })
+    .then(message => {
+        console.log(message);
+        const currentUserDiv = document.getElementById('currentUser');
+        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Show error message to the user
+    });
 });
 
 document.getElementById('logoutPlayer').addEventListener('click', function() {

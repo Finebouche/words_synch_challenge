@@ -19,6 +19,22 @@ const Player = sequelize.define('Player', {
   pseudonym: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  ageGroup: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  gender: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  region: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  llmKnowledge: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 
