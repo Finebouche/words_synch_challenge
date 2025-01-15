@@ -251,10 +251,11 @@ router.post('/query-model', async (req, res) => {
         return res.status(400).send("Invalid model provider");
     }
 
-    if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 5) {
-        return res.json({llmWord: llmWord, status: "loses"});
-    } else if (llmWord.toLowerCase() === newWord.toLowerCase()) {
+    if (llmWord.toLowerCase() === newWord.toLowerCase()) {
         return res.json({llmWord: llmWord, status: "wins"});
+    }
+    else if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 10) {
+        return res.json({llmWord: llmWord, status: "loses"});
     } else {
         res.json({llmWord: llmWord, status: "continue"});
     }
