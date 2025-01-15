@@ -1,22 +1,24 @@
 
 // USER OPTIONS
 document.getElementById('user-profile-selector').addEventListener('click', function () {
-    var userOptions = document.getElementById('userOptions');
-    userOptions.style.display = 'block';
+    let userOptions = document.getElementById('userOptions');
+    userOptions.style.opacity = "1";
+    userOptions.style.maxWidth = "200px";
+    userOptions.style.maxHeight = "100%";
 });
 
 function generatePlayerID() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     return Array.from({ length: 8 }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
 }
-var playerId = generatePlayerID();
-var pseudonym = '';
+let playerId = generatePlayerID();
+let pseudonym = '';
 console.log('Player ID:', playerId);
 
 document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent full page reload
+    event.preventDefault();
 
-    const userId = document.getElementById('userIdInput').value;
+    const userId = document.getElementById('current-password').value;
     fetch('/auth/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},

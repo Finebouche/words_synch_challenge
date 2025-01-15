@@ -14,11 +14,11 @@
             <div id="currentUser">
                 <span role="img" aria-label="User" data-translate="login">&#x1F464;</span> Log In
             </div>
-            <div id="userOptions" style="display: none;">
+            <div id="userOptions" style="max-width:0; max-height:0; opacity:0">
                 <div class="user-option" id="login">
                     <form id="loginForm" action="/auth/login" method="POST">
-                        <input type="text" id="userIdInput" placeholder="Enter your ID" aria-label="User ID" autocomplete="username">
-                        <input type="password" name="password" style="position:absolute; left:-9999px; width:0; height:0; opacity:0;" tabindex="-1" autocomplete="current-password"/>
+                        <label for="current-password" style="max-width:0; max-height:0; opacity:0"></label>
+                        <input type="password" name="password" id="current-password" placeholder="Account number" autocomplete="current-password">
                         <button type="submit" id="loginPlayer" class="button small-button">Log in</button>
                     </form>
                     <div class="horizontal-line"></div>
