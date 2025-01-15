@@ -10,7 +10,14 @@ router.post('/login', async (req, res) => {
     try {
         const player = await Player.findByPk(playerId);
         if (player) {
-            res.json({ pseudonym: player.pseudonym, playerId: player.playerId });
+            res.json({
+            pseudonym: player.pseudonym,
+            playerId: player.playerId,
+            ageGroup: player.ageGroup,
+            gender: player.gender,
+            region: player.region,
+            llmKnowledge: player.llmKnowledge
+            });
         } else {
             res.status(404).send('User not found');
         }

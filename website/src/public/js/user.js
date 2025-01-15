@@ -2,9 +2,7 @@
 // USER OPTIONS
 document.getElementById('user-profile-selector').addEventListener('click', function () {
     let userOptions = document.getElementById('userOptions');
-    userOptions.style.opacity = "1";
-    userOptions.style.maxWidth = "200px";
-    userOptions.style.maxHeight = "100%";
+    userOptions.style.display = "block";
 });
 
 function generatePlayerID() {
@@ -41,12 +39,22 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         }
     })
     .then(data => {
-        pseudonym = data.pseudonym;
-        playerId = data.playerId;
-        document.getElementById('pseudonymInput').textContent = pseudonym;
+        // Store the data in variables (or directly set them in the UI)
+        const pseudonym = data.pseudonym;
+        const playerId = data.playerId;
+        const ageGroup = data.ageGroup;
+        const gender = data.gender;
+        const region = data.region;
+        const llmKnowledge = data.llmKnowledge;
+
+        // Populate the DOM elements
+        document.getElementById('pseudonymInput').value = pseudonym;
         document.getElementById('userId').textContent = playerId;
-        const currentUserDiv = document.getElementById('currentUser');
-        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + (pseudonym || userId);
+        document.getElementById('ageGroupInput').value = ageGroup || ''; // fallback to empty if not provided
+        document.getElementById('genderInput').value = gender || '';
+        document.getElementById('regionInput').value = region || '';
+        document.getElementById('llmKnowledgeInput').value = llmKnowledge || '';
+        document.getElementById('currentUser').innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + (pseudonym || playerId);
     });
 });
 
