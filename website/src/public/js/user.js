@@ -13,7 +13,9 @@ var playerId = generatePlayerID();
 var pseudonym = '';
 console.log('Player ID:', playerId);
 
-document.getElementById('loginPlayer').addEventListener('click', function() {
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent full page reload
+
     const userId = document.getElementById('userIdInput').value;
     fetch('/auth/login', {
         method: 'POST',
