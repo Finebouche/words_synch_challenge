@@ -375,6 +375,7 @@ document.getElementById('gameRestart').addEventListener('click', async function 
     document.getElementById('llmSelect').style.display = 'none';
     document.getElementById('languageSelect').value = '';
     document.getElementById('languageSelect').disabled = false;
+    document.getElementById('languageSelect').style.display = 'block';
     document.getElementById('startLLMGame').style.display = 'none';
 
     document.getElementById('gameRestart').style.display = 'none';
