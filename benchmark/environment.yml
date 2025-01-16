@@ -12,4 +12,5 @@ dependencies:
   - plotly
   - numpy
   - jupyter-dash
-  - pip
+  - pip:
+      - requests

@@ -1,59 +1,58 @@
+import requests
 import sqlite3
 from sqlite3 import Error
 
-def read_token_from_file(file_path):
-    """Reads the authentication token from a file."""
+
+def download_database(url, token, db_path):
+    """Download the SQLite database using an authentication token."""
+    headers = {'x-download-token': token}
+    response = requests.get(url, headers=headers, stream=True)
+
+    if response.status_code == 200:
+        with open(db_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print("Database downloaded successfully.")
+    else:
+        print("Failed to download database:", response.status_code, response.text)
+        return False
+    return True
+
+
+def query_database(db_path):
+    """Query the SQLite database."""
     try:
-        with open(file_path, 'r') as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        print("Token file not found.")
-        return None
-
-
-def create_connection(db_file):
-    """Create a database connection to the SQLite database specified by db_file."""
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        print("Connection established.")
-    except Error as e:
-        print(e)
-    return conn
-
-
-def execute_query(conn, token, correct_token):
-    """Execute a query if token is valid."""
-    if token != correct_token:
-        print("Invalid token.")
-        return
-
-    try:
+        conn = sqlite3.connect(db_path)
+        print("Connected to the database.")
         cur = conn.cursor()
-        # Example query: Select everything from a hypothetical 'users' table
-        cur.execute("SELECT * FROM users")
 
+        # Example query
+        cur.execute("SELECT * FROM tablename")  # Replace 'tablename' with your actual table name
         rows = cur.fetchall()
+
         for row in rows:
             print(row)
+
+        conn.close()
     except Error as e:
-        print(e)
+        print("Error during connection or query execution:", e)
 
 
 
 if __name__ == '__main__':
-    database_path = 'word_sync.db'  # Path to your SQLite database
-    token_file_path = 'download_db_key.txt'  # Path to the file containing the token
+    token_path = 'download_db_key.txt'  # Path to your local token file
+    database_path = 'downloaded_word_sync.db'  # Local path to save the downloaded database
+    download_url = 'https://word-sync.games//database/download-database'  # URL to download the database
 
-    # Read token from file
-    token = read_token_from_file(token_file_path)
-    if token is None:
+    # Read the token from the file
+    try:
+        with open(token_path, 'r') as file:
+            token = file.read().strip()
+    except FileNotFoundError:
+        print("Token file not found.")
         exit()
 
-    # Create a database connection
-    conn = create_connection(database_path)
-    if conn:
-        correct_token = 'your_secret_token'  # This should match the token in your token.txt
-        execute_query(conn, token, correct_token)
-
-        conn.close()  # Close the connection
+    # Download the database
+    if download_database(download_url, token, database_path):
+        # Query the database
+        query_database(database_path)
