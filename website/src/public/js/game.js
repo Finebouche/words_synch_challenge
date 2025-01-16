@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 3) If the user selects "Play with Human"
     selectHumanGame.addEventListener('click', function () {
+        let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
         gameMode = 'human';
         socket = io(); // Connect to the server
         // Hide LLM options, and "Play with..." buttons
@@ -146,6 +147,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById('startLLMGame').addEventListener('click', function () {
+    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+
     // Get selected model
     selectedModelName = document.getElementById('llmSelect').value;
     // Get the corresponding flag emoji for the selected language
