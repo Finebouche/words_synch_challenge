@@ -3,6 +3,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import modelRoutes from './routes/model_game.js';
+import databaseRoutes from './routes/database_sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +20,7 @@ app.use(express.json());
 
 app.use('/auth', authRoutes);
 app.use('/model', modelRoutes);
+app.use('/database', databaseRoutes);
 // NOTE: no need to do `app.use('/players', playersRoutes)`
 // because the "players" logic is Socket.IO-based, not typical route-based.
 

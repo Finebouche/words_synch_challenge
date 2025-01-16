@@ -3,8 +3,6 @@ import { Player } from '../database.js';
 
 const router = express.Router();
 
-// USER AUTHENTICATION
-
 router.post('/login', async (req, res) => {
     const { playerId } = req.body;
     try {
