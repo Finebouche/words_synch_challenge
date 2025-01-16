@@ -21,7 +21,7 @@ const authenticateDownload = (req, res, next) => {
 
 // Route to download the database file
 router.get('/download-database', authenticateDownload, (req, res) => {
-  const dbPath = path.resolve(__dirname, '../../word_sync.db');
+  const dbPath = path.resolve(__dirname, '../../');
   res.download(dbPath, 'word_sync.db', (err) => {
     if (err) {
       console.error('Error sending the database file:', err);
