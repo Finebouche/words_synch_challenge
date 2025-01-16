@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import { Game, Player } from '../database.js';
-import sequelize from '../database.js'; // If you need direct access to Sequelize
 import { v4 as uuidv4 } from 'uuid';
 
 export default function initPlayersSocket(server) {

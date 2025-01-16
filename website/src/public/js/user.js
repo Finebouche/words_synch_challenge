@@ -1,17 +1,80 @@
+/*******************************************************
+ * Utility Functions
+ *******************************************************/
+function generatePlayerID() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  return Array.from({ length: 8 }, () =>
+    characters.charAt(Math.floor(Math.random() * characters.length))
+  ).join('');
+}
 
-// USER OPTIONS
+/** Retrieves a value from localStorage and handles potential 'null' string values.
+ * If the item is 'null' or not set, returns an empty string instead.
+ * @param {string} key - The key to retrieve from localStorage.
+ * @return {string} - The value from localStorage or an empty string if not found or 'null'.
+ */
+function getLocalStorageValue(key) {
+  const value = localStorage.getItem(key);
+  return (value === 'null' || value === null) ? '' : value;
+}
+
+
+/** Sets the value of a form input or text content of an element based on its ID.
+ * @param {string} key - The localStorage key associated with the element.
+ * @param {string} elementId - The ID of the DOM element to update.
+ * @param {boolean} isText - If true, sets textContent; otherwise, sets value.
+ */
+function populateElementFromStorage(key, elementId, isText = false) {
+  const value = getLocalStorageValue(key);
+  const element = document.getElementById(elementId);
+  if (element) {
+    if (isText) {
+      element.textContent = value;
+    } else {
+      element.value = value;
+    }
+  }
+}
+
+/*******************************************************
+    * Event Listeners
+ * ******************************************************/
+
+window.addEventListener('DOMContentLoaded', function() {
+    let playerId = getLocalStorageValue('playerId');
+
+    if (playerId) {
+        // User is recognized in localStorage, prepare and show user profile interface.
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('signin').style.display = 'none';
+        document.getElementById('parameters').style.display = 'flex';
+
+        // Populate form fields and user identifiers from localStorage
+        populateElementFromStorage('pseudonym', 'pseudonymInput');
+        populateElementFromStorage('playerId', 'userId', true);
+        populateElementFromStorage('ageGroup', 'ageGroupInput');
+        populateElementFromStorage('gender', 'genderInput');
+        populateElementFromStorage('region', 'regionInput');
+        populateElementFromStorage('llmKnowledge', 'llmKnowledgeInput');
+
+        // Set user's display name in the user interface
+        const displayName = getLocalStorageValue('pseudonym') || playerId;
+        if (displayName) {
+            document.getElementById('currentUser').innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
+        }
+    } else {
+        // No playerId in storage, show login interface
+        document.getElementById('login').style.display = 'flex';
+        document.getElementById('parameters').style.display = 'none';
+        localStorage.setItem('newPlayerID', generatePlayerID());
+    }
+    console.log('Player ID:', playerId);
+});
+
 document.getElementById('user-profile-selector').addEventListener('click', function () {
     let userOptions = document.getElementById('userOptions');
     userOptions.style.display = "block";
 });
-
-function generatePlayerID() {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length: 8 }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
-}
-let playerId = generatePlayerID();
-let pseudonym = '';
-console.log('Player ID:', playerId);
 
 document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -41,11 +104,19 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     .then(data => {
         // Store the data in variables (or directly set them in the UI)
         const pseudonym = data.pseudonym;
-        const playerId = data.playerId;
-        const ageGroup = data.ageGroup;
-        const gender = data.gender;
-        const region = data.region;
+        const playerId  = data.playerId;
+        const ageGroup  = data.ageGroup;
+        const gender    = data.gender;
+        const region    = data.region;
         const llmKnowledge = data.llmKnowledge;
+
+        // Store data in localStorage
+        localStorage.setItem('pseudonym', pseudonym);
+        localStorage.setItem('playerId', playerId);
+        localStorage.setItem('ageGroup', ageGroup);
+        localStorage.setItem('gender', gender);
+        localStorage.setItem('region', region);
+        localStorage.setItem('llmKnowledge', llmKnowledge);
 
         // Populate the DOM elements
         document.getElementById('pseudonymInput').value = pseudonym;
@@ -54,7 +125,11 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         document.getElementById('genderInput').value = gender || '';
         document.getElementById('regionInput').value = region || '';
         document.getElementById('llmKnowledgeInput').value = llmKnowledge || '';
-        document.getElementById('currentUser').innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + (pseudonym || playerId);
+        const displayName = getLocalStorageValue('pseudonym') || playerId;
+        if (displayName) {
+          document.getElementById('currentUser').innerHTML =
+            '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
+        }
     });
 });
 
@@ -62,10 +137,11 @@ document.getElementById('createPlayer').addEventListener('click', function() {
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'none';
     document.getElementById('signin').style.display = 'flex';
-    document.getElementById('newUserId').textContent = playerId;
+    document.getElementById('newUserId').textContent = getLocalStorageValue('newPlayerID');
 });
 
 document.getElementById('copyId').addEventListener('click', function() {
+    let playerId = getLocalStorageValue('newPlayerID');
     navigator.clipboard.writeText(playerId).then(function() {
         fetch('/auth/create', {
             method: 'POST',
@@ -85,6 +161,7 @@ document.getElementById('copyId').addEventListener('click', function() {
 
 
 document.getElementById('goLogin').addEventListener('click', function() {
+    let playerId = getLocalStorageValue('playerId');
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
@@ -93,19 +170,19 @@ document.getElementById('goLogin').addEventListener('click', function() {
 
 
 document.getElementById('updateProfile').addEventListener('click', function() {
-    const pseudonym = document.getElementById('pseudonymInput').value;
-    const ageGroup = document.getElementById('ageGroupInput').value;
-    const gender = document.getElementById('genderInput').value;
-    const region = document.getElementById('regionInput').value;
+    const pseudonym   = document.getElementById('pseudonymInput').value;
+    const ageGroup    = document.getElementById('ageGroupInput').value;
+    const gender      = document.getElementById('genderInput').value;
+    const region      = document.getElementById('regionInput').value;
     const llmKnowledge = document.getElementById('llmKnowledgeInput').value;
+    const playerId = getLocalStorageValue('playerId');
 
-    // Make a request to the new /auth/update-profile route
     fetch('/auth/update-profile', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            playerId: playerId,        // from your existing code
-            pseudonym: pseudonym || '',  // or undefined if empty
+            playerId: playerId,
+            pseudonym: pseudonym || '',
             ageGroup: ageGroup || '',
             gender: gender || '',
             region: region || '',
@@ -116,24 +193,38 @@ document.getElementById('updateProfile').addEventListener('click', function() {
         if (!response.ok) {
             throw new Error('Profile update failed');
         }
-        return response.text();
+        return response.text(); // or response.json(), depending on your server
     })
     .then(message => {
-        console.log(message);
-        const currentUserDiv = document.getElementById('currentUser');
-        currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + pseudonym;
+        console.log('Profile update message:', message);
+        localStorage.setItem('pseudonym', pseudonym);
+        localStorage.setItem('ageGroup', ageGroup);
+        localStorage.setItem('gender', gender);
+        localStorage.setItem('region', region);
+        localStorage.setItem('llmKnowledge', llmKnowledge);
+
+        const displayName = getLocalStorageValue('pseudonym') || playerId;
+        if (displayName) {
+          document.getElementById('currentUser').innerHTML =
+            '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
+        }
+
+        console.log('Local storage updated successfully!');
     })
     .catch(error => {
         console.error('Error:', error);
-        // Show error message to the user
+        // Optionally show an error message to the user
     });
 });
 
 document.getElementById('logoutPlayer').addEventListener('click', function() {
+    // Remove user data from localStorage
+    localStorage.clear();
+
+    // Reset UI
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
     const currentUserDiv = document.getElementById('currentUser');
     currentUserDiv.innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + 'Log In';
 });
-// END USER OPTIONS
