@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const router = Router();
+
+// Calculate the directory name using ESM syntax
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware for token authentication
 const authenticateDownload = (req, res, next) => {
