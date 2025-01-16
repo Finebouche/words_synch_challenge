@@ -24,7 +24,9 @@ const availableModels = [
     { name: 'openai-community/gpt2', type: 'text-generation', languages : ['en', 'fr'], provider: "huggingface" },
     { name: 'google/flan-t5-large', type: 'text2text-generation' , languages : ['en'], provider: "huggingface"  },
     { name: 'google-bert/bert-base-uncased', type: 'fill-mask' , languages : ['en'] , mask_token: '[MASK]', provider: "huggingface" },
-    { name: 'FacebookAI/xlm-roberta-base', type: 'fill-mask' , languages : ['es', 'en','fr'], mask_token: "<mask>", provider: "huggingface" },
+    { name: 'distilbert/distilroberta-base', type: 'fill-mask' , languages : ['en'] , mask_token: "<mask>", provider: "huggingface" },
+    { name: 'meta-llama/Llama-3.2-1B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface" },
+    { name: 'meta-llama/Llama-3.2-3B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface" },
 ];
 
 // Endpoint to get available models
