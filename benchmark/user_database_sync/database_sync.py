@@ -1,7 +1,6 @@
 import sqlite3
 from sqlite3 import Error
 
-
 def read_token_from_file(file_path):
     """Reads the authentication token from a file."""
     try:
