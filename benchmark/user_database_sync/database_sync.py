@@ -1,7 +1,4 @@
 import requests
-import sqlite3
-from sqlite3 import Error
-
 
 def download_database(url, token, db_path):
     """Download the SQLite database using an authentication token."""
@@ -19,25 +16,6 @@ def download_database(url, token, db_path):
     return True
 
 
-def query_database(db_path):
-    """Query the SQLite database."""
-    try:
-        conn = sqlite3.connect(db_path)
-        print("Connected to the database.")
-        cur = conn.cursor()
-
-        # Example query
-        cur.execute("SELECT * FROM tablename")  # Replace 'tablename' with your actual table name
-        rows = cur.fetchall()
-
-        for row in rows:
-            print(row)
-
-        conn.close()
-    except Error as e:
-        print("Error during connection or query execution:", e)
-
-
 
 if __name__ == '__main__':
     token_path = 'download_db_key.txt'  # Path to your local token file
@@ -53,6 +31,4 @@ if __name__ == '__main__':
         exit()
 
     # Download the database
-    if download_database(download_url, token, database_path):
-        # Query the database
-        query_database(database_path)
+    download_database(download_url, token, database_path)
