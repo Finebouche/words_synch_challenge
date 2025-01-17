@@ -136,7 +136,7 @@
                 Play with someone
             </button>
         </div>
-        <div id="message-Human" style="display: none">
+        <div id="message-Human" class="gameMessage" style="display: none">
             Waiting for a human player to join...
         </div>
         <div id="selections-LLM" class="selectionContainer">
@@ -145,6 +145,9 @@
                 <!-- Options will be added here by JavaScript -->
             </select>
             <button class="button big-button" id="startLLMGame" style="display:none" data-translate="startGame">Start Game</button>
+            <div id="message-LLM" class="gameMessage" style="display: none">
+                Instantiating the chatbot...
+            </div>
         </div>
         <div class="game-description" id="selectedInfo" style="display: none;">
             <div class="message">
@@ -162,9 +165,30 @@
             </form>
         </div>
         <div id="gameRestart" style="display: none;">
-            <span id="lossMessage" data-translate="lossMessage" style="display: none;">You lost the game !</span>
-            <span id="winMessage" data-translate="winMessage" style="display: none;">You won the game !</span>
-            <button class="button big-button" id="restartButton" data-translate="restart">Restart</button>
+            <span id="lossMessage" class="gameMessage" data-translate="lossMessage" style="display: none;">You lost the game !</span>
+            <span id="winMessage" class="gameMessage" data-translate="winMessage" style="display: none;">You won the game !</span>
+            <button class="button big-button" id="restartButton" data-translate="restart">Play again</button>
+            <button class="button small-button" id="questionsButton" data-translate="answers">Answer a few questions</button>
+        </div>
+        <!-- NEW QUESTIONNAIRE SECTION -->
+        <div id="questionnaireContainer" style="display: none;">
+            <div>
+                <label for="strategyUsed">What strategy did you use in the game?</label>
+                <input type="text" id="strategyUsed" name="strategyUsed" placeholder="Short answer...">
+            </div>
+
+            <div style="margin-top: 10px;">
+                <label for="otherPlayerStrategy">What strategy do you think the other player used?</label>
+                <input type="text" id="otherPlayerStrategy" name="otherPlayerStrategy" placeholder="Short answer...">
+            </div>
+
+            <button class="button small-button" id="submitQuestionnaire" style="margin-top: 10px;">Submit Answers</button>
+        </div>
+        <div id="thankYouContainer" style="display: none;">
+            <div id="messageThanks" class="gameMessage">
+                Thank you for your answers!
+            </div>
+            <button class="button big-button" id="restartButtonTwo" data-translate="restart">Play again</button>
         </div>
         <div id="gameStatus"></div>
         <div id="previousWordsArea"></div>

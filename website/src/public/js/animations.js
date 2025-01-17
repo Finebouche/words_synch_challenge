@@ -51,7 +51,7 @@ function reset(element) {
 }
 
 function win_game() {
-    document.getElementById('gameRestart').style.display = 'block';
+    document.getElementById('gameRestart').style.display = 'flex';
     document.getElementById('winMessage').style.display = 'block';
     document.getElementById('gameInput').style.display = 'none';
 
@@ -63,7 +63,7 @@ function win_game() {
 
 // RAIN ANIMATION
 function loose_game() {
-    document.getElementById('gameRestart').style.display = 'block';
+    document.getElementById('gameRestart').style.display = 'flex';
     document.getElementById('lossMessage').style.display = 'block';
     document.getElementById('gameInput').style.display = 'none';
 

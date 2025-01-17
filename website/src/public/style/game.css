@@ -257,3 +257,13 @@
 }
 /* END CONVERSATION STYLES */
 
+.gameMessage {
+    width: 100%;
+}
+
+#gameRestart{
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+}

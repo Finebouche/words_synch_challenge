@@ -106,8 +106,13 @@ input {
 
 .small-button {
     padding: 5px 8px;
-    margin: 0px 2px;
     width: 100%;
+}
+
+.game-container .small-button {
+    margin-bottom: 10px;
+    margin-top: 10px;
+    margin-left: 3px;
 }
 /* END LOCAL LANGAGE SELECTION STYLES */
 

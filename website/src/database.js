@@ -84,6 +84,11 @@ const Game = sequelize.define('Game', {
     allowNull: false,
     defaultValue: '[]'
   },
+  surveyAnswers: {
+    type: DataTypes.TEXT,
+    allowNull: true,        // Let it be null if no answers yet
+    defaultValue: '[]'
+  },
 });
 
 Player.hasMany(Game, {

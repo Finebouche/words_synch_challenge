@@ -14,7 +14,6 @@ var languageNames = {
     // Add more mappings as needed
 };
 let selectedLanguage = null;
-
 let past_words_array = []; // Array to store the words
 let socket = null;
 let gameId = null;
@@ -158,6 +157,8 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
     let selectedModel = MODELS.find(model => model.name === selectedModelName);
     document.getElementById('selectedContent').textContent = "Bzz... bzz... model " + selectedModel.name + " loaded, currently playing with " + languageName  + " vocabulary...";
     document.getElementById('languageSelect').style.display = 'none';
+    document.getElementById('message-LLM').style.display = 'block';
+    console.log("Model is loading. Please wait.");
 
     fetch('/model/initialize-model', {
         method: 'POST',
@@ -167,7 +168,7 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
         body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage}) // Send the selected model to the server
     })
         .then(response => {
-            console.log("Model is loading. Please wait.");
+            document.getElementById('message-LLM').style.display = 'none';
             if (response.status === 504 || response.status === 503 || response.status === 500) {
                 console.log("Model is not available. Take another one");
                 document.getElementById('errorBanner').style.display = 'block'; // Show the banner
@@ -183,6 +184,7 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
                 document.getElementById('submitWord').disabled = false;
                 return response.json()
             }
+
         })
         .then(data => {
             gameId = data.gameId;
@@ -360,8 +362,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
 
 });
 
-document.getElementById('gameRestart').addEventListener('click', async function (event) {
-    // Clear previous words and conversation
+cleanPreviousWordsArea = function() {
     document.getElementById('conversationArea').innerHTML = '';
     document.getElementById('previousWordsArea').innerHTML = '';
     document.getElementById('selectedContent').textContent = '';
@@ -369,7 +370,17 @@ document.getElementById('gameRestart').addEventListener('click', async function 
     document.getElementById('gameWord').value = '';
     document.getElementById('winMessage').style.display = 'none';
     document.getElementById('lossMessage').style.display = 'none';
-    past_words_array = [];
+    document.getElementById('gameRestart').style.display = 'none';
+}
+
+resetTheGame = function() {
+    selectedLanguage = null;
+    past_words_array = []; // Array to store the words
+    socket = null;
+    gameId = null;
+    gameMode = null;
+    myRole = null;
+
     // set selection to default
     document.getElementById('llmSelect').value = '';
     document.getElementById('llmSelect').style.display = 'none';
@@ -377,8 +388,6 @@ document.getElementById('gameRestart').addEventListener('click', async function 
     document.getElementById('languageSelect').disabled = false;
     document.getElementById('languageSelect').style.display = 'block';
     document.getElementById('startLLMGame').style.display = 'none';
-
-    document.getElementById('gameRestart').style.display = 'none';
     document.getElementById('selections-LLM').style.display = 'block';
 
     // Stop the confettis
@@ -389,5 +398,66 @@ document.getElementById('gameRestart').addEventListener('click', async function 
         rainElement.innerHTML = '';
     });
 
+}
+document.getElementById('restartButton').addEventListener('click', async function (event) {
+    // Clear previous words and conversation area
+    cleanPreviousWordsArea()
+
+    resetTheGame();
 });
 // END GAME LOGIC
+
+// START QUESTIONNAIRE LOGIC
+document.getElementById('questionsButton').addEventListener('click', function() {
+    document.getElementById('questionnaireContainer').style.display = 'block';
+
+    // Clear previous words and conversation area
+    cleanPreviousWordsArea()
+});
+
+// 2. Submit the questionnaire
+document.getElementById('submitQuestionnaire').addEventListener('click', function() {
+    const strategyUsed = document.getElementById('strategyUsed').value.trim();
+    const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();
+
+    // Example: gameId stored in a global variable or from localStorage
+    // Adjust to how you're actually tracking the current game
+    // If it's not global, retrieve it from where you store game info
+    const currentGameId = gameId;
+
+    fetch('/game/answers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            gameId: currentGameId,
+            strategyUsed: strategyUsed,
+            otherPlayerStrategy: otherPlayerStrategy
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Questionnaire answers saved successfully!', data);
+            // Hide the questionnaire (optional)
+            document.getElementById('questionnaireContainer').style.display = 'none';
+            // Clear the inputs
+            document.getElementById('strategyUsed').value = '';
+            document.getElementById('otherPlayerStrategy').value = '';
+        } else {
+            console.error('Failed to save questionnaire answers.', data);
+        }
+    })
+    .catch(err => {
+        console.error('Error saving questionnaire answers:', err);
+    });
+
+    document.getElementById('questionnaireContainer').style.display = 'none';
+    document.getElementById('thankYouContainer').style.display = 'block';
+});
+
+document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
+    document.getElementById('thankYouContainer').style.display = 'none';
+
+    resetTheGame();
+});
+// END QUESTIONNAIRE LOGIC
