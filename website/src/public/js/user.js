@@ -73,6 +73,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 document.getElementById('user-profile-selector').addEventListener('click', function () {
     let userOptions = document.getElementById('userOptions');
+    document.getElementById('red-arrow-tooltip').style.display = 'none';
     userOptions.style.display = "block";
 });
 

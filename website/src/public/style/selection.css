@@ -8,6 +8,29 @@ body {
     margin: 0px;
 }
 
+/* 2) The box containing the text and the arrow tip */
+#red-arrow-tooltip {
+  position: relative;
+  background: #ffecec;       /* lightly tinted background */
+  color: #a70000;            /* text color to match red arrow theme */
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ff9999;
+  border-radius: 4px;
+  font-size: 0.85rem;        /* slightly smaller text */
+}
+
+/* 3) The actual red arrow (pointing right) */
+.red-arrow {
+  position: absolute;
+  top: 50%;
+  right: -10px;             /* place arrow on the right side of the tooltip box */
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 10px solid #a70000; /* arrow color */
+}
 
 /* LOCAL LANGAGE SELECTION STYLES */
 .config-box {

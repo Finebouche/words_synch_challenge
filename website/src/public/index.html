@@ -10,6 +10,10 @@
 <body>
     <div class="config-box">
         <!-- USER PROFILE SELECTOR -->
+        <div id="red-arrow-tooltip">
+          Help science by providing some information about yourself
+          <div class="red-arrow"></div>
+        </div>
         <div class="selector" id="user-profile-selector">
             <div id="currentUser">
                 <span role="img" aria-label="User" data-translate="login">&#x1F464;</span> Log In
@@ -125,8 +129,8 @@
             <select id="languageSelect">
                 <option value="" data-translate="language-option">Select Language</option>
                 <option value="en" data-translate="language-option-en">English</option>
-                <option value="es" data-translate="language-option-es">Español</option>
-                <option value="fr" data-translate="language-option-fr">Français</option>
+                <option value="es" disabled data-translate="language-option-es">Español</option>
+                <option value="fr" disabled data-translate="language-option-fr">Français</option>
                 <!-- Add other languages -->
             </select>
             <button class="button small-button" id="selectLLMGame" data-translate="selectLLMGame" style="display:none" >
