@@ -42,16 +42,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let languageSelect = document.getElementById('languageSelect');
     // 1) When language is chosen, show/hide the "Play with LLM" and "Play with Human" buttons
-    languageSelect.addEventListener('change', function () {
-        if (this.value) {
-            selectLLMGame.style.display = 'block';
-            selectHumanGame.style.display = 'block';
-            selectedLanguage = this.value;
-        } else {
-            selectLLMGame.style.display = 'none';
-            selectHumanGame.style.display = 'none';
-        }
-    });
+    // if language is disabled, we show the buttons and selectedLanguage is "en"
+    if (languageSelect.disabled) {
+        selectLLMGame.style.display = 'block';
+        selectHumanGame.style.display = 'block';
+        languageSelect.style.display = 'none';
+        selectedLanguage = 'en';
+    }
+    else {
+        languageSelect.addEventListener('change', function () {
+            if (this.value) {
+                selectLLMGame.style.display = 'block';
+                selectHumanGame.style.display = 'block';
+                selectedLanguage = this.value;
+            } else {
+                selectLLMGame.style.display = 'none';
+                selectHumanGame.style.display = 'none';
+            }
+        });
+    }
+
 
     // 2) If the user selects "Play with LLM"
     selectLLMGame.addEventListener('click', function () {
@@ -63,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Hide the "Play with..." buttons after a choice
         selectLLMGame.style.display = 'none';
         selectHumanGame.style.display = 'none';
-        languageSelect.disabled = true; // Disable language selection
+        languageSelect.style.display = 'none';
 
         // Show the LLM selection dropdown
         llmSelect.style.display = '';
@@ -87,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
         selectionLLM.style.display = 'none';
         selectLLMGame.style.display = 'none';
         selectHumanGame.style.display = 'none';
-        languageSelect.disabled = true; // Disable language selection
+        languageSelect.style.display = 'none';
         socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId });
 
         socket.on('waitingForOpponent', () => {
@@ -381,13 +391,20 @@ resetTheGame = function() {
     myRole = null;
 
     // set selection to default
-    document.getElementById('llmSelect').value = '';
-    document.getElementById('llmSelect').style.display = 'none';
-    document.getElementById('languageSelect').value = '';
-    document.getElementById('languageSelect').disabled = false;
-    document.getElementById('languageSelect').style.display = 'block';
-    document.getElementById('startLLMGame').style.display = 'none';
-    document.getElementById('selections-LLM').style.display = 'block';
+    let languageSelect = document.getElementById('languageSelect');
+    if (languageSelect.disabled) {
+        document.getElementById('selectLLMGame').style.display = 'block';
+        document.getElementById('selectHumanGame').style.display = 'block';
+        languageSelect.style.display = 'none';
+        selectedLanguage = 'en';
+    }
+    else {
+        languageSelect.value = '';
+        document.getElementById('llmSelect').value = '';
+        document.getElementById('llmSelect').style.display = 'none';
+        document.getElementById('startLLMGame').style.display = 'none';
+        document.getElementById('selections-LLM').style.display = 'block';
+    }
 
     // Stop the confettis
     const wrapper = document.getElementById('confetti-wrapper');
@@ -399,9 +416,7 @@ resetTheGame = function() {
 
 }
 document.getElementById('restartButton').addEventListener('click', async function (event) {
-    // Clear previous words and conversation area
     cleanPreviousWordsArea()
-
     resetTheGame();
 });
 // END GAME LOGIC
