@@ -194,7 +194,7 @@ document.getElementById('updateProfile').addEventListener('click', function() {
         if (!response.ok) {
             throw new Error('Profile update failed');
         }
-        return response.text(); // or response.json(), depending on your server
+        return response.text(); // or response.json() if the server returns JSON
     })
     .then(message => {
         console.log('Profile update message:', message);

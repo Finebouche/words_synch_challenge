@@ -1,4 +1,3 @@
-// In your server code (e.g., app.js or a specific route file)
 import express from 'express';
 import { Game } from '../database.js'; // Adjust the path to match your project structure
 

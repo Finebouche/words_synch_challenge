@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Store references to important elements
-    let languageSelect = document.getElementById('languageSelect');
     let selectLLMGame = document.getElementById('selectLLMGame');
     let selectHumanGame = document.getElementById('selectHumanGame');
     let selectionLLM = document.getElementById('selections-LLM');
@@ -41,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let llmSelect = document.getElementById('llmSelect');
     let startGameButton = document.getElementById('startLLMGame');
 
+    let languageSelect = document.getElementById('languageSelect');
     // 1) When language is chosen, show/hide the "Play with LLM" and "Play with Human" buttons
     languageSelect.addEventListener('change', function () {
         if (this.value) {
@@ -322,7 +322,6 @@ document.getElementById('submitWord').addEventListener('click', async function (
           role: myRole
         })
 
-        // Once emitted, you can set `haveIPlayedThisRound = true` immediately:
         socket.off('roundResult');
 
         // When the server says "roundResult", we display the word
@@ -419,10 +418,6 @@ document.getElementById('questionsButton').addEventListener('click', function() 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
     const strategyUsed = document.getElementById('strategyUsed').value.trim();
     const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();
-
-    // Example: gameId stored in a global variable or from localStorage
-    // Adjust to how you're actually tracking the current game
-    // If it's not global, retrieve it from where you store game info
     const currentGameId = gameId;
 
     fetch('/game/answers', {
