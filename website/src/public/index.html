@@ -11,7 +11,7 @@
     <div class="config-box">
         <!-- USER PROFILE SELECTOR -->
         <div id="red-arrow-tooltip">
-          Help science by providing some information about yourself
+          Please create an account or log in to play the game
           <div class="red-arrow"></div>
         </div>
         <div class="selector" id="user-profile-selector">
@@ -26,10 +26,11 @@
                         <button type="submit" id="loginPlayer" class="button small-button">Log in</button>
                     </form>
                     <div class="horizontal-line"></div>
-                    <button id="createPlayer" class="button small-button yellow-button">Create</button>
+                    <button id="createPlayer" class="button small-button yellow-button">Generate id</button>
                 </div>
                 <div class="user-option" id="signin" style="display: none;">
-                    <div class="option">
+                    <p class="id_message">Here is your account ID, copy it and keep it safe to log in later:</p>
+                    <div class="user-id">
                         <span role="img">&#x1F464;</span><span id="newUserId"></span>
                     </div>
                     <button id="copyId" class="button small-button">Copy</button>
@@ -38,10 +39,10 @@
                     <button id="goLogin" class="button small-button" style="display: none;" disabled>Go Login</button>
                 </div>
                 <div class="user-option" id="parameters" style="display: none;">
-                    <div class="option">
+                    <div class="user-id">
                         <span>&#x1F511;</span><span id="userId"></span>
                     </div>
-                    <input type="text" id="pseudonymInput" placeholder="Pseudonym" aria-label="Pseudonym">
+                    <input type="text" id="pseudonymInput" placeholder="Prolific id" aria-label="Prolific id">
                     <!-- Age Group Selector -->
                     <select id="ageGroupInput" aria-label="AgeGroup">
                         <option value="" disabled selected>Age group</option>
