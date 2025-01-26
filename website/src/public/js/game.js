@@ -14,7 +14,10 @@ let MODELS = []
 let selectedModelName = null;
 
 document.addEventListener('DOMContentLoaded', function () {
-    // If there's an errorBanner on the page, set up the close button
+    /**
+     * 1️⃣ Setup Error Banner Handling
+     * If an error banner exists on the page, this ensures that clicking the close button hides it.
+     */
     const errorBanner = document.getElementById('errorBanner');
     if (errorBanner) {
         const closeButton = errorBanner.querySelector('button');
@@ -25,33 +28,45 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * 2️⃣ Fetch Available Models
+     * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
+     */
     fetch('/model/available-models')
         .then(response => response.json())
         .then(availableModels => {
-            MODELS = availableModels;
+            MODELS = availableModels; // Store fetched models globally
         })
         .catch(error => {
             console.error('Error fetching models:', error);
-    });
+        });
 
-    // Store references to important elements
-    let selectLLMGame = document.getElementById('selectLLMGame');
-    let selectHumanGame = document.getElementById('selectHumanGame');
-    let selectionLLM = document.getElementById('selections-LLM');
-    let messageHuman = document.getElementById('message-Human');
-    let llmSelect = document.getElementById('llmSelect');
-    let startGameButton = document.getElementById('startLLMGame');
+    /**
+     * 3️⃣ Store References to Important UI Elements
+     * These elements are used later for UI interactions.
+     */
+    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
+    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
+    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
+    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
+    let llmSelect = document.getElementById('llmSelect'); // LLM selection dropdown
+    let startGameButton = document.getElementById('startLLMGame'); // Button to start LLM game
 
-    let languageSelect = document.getElementById('languageSelect');
-    // 1) When language is chosen, show/hide the "Play with LLM" and "Play with Human" buttons
-    // if language is disabled, we show the buttons and selectedLanguage is "en"
+    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+
+    /**
+     * 4️⃣ Handle Language Selection
+     * - If the language selection dropdown is disabled, default to English and show game mode buttons.
+     * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
+     */
     if (languageSelect.disabled) {
+        // Default to English if selection is disabled
         selectLLMGame.style.display = 'block';
         selectHumanGame.style.display = 'block';
         languageSelect.style.display = 'none';
         selectedLanguage = 'en';
-    }
-    else {
+    } else {
+        // Listen for language selection changes
         languageSelect.addEventListener('change', function () {
             if (this.value) {
                 selectLLMGame.style.display = 'block';
@@ -64,59 +79,72 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-
-    // 2) If the user selects "Play with LLM"
+    /**
+     * 5️⃣ Handle "Play with LLM" Selection
+     * - Updates the game mode to 'llm'
+     * - Displays relevant LLM game settings
+     * - Hides unnecessary UI elements
+     * - Listens for LLM selection before enabling the "Start Game" button
+     */
     selectLLMGame.addEventListener('click', function () {
         gameMode = 'llm';
-        updateModelOptions(selectedLanguage)
-        // Show LLM options, hide Human options
+        updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
+
+        // Show LLM-related UI elements
         selectionLLM.style.display = 'block';
+        llmSelect.style.display = '';
         messageHuman.style.display = 'none';
-        // Hide the "Play with..." buttons after a choice
+
+        // Hide game mode selection buttons and language dropdown
         selectLLMGame.style.display = 'none';
         selectHumanGame.style.display = 'none';
         languageSelect.style.display = 'none';
 
-        // Show the LLM selection dropdown
-        llmSelect.style.display = '';
-
-        // Only show the start button if an LLM is selected
+        // Enable start button only when an LLM is selected
         llmSelect.addEventListener('change', function () {
-            if (this.value) {
-                startGameButton.style.display = '';
-            } else {
-                startGameButton.style.display = 'none';
-            }
+            startGameButton.style.display = this.value ? '' : 'none';
         });
     });
 
-    // 3) If the user selects "Play with Human"
+    /**
+     * 6️⃣ Handle "Play with Human" Selection
+     * - Updates game mode to 'human'
+     * - Establishes a WebSocket connection
+     * - Sends a request to join the matchmaking queue
+     * - Handles various game-related WebSocket events
+     */
     selectHumanGame.addEventListener('click', function () {
         let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
         gameMode = 'human';
-        socket = io(); // Connect to the server
-        // Hide LLM options, and "Play with..." buttons
+        socket = io(); // Initialize WebSocket connection
+
+        // Hide game selection and LLM-related UI elements
         selectionLLM.style.display = 'none';
         selectLLMGame.style.display = 'none';
         selectHumanGame.style.display = 'none';
         languageSelect.style.display = 'none';
+
+        // Join the matchmaking queue for a human game
         socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId });
 
+        // Handle matchmaking status updates
         socket.on('waitingForOpponent', () => {
-            // Show a message to the user that we're waiting for an opponent
+            // Inform the player that they are waiting for an opponent
             messageHuman.style.display = 'block';
         });
 
-        // Suppose we handle "gameStarted" event
+        // Handle game start event from the server
         socket.on('gameStarted', ({ gameId: gId, role }) => {
-            gameId = gId;
-            myRole = role;
-            messageHuman.style.display = 'none';
+            gameId = gId; // Store game ID
+            myRole = role; // Store player role
+
+            messageHuman.style.display = 'none'; // Hide waiting message
             console.log(`Game started! I am ${myRole} in game ${gameId}.`);
+
+            // Show game input UI
             document.getElementById('gameInput').style.display = 'block';
             document.getElementById('submitWord').disabled = false;
         });
-
     });
 });
 
