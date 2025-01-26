@@ -74,10 +74,13 @@ const Game = sequelize.define('Game', {
     allowNull: false,
     defaultValue: 0
   },
-  gameWon: {
-    type: DataTypes.BOOLEAN,
+  status: {
+    type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: false
+    defaultValue: 'in_progress',
+    validate: {
+      isIn: [['won', 'lost', 'in_progress']]
+    },
   },
   wordsArray: {
     type: DataTypes.TEXT,

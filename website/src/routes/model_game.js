@@ -34,6 +34,34 @@ router.get('/available-models', (req, res) => {
     res.json(availableModels);
 });
 
+async function checkIfWordExists(llmWord) {
+        const endpoint = `https://en.wiktionary.org/w/api.php`;
+
+        // Helper function to create parameters and make API request
+        async function fetchWordInfo(variant) {
+            const params = new URLSearchParams({
+                action: 'query',
+                format: 'json',
+                titles: variant,
+                origin: '*'
+            });
+            const url = `${endpoint}?${params.toString()}`;
+            const response = await fetch(url);
+            return response.json();
+        }
+
+        // Fetch with the word entirely in lowercase
+        const lowerCaseData = await fetchWordInfo(llmWord.toLowerCase());
+        const firstCapData = await fetchWordInfo(llmWord.charAt(0).toUpperCase() + llmWord.slice(1).toLowerCase());
+
+        // Check for valid pages in response data
+        if (!lowerCaseData.query.pages['-1'] || !firstCapData.query.pages['-1']) {
+            return true;
+        } else {
+            return false;
+        }
+}
+
 router.post('/initialize-model', async (req, res) => {
     const model = req.body.model; // Retrieve the model from the request body
     const playerId = req.body.player_id;
@@ -225,6 +253,7 @@ async function openaicall(model, round, past_words_array, res) {
 
         const llmWord = response.choices[0].message.content.trim();
         return llmWord.replace(/[^a-zA-Z]/g, "");
+
     } catch (error) {
         console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
         res.status(500).send("Error calling the OpenAI API");
@@ -245,28 +274,45 @@ router.post('/query-model', async (req, res) => {
     const round = Math.floor(past_words_array.length / 2) + 1;
 
     let llmWord;
-    if (model.provider === "huggingface") {
-        llmWord = await huggingfacecall(model, round, past_words_array, res);
-    } else if (model.provider === "openai") {
-        llmWord = await openaicall(model, round, past_words_array, res);
-    } else {
-        return res.status(400).send("Invalid model provider");
+    while (true) {
+        if (model.provider === "huggingface") {
+            llmWord = await huggingfacecall(model, round, past_words_array, res);
+        } else if (model.provider === "openai") {
+            llmWord = await openaicall(model, round, past_words_array, res);
+        } else {
+            return res.status(400).send("Invalid model provider");
+        }
+        console.log(`Model ${model.name} returned word: ${llmWord}`);
+
+        // Ensure the function waits for the check before continuing
+        let exists = await checkIfWordExists(llmWord);
+
+        if (exists) {
+            llmWord = llmWord.replace(/[^a-zA-Z]/g, ""); // Fix replace issue
+            break; // Exit loop when we get a unique word
+        }
     }
 
+    let status = "in_progress";
     if (llmWord.toLowerCase() === newWord.toLowerCase()) {
-        return res.json({llmWord: llmWord, status: "wins"});
+        status = "won";
     }
     else if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 10) {
-        return res.json({llmWord: llmWord, status: "loses"});
-    } else {
-        res.json({llmWord: llmWord, status: "continue"});
+        status = "lost";
     }
 
     let game = await Game.findByPk(gameId);
     let wordsArray = game.wordsArray ? JSON.parse(game.wordsArray) : [];
     wordsArray.push(llmWord);
     wordsArray.push(newWord);
-    await game.update({ wordsArray: JSON.stringify(wordsArray), roundCount: round, gameWon: llmWord === newWord });
+    await game.update({
+        wordsArray: JSON.stringify(wordsArray),
+        roundCount: round,
+        gameWon: llmWord === newWord,
+        status: status
+    });
+
+    res.json({llmWord: llmWord, status: status});
 });
 
 export default router;

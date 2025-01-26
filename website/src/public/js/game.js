@@ -1,12 +1,3 @@
-document.addEventListener('DOMContentLoaded', function () {
-    var closeButton = document.getElementById('errorBanner').querySelector('button');
-    if (closeButton) {
-        closeButton.addEventListener('click', function () {
-            document.getElementById('errorBanner').style.display = 'none';
-        });
-    }
-});
-
 var languageNames = {
     'en': 'English',
     'es': 'Spanish',
@@ -19,18 +10,29 @@ let socket = null;
 let gameId = null;
 let gameMode = null;
 let myRole = null;
+let MODELS = []
+let selectedModelName = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     // If there's an errorBanner on the page, set up the close button
-    var errorBanner = document.getElementById('errorBanner');
+    const errorBanner = document.getElementById('errorBanner');
     if (errorBanner) {
-        var closeButton = errorBanner.querySelector('button');
+        const closeButton = errorBanner.querySelector('button');
         if (closeButton) {
             closeButton.addEventListener('click', function () {
                 errorBanner.style.display = 'none';
             });
         }
     }
+
+    fetch('/model/available-models')
+        .then(response => response.json())
+        .then(availableModels => {
+            MODELS = availableModels;
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
+    });
 
     // Store references to important elements
     let selectLLMGame = document.getElementById('selectLLMGame');
@@ -142,19 +144,6 @@ function updateModelOptions(selected_language) {
 }
 
 // GAME LOGIC FOR LLMs
-let MODELS = []
-let selectedModelName = null;
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/model/available-models')
-        .then(response => response.json())
-        .then(availableModels => {
-            MODELS = availableModels;
-        })
-        .catch(error => {
-            console.error('Error fetching models:', error);
-        });
-});
-
 document.getElementById('startLLMGame').addEventListener('click', function () {
     let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
 
@@ -309,10 +298,10 @@ document.getElementById('submitWord').addEventListener('click', async function (
                 document.getElementById('gameWord').value = ''; // Clear the input field
                 updatePreviousWordsArea(); // Update the list of previous words
 
-                if (data.status === 'loses') {
-                    loose_game();
-                } else if (data.status === 'wins') {
-                    win_game();
+                if (data.status === 'lost') {
+                    loseGame();
+                } else if (data.status === 'won') {
+                    winGame();
                 }
             })
             .catch(error => {
@@ -358,12 +347,11 @@ document.getElementById('submitWord').addEventListener('click', async function (
 
             console.log('Game status:', status);
 
-            if (status === 'loses') {
-                loose_game();
-            } else if (status === 'wins') {
-                win_game();
+            if (status === 'lost') {
+                loseGame();
+            } else if (status === 'won') {
+                winGame();
             } else {
-                haveIPlayedThisRound = false;
                 submitButton.disabled = false
             }
         });
@@ -413,11 +401,11 @@ resetTheGame = function() {
     document.querySelectorAll('.rain-wrapper').forEach(function(rainElement) {
         rainElement.innerHTML = '';
     });
-
 }
 document.getElementById('restartButton').addEventListener('click', async function (event) {
     cleanPreviousWordsArea()
     resetTheGame();
+    fetchGameStats();
 });
 // END GAME LOGIC
 
@@ -433,13 +421,12 @@ document.getElementById('questionsButton').addEventListener('click', function() 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
     const strategyUsed = document.getElementById('strategyUsed').value.trim();
     const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();
-    const currentGameId = gameId;
 
     fetch('/game/answers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            gameId: currentGameId,
+            gameId: gameId,
             strategyUsed: strategyUsed,
             otherPlayerStrategy: otherPlayerStrategy
         })

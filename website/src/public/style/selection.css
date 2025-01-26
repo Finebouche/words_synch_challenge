@@ -159,7 +159,7 @@ input {
 /* END LOCAL LANGAGE SELECTION STYLES */
 
 /* START GITHUB BUTTON STYLES */
-.github-button {
+#github-button {
     position: fixed; /* Positioning relative to the viewport */
     bottom: 20px; /* 20px from the bottom */
     right: 20px; /* 20px from the right */
@@ -169,6 +169,12 @@ input {
     align-items: center; /* Center vertically */
     justify-content: center; /* Center horizontally */
     min-width: 0px;
+}
+
+#gamesPlayed {
+    position: fixed; /* Positioning relative to the viewport */
+    top: 20px; /* 20px from the top */
+    left: 20px; /* 20px from the left */
 }
 /* END GITHUB BUTTON STYLES */
 

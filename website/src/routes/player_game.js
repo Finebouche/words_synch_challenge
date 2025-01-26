@@ -137,12 +137,12 @@ export default function initPlayersSocket(server) {
         const p1Word = gameObj.roundWords.player1;
         const p2Word = gameObj.roundWords.player2;
 
-        let status = "continue";
+        let status = "in_progress";
         // The game is lost if the round is above 5
         if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
-          status = "wins"
+          status = "won"
         } else if (gameObj.roundWords.length > 5) {
-            status = "loses";
+            status = "lost";
         }
 
         // Send roundResult to player1
@@ -167,6 +167,7 @@ export default function initPlayersSocket(server) {
               round: dbGame.roundCount + 1,
               player1Word: p1Word,
               player2Word: p2Word,
+              status: status,
             });
             dbGame.wordsArray = JSON.stringify(existingWords);
             dbGame.roundCount = dbGame.roundCount + 1;

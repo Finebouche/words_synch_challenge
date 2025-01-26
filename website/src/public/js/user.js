@@ -1,7 +1,7 @@
 /*******************************************************
  * Utility Functions
  *******************************************************/
-function generatePlayerID() {
+function generateNewPlayerID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   return Array.from({ length: 8 }, () =>
     characters.charAt(Math.floor(Math.random() * characters.length))
@@ -36,6 +36,26 @@ function populateElementFromStorage(key, elementId, isText = false) {
   }
 }
 
+function fetchGameStats() {
+    let playerId = localStorage.getItem('playerId')
+    fetch(`/game/number_games`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ playerId: playerId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('gamesPlayed').style.display = 'block';
+            document.getElementById('gamesPlayed').innerHTML = `
+                <strong>Games against Bot:</strong> ${data.gamesPlayedAgainstBot} <br>
+                <strong>Games against Human:</strong> ${data.gamesPlayedAgainstHuman}
+            `;
+        }
+    })
+    .catch(error => console.error('Failed to fetch game stats:', error));
+}
+
 /*******************************************************
     * Event Listeners
  * ******************************************************/
@@ -66,7 +86,7 @@ window.addEventListener('DOMContentLoaded', function() {
         // No playerId in storage, show login interface
         document.getElementById('login').style.display = 'flex';
         document.getElementById('parameters').style.display = 'none';
-        localStorage.setItem('newPlayerID', generatePlayerID());
+        localStorage.setItem('newPlayerID', generateNewPlayerID());
     }
     console.log('Player ID:', playerId);
 });
@@ -131,7 +151,10 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
           document.getElementById('currentUser').innerHTML =
             '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
         }
+    }).then(() => {
+        fetchGameStats();
     });
+
 });
 
 document.getElementById('createPlayer').addEventListener('click', function() {
@@ -167,6 +190,7 @@ document.getElementById('goLogin').addEventListener('click', function() {
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
     document.getElementById('userId').textContent = playerId;
+    localStorage.setItem('newPlayerID', generateNewPlayerID());
 });
 
 
@@ -224,6 +248,7 @@ document.getElementById('logoutPlayer').addEventListener('click', function() {
 
     // Reset UI
     document.getElementById('parameters').style.display = 'none';
+    document.getElementById('gamesPlayed').style.display = 'none';
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
     const currentUserDiv = document.getElementById('currentUser');

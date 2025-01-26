@@ -50,7 +50,7 @@ function reset(element) {
     drop(element);
 }
 
-function win_game() {
+function winGame() {
     document.getElementById('gameRestart').style.display = 'flex';
     document.getElementById('winMessage').style.display = 'block';
     document.getElementById('gameInput').style.display = 'none';
@@ -62,7 +62,7 @@ function win_game() {
 // END CONFETTI
 
 // RAIN ANIMATION
-function loose_game() {
+function loseGame() {
     document.getElementById('gameRestart').style.display = 'flex';
     document.getElementById('lossMessage').style.display = 'block';
     document.getElementById('gameInput').style.display = 'none';
