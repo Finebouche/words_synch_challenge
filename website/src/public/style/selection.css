@@ -60,17 +60,6 @@ body {
     top: 20px;
     right: 20px;
 }
-.selector {
-    background-color: #f0f0f0; ; /* Use a contrasting color */
-    color: black;
-    border: none;
-    padding: 10px 8px;
-    border-radius: 10px; /* Rounded edges */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: pointer;
-    margin: 0 5px;
-    min-width: 90px;
-}
 
 .option {
     padding-top: 5px;
@@ -80,20 +69,6 @@ body {
 }
 .option span {
     margin-right: 5px;  /* A bit of space between the icon and the text */
-}
-@media (max-width: 600px) {
-    .selector {
-        font-size: 0; /* Hides the text by setting font size to 0 */
-        min-width: 0px;
-    }
-    .selector span {
-        font-size: 16px; /* Reset the font size for the emoji */
-        min-width: 0px;
-    }
-}
-
-.selector:hover {
-    background-color: #e0e0e0; 
 }
 
 .user-option {
@@ -159,6 +134,30 @@ input {
 /* END LOCAL LANGAGE SELECTION STYLES */
 
 /* START GITHUB BUTTON STYLES */
+
+.selector {
+    background-color: #f0f0f0; ; /* Use a contrasting color */
+    color: black;
+    border: none;
+    padding: 10px 8px;
+    border-radius: 10px; /* Rounded edges */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    margin: 0 5px;
+    min-width: 90px;
+}
+
+@media (max-width: 600px) {
+    .selector {
+        font-size: 0; /* Hides the text by setting font size to 0 */
+        min-width: 0px;
+    }
+    .selector span {
+        font-size: 16px; /* Reset the font size for the emoji */
+        min-width: 0px;
+    }
+}
+
+
 #github-button {
     position: fixed; /* Positioning relative to the viewport */
     bottom: 20px; /* 20px from the bottom */
@@ -169,12 +168,25 @@ input {
     align-items: center; /* Center vertically */
     justify-content: center; /* Center horizontally */
     min-width: 0px;
+    cursor: pointer;
+}
+
+#language-selector, #user-profile-selector{
+    cursor: pointer;
+}
+#language-selector:hover, #user-profile-selector:hover, #github-button:hover {
+    background-color: #e0e0e0;
 }
 
 #gamesPlayed {
     position: fixed; /* Positioning relative to the viewport */
     top: 20px; /* 20px from the top */
     left: 20px; /* 20px from the left */
+}
+
+.count-cell {
+    padding: 4px 8px;
+    text-align: left;
 }
 /* END GITHUB BUTTON STYLES */
 

@@ -67,7 +67,7 @@ export default function initPlayersSocket(server) {
           botId: null,        // null means we’re not playing against a bot
           language,           // store the language in the Game record
           roundCount: 0,
-          gameWon: false,
+          status: "in_progress",
           wordsArray: JSON.stringify([]),
         });
 
@@ -141,6 +141,7 @@ export default function initPlayersSocket(server) {
         // The game is lost if the round is above 5
         if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
           status = "won"
+          console.log(`Game ${gameId}: Both players submitted the same word!`);
         } else if (gameObj.roundWords.length > 5) {
             status = "lost";
         }
@@ -160,18 +161,17 @@ export default function initPlayersSocket(server) {
 
         // Update DB with the new words
         try {
-          const dbGame = await Game.findOne({ where: { gameId } });
-          if (dbGame) {
-            const existingWords = JSON.parse(dbGame.wordsArray || '[]');
+          const game = await Game.findByPk(gameId);
+          if (game) {
+            const existingWords = JSON.parse(game.wordsArray || '[]');
             existingWords.push({
-              round: dbGame.roundCount + 1,
-              player1Word: p1Word,
-              player2Word: p2Word,
-              status: status,
+              "player1": p1Word,
+              "player2": p2Word,
             });
-            dbGame.wordsArray = JSON.stringify(existingWords);
-            dbGame.roundCount = dbGame.roundCount + 1;
-            await dbGame.save();
+            game.wordsArray = JSON.stringify(existingWords);
+            game.roundCount = game.roundCount + 1;
+            game.status = status;
+            await game.save();
           }
         } catch (err) {
           console.error('Error updating game in DB:', err);

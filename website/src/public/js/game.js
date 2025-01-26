@@ -15,7 +15,7 @@ let selectedModelName = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     /**
-     * 1️⃣ Setup Error Banner Handling
+     * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
      */
     const errorBanner = document.getElementById('errorBanner');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * 2️⃣ Fetch Available Models
+     * 2) Fetch Available Models
      * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
      */
     fetch('/model/available-models')
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     /**
-     * 3️⃣ Store References to Important UI Elements
+     * 3) Store References to Important UI Elements
      * These elements are used later for UI interactions.
      */
     let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
 
     /**
-     * 4️⃣ Handle Language Selection
+     * 4) Handle Language Selection
      * - If the language selection dropdown is disabled, default to English and show game mode buttons.
      * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
      */
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * 5️⃣ Handle "Play with LLM" Selection
+     * 5) Handle "Play with LLM" Selection
      * - Updates the game mode to 'llm'
      * - Displays relevant LLM game settings
      * - Hides unnecessary UI elements
@@ -430,6 +430,7 @@ resetTheGame = function() {
         rainElement.innerHTML = '';
     });
 }
+
 document.getElementById('restartButton').addEventListener('click', async function (event) {
     cleanPreviousWordsArea()
     resetTheGame();
@@ -440,12 +441,10 @@ document.getElementById('restartButton').addEventListener('click', async functio
 // START QUESTIONNAIRE LOGIC
 document.getElementById('questionsButton').addEventListener('click', function() {
     document.getElementById('questionnaireContainer').style.display = 'block';
-
-    // Clear previous words and conversation area
     cleanPreviousWordsArea()
 });
 
-// 2. Submit the questionnaire
+
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
     const strategyUsed = document.getElementById('strategyUsed').value.trim();
     const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();

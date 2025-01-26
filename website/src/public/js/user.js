@@ -48,8 +48,14 @@ function fetchGameStats() {
         if (data.success) {
             document.getElementById('gamesPlayed').style.display = 'block';
             document.getElementById('gamesPlayed').innerHTML = `
-                <strong>Games against Bot:</strong> ${data.gamesPlayedAgainstBot} <br>
-                <strong>Games against Human:</strong> ${data.gamesPlayedAgainstHuman}
+                <strong class="games-played-title">Games Played</strong>
+                <div class="count-cell">
+                    😊  human  : ${data.gamesPlayedAgainstHuman}
+                </div>
+            
+                <div class="count-cell">
+                    🤖  bot  : ${data.gamesPlayedAgainstBot}
+                </div>
             `;
         }
     })
@@ -64,6 +70,8 @@ window.addEventListener('DOMContentLoaded', function() {
     let playerId = getLocalStorageValue('playerId');
 
     if (playerId) {
+        fetchGameStats();
+
         // User is recognized in localStorage, prepare and show user profile interface.
         document.getElementById('login').style.display = 'none';
         document.getElementById('signin').style.display = 'none';
