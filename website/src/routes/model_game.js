@@ -19,14 +19,17 @@ const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // MODEL INTERACTION
 const availableModels = [
-    { name: 'gpt-3.5-turbo', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai"},
-    { name: 'gpt-4', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai" },
-    { name: 'openai-community/gpt2', type: 'text-generation', languages : ['en', 'fr'], provider: "huggingface" },
-    { name: 'google/flan-t5-large', type: 'text2text-generation' , languages : ['en'], provider: "huggingface"  },
-    { name: 'google-bert/bert-base-uncased', type: 'fill-mask' , languages : ['en'] , mask_token: '[MASK]', provider: "huggingface" },
-    { name: 'distilbert/distilroberta-base', type: 'fill-mask' , languages : ['en'] , mask_token: "<mask>", provider: "huggingface" },
-    { name: 'meta-llama/Llama-3.2-1B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface" },
-    { name: 'meta-llama/Llama-3.2-3B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface" },
+    // OPENAI
+    { name: 'gpt-4o', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: false },
+    { name: 'gpt-4o-mini', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: true },
+    { name: 'gpt-4', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: true },
+    // HUGGINGFACE
+    { name: 'meta-llama/Llama-3.2-3B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface", disabled: true  },
+    { name: 'meta-llama/Llama-3.2-1B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface", disabled: true  },
+    { name: 'openai-community/gpt2', type: 'text-generation', languages : ['en', 'fr'], provider: "huggingface", disabled: true  },
+    { name: 'google/flan-t5-large', type: 'text2text-generation' , languages : ['en'], provider: "huggingface", disabled: true   },
+    { name: 'google-bert/bert-base-uncased', type: 'fill-mask' , languages : ['en'] , mask_token: '[MASK]', provider: "huggingface", disabled: true  },
+    { name: 'distilbert/distilroberta-base', type: 'fill-mask' , languages : ['en'] , mask_token: "<mask>", provider: "huggingface", disabled: true  },
 ];
 
 // Endpoint to get available models

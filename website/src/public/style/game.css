@@ -165,6 +165,7 @@
     flex-wrap: nowrap;
     align-items: flex-end;
     justify-content: center;
+    z-index: -1;
 }
 
 .game-description .message .bubble{

@@ -160,14 +160,22 @@ function updateModelOptions(selected_language) {
     defaultOption.setAttribute('data-translate', 'llm-option');
     modelSelect.appendChild(defaultOption);
 
-    // Add options based on the selected language
-    MODELS.forEach(model => {
+    // Group models by provider and add options to the dropdown
+    const groupedModels = MODELS.reduce((acc, model) => {
         if (model.languages.includes(selected_language)) {
-            const option = document.createElement('option');
-            option.value = model.name;
-            option.textContent = model.name;
-            modelSelect.appendChild(option);
+            (acc[model.provider] ||= []).push(model);
         }
+        return acc;
+    }, {});
+
+
+    // Add options based on the selected language
+    Object.entries(groupedModels).forEach(([provider, models]) => {
+        const optGroup = Object.assign(document.createElement('optgroup'), { label: provider });
+        models.forEach(({ name, disabled }) => {
+            optGroup.appendChild(Object.assign(document.createElement('option'), { value: name, textContent: name, disabled }));
+        });
+        modelSelect.appendChild(optGroup);
     });
 }
 
