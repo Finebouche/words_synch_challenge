@@ -297,6 +297,11 @@ function updatePreviousWordsArea() {
     document.getElementById('previousWordsArea').innerHTML = previousWordsSorted.join(', ');
 }
 
+function scrollToBottom() {
+    const chatContainer = document.getElementById('conversationArea');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 document.getElementById('submitWord').addEventListener('click', async function (event) {
     event.preventDefault(); // Prevent form submission
     let submitButton = document.getElementById('submitWord');
@@ -333,6 +338,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
                 document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
                 document.getElementById('gameWord').value = ''; // Clear the input field
                 updatePreviousWordsArea(); // Update the list of previous words
+                scrollToBottom();
 
                 if (data.status === 'lost') {
                     loseGame();
@@ -380,6 +386,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
             past_words_array.push(yourWord);
             past_words_array.push(opponentWord);
             updatePreviousWordsArea();
+            scrollToBottom();
 
             console.log('Game status:', status);
 

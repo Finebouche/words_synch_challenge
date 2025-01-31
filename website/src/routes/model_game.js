@@ -17,6 +17,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || fs.readFileSync(path.join(_
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN || fs.readFileSync(path.join(__dirname, '..', 'huggingface_api_token.txt'), 'utf8').trim();
 const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+const MAX_NUMBER_OF_ROUNDS = 15;
+
 // MODEL INTERACTION
 const availableModels = [
     // OPENAI
@@ -300,7 +302,7 @@ router.post('/query-model', async (req, res) => {
     if (llmWord.toLowerCase() === newWord.toLowerCase()) {
         status = "won";
     }
-    else if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > 10) {
+    else if (past_words_array.includes(newWord) || past_words_array.includes(llmWord) || round > MAX_NUMBER_OF_ROUNDS) {
         status = "lost";
     }
 

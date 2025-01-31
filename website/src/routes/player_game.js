@@ -2,6 +2,10 @@ import { Server } from 'socket.io';
 import { Game, Player } from '../database.js';
 import { v4 as uuidv4 } from 'uuid';
 
+
+const MAX_NUMBER_OF_ROUNDS = 15;
+
+
 export default function initPlayersSocket(server) {
   const io = new Server(server);
 
@@ -142,7 +146,7 @@ export default function initPlayersSocket(server) {
         if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
           status = "won"
           console.log(`Game ${gameId}: Both players submitted the same word!`);
-        } else if (gameObj.roundWords.length > 5) {
+        } else if (gameObj.roundWords.length > MAX_NUMBER_OF_ROUNDS) {
             status = "lost";
         }
 
