@@ -463,25 +463,35 @@ document.getElementById('questionsButton').addEventListener('click', function() 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
     const strategyUsed = document.getElementById('strategyUsed').value.trim();
     const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();
+    const otherPlayerUnderstoodElem = document.querySelector('input[name="otherPlayerUnderstoodYourStrategies"]:checked');
+    const otherPlayerUnderstood = otherPlayerUnderstoodElem ? otherPlayerUnderstoodElem.value : '';
+    const didYouUnderstandElem = document.querySelector('input[name="didYouUnderstandOtherPlayerStrategy"]:checked');
+    const didYouUnderstandOtherPlayerStrategy = didYouUnderstandElem ? didYouUnderstandElem.value : '';
+    const otherPlayerRating = document.getElementById('otherPlayerRating').value;
 
+    // Post the data to the server
     fetch('/game/answers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             gameId: gameId,
             strategyUsed: strategyUsed,
-            otherPlayerStrategy: otherPlayerStrategy
+            otherPlayerStrategy: otherPlayerStrategy,
+            otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
+            didYouUnderstandOtherPlayerStrategy: didYouUnderstandOtherPlayerStrategy,
+            otherPlayerRating: otherPlayerRating
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             console.log('Questionnaire answers saved successfully!', data);
-            // Hide the questionnaire (optional)
             document.getElementById('questionnaireContainer').style.display = 'none';
-            // Clear the inputs
             document.getElementById('strategyUsed').value = '';
             document.getElementById('otherPlayerStrategy').value = '';
+            document.querySelectorAll('input[name="otherPlayerUnderstoodYourStrategies"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="didYouUnderstandOtherPlayerStrategy"]').forEach(input => input.checked = false);
+            document.getElementById('otherPlayerRating').value = '1';
         } else {
             console.error('Failed to save questionnaire answers.', data);
         }
@@ -490,6 +500,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         console.error('Error saving questionnaire answers:', err);
     });
 
+    // Optionally show a thank you container after submission
     document.getElementById('questionnaireContainer').style.display = 'none';
     document.getElementById('thankYouContainer').style.display = 'block';
 });

@@ -188,6 +188,49 @@
                 <input type="text" id="otherPlayerStrategy" name="otherPlayerStrategy" placeholder="Short answer...">
             </div>
 
+            <div style="margin-top: 10px;">
+                <p>Do you think the other player understood your strategies?</p>
+                <label>
+                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="yes">
+                    Yes
+                </label>
+                <label>
+                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="no">
+                    No
+                </label>
+                <label>
+                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="somewhat">
+                    Somewhat
+                </label>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <p>Did you understand the other player's strategy?</p>
+                <label>
+                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="yes">
+                    Yes
+                </label>
+                <label>
+                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="no">
+                    No
+                </label>
+                <label>
+                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="somewhat">
+                    Somewhat
+                </label>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <label for="otherPlayerRating">Rate the other player from 1 to 5:</label>
+                <select id="otherPlayerRating" name="otherPlayerRating">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+
             <button class="button small-button" id="submitQuestionnaire" style="margin-top: 10px;">Submit Answers</button>
         </div>
         <div id="thankYouContainer" style="display: none;">
