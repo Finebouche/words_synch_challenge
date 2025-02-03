@@ -137,7 +137,7 @@ router.post('/initialize-model', async (req, res) => {
     }
 });
 
-const RULE_TOKEN = "You are playing a game where at each round both player say a word. The goal is to produce the same word based on previous words at which point the game ends."
+const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player say a word. The goal is to produce the same word than the other player based on previous words of the game."
 const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word."
 
 const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
@@ -224,16 +224,16 @@ async function huggingfacecall(model, round, past_words_array, res) {
 
 async function openaicall(model, round, past_words_array, res) {
     let messages = [];
-    messages.push({role: "system", content: RULE_TOKEN});
-    messages.push({role: "system", content: ROUND_ONE});
+    messages.push({role: "developer", content: RULE_TOKEN});
+    messages.push({role: "user", content: ROUND_ONE});
 
     function openAIRoundTemplate(round_number, past_words_array, word) {
-        if (round === 1) {
-            return "Round 1. New game, please give your first (really random) word and only that word."
+        if (round_number === 1) {
+            return "Round 1. New game, please give your first (really random) word and only that word. Be really creative please."
         } else {
             return (
-                `${word}! We said different words, let's do another round. Past forbidden words: [${past_words_array.join(', ')}]. ` +
-                "Please give only your word for this round."
+                `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
+                "What do you think my next word is going to be ?"
             )
         }
     }
@@ -242,6 +242,7 @@ async function openaicall(model, round, past_words_array, res) {
         for (let i = 0; i < past_words_array.length; i++) {
             if (i % 2 === 0) {
                 messages.push({role: "assistant", content: `'${past_words_array[i]}'`});
+                console.log(past_words_array[i])
             } else {
                 messages.push({role: "user", content: openAIRoundTemplate(round, past_words_array, past_words_array[i])});
             }
@@ -249,11 +250,12 @@ async function openaicall(model, round, past_words_array, res) {
     }
 
     try {
+        let temp = round === 1 ? 2.0 : 1.2;
         const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,
-            max_tokens: 20,
-            temperature: 1.2,
+            max_tokens: 15,
+            temperature: temp,
         });
 
         const llmWord = response.choices[0].message.content.trim();

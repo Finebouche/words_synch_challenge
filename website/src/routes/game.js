@@ -5,9 +5,17 @@ import { Op } from 'sequelize';
 const router = express.Router();
 
 // POST /game/answers
+// POST /game/answers
 router.post('/answers', async (req, res) => {
   try {
-    const { gameId, strategyUsed, otherPlayerStrategy } = req.body;
+    const {
+      gameId,
+      strategyUsed,
+      otherPlayerStrategy,
+      otherPlayerUnderstoodYourStrategies,
+      didYouUnderstandOtherPlayerStrategy,
+      otherPlayerRating
+    } = req.body;
 
     // 1) Find the game in the database
     const dbGame = await Game.findOne({ where: { gameId } });
@@ -20,7 +28,10 @@ router.post('/answers', async (req, res) => {
     existingAnswers.push({
       timestamp: new Date().toISOString(),
       strategyUsed,
-      otherPlayerStrategy
+      otherPlayerStrategy,
+      otherPlayerUnderstoodYourStrategies,
+      didYouUnderstandOtherPlayerStrategy,
+      otherPlayerRating
     });
 
     dbGame.surveyAnswers = JSON.stringify(existingAnswers);
