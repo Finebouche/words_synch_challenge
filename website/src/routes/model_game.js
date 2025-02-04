@@ -235,7 +235,7 @@ async function openaicall(model, round, past_words_array, res) {
         } else {
             return (
                 `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
-                "What do you think my next word is going to be ?"
+                "Please give only your word for this round."
             )
         }
     }
@@ -310,16 +310,22 @@ router.post('/query-model', async (req, res) => {
         status = "lost";
     }
 
-    let game = await Game.findByPk(gameId);
-    let wordsArray = game.wordsArray ? JSON.parse(game.wordsArray) : [];
-    wordsArray.push(llmWord);
-    wordsArray.push(newWord);
-    await game.update({
-        wordsArray: JSON.stringify(wordsArray),
-        roundCount: round,
-        gameWon: llmWord === newWord,
-        status: status
-    });
+    // Update DB with the new words
+    try {
+        let game = await Game.findByPk(gameId);
+        let wordsPlayed1 = game.wordsPlayed1 ? JSON.parse(game.wordsPlayed1) : [];
+        let wordsPlayed2 = game.wordsPlayed2 ? JSON.parse(game.wordsPlayed2) : [];
+        wordsPlayed1.push(newWord);
+        wordsPlayed2.push(llmWord);
+        await game.update({
+            wordsPlayed1: JSON.stringify(wordsPlayed1),
+            wordsPlayed2: JSON.stringify(wordsPlayed2),
+            roundCount: round,
+            status: status
+        });
+    } catch (err) {
+      console.error('Error updating game in DB:', err);
+    }
 
     res.json({llmWord: llmWord, status: status});
 });

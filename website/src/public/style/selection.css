@@ -157,6 +157,9 @@ input {
     }
 }
 
+#updateProfile {
+    transition: background-color 0.5s ease-in-out;
+}
 
 #github-button {
     position: fixed; /* Positioning relative to the viewport */
@@ -221,6 +224,16 @@ input {
     max-width: 150px;
 }
 
+.green-button  {
+    background-color: #4caf50;
+    color: white;
+    opacity: 1;
+}
+
+.green-button:hover {
+    background-color: #3e8e41; /* Darken color on hover */
+}
+
 .button:hover {
     background-color: #4034a0; /* Darken color on hover */
 }
@@ -240,12 +253,6 @@ input {
     cursor: not-allowed; /* Change cursor to indicate it's not clickable */
     opacity: 0.6; /* Optional: make it semi-transparent */
     pointer-events: none; /* Prevents any interaction with the button */
-}
-
-.green-button:disabled  {
-    background-color: #4caf50; 
-    color: white;
-    opacity: 1;
 }
 
 .big-button {

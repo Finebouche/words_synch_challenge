@@ -82,7 +82,12 @@ const Game = sequelize.define('Game', {
       isIn: [['won', 'lost', 'in_progress']]
     },
   },
-  wordsArray: {
+  wordsPlayed1: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '[]'
+  },
+  wordsPlayed2: {
     type: DataTypes.TEXT,
     allowNull: false,
     defaultValue: '[]'

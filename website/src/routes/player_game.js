@@ -165,20 +165,18 @@ export default function initPlayersSocket(server) {
 
         // Update DB with the new words
         try {
-          const game = await Game.findByPk(gameId);
-          if (game) {
-            const existingWords = JSON.parse(game.wordsArray || '[]');
-            existingWords.push({
-              "player1": p1Word,
-              "player2": p2Word,
-            });
-            game.wordsArray = JSON.stringify(existingWords);
+            const game = await Game.findByPk(gameId);
+            let wordsPlayed1 = game.wordsPlayed1 ? JSON.parse(game.wordsPlayed1) : [];
+            let wordsPlayed2 = game.wordsPlayed2 ? JSON.parse(game.wordsPlayed2) : [];
+            wordsPlayed1.push(p1Word);
+            wordsPlayed2.push(p2Word);
+            game.wordsPlayed1 = JSON.stringify(wordsPlayed1);
+            game.wordsPlayed2 = JSON.stringify(wordsPlayed2);
             game.roundCount = game.roundCount + 1;
             game.status = status;
             await game.save();
-          }
         } catch (err) {
-          console.error('Error updating game in DB:', err);
+            console.error('Error updating game in DB:', err);
         }
 
         // Reset roundWords so a new round can begin

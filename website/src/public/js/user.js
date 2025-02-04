@@ -242,7 +242,15 @@ document.getElementById('updateProfile').addEventListener('click', function() {
             '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
         }
 
-        console.log('Local storage updated successfully!');
+    })
+    .then(() => {
+        // add green-button class to the updateProfile button
+        document.getElementById('updateProfile').classList.add('green-button');
+        // Wait 1 second and remove the green-button class
+        setTimeout(() => {
+            document.getElementById('updateProfile').classList.remove('green-button');
+        }, 3000);
+
     })
     .catch(error => {
         console.error('Error:', error);
