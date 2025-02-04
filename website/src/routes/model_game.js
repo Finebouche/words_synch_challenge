@@ -135,9 +135,11 @@ router.post('/initialize-model', async (req, res) => {
             res.status(500).send("Error calling the OpenAI API");
         }
     }
+
 });
 
-const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player say a word. The goal is to produce the same word than the other player based on previous words of the game."
+const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
+    "The goal is to synchronize our choices over time, trying to write the same word at the same time to win the game."
 const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word."
 
 const huggingFaceRoundTemplate = (roundNumber, pastWords) => {

@@ -2,9 +2,9 @@
     "gameTitle": "Word Synchronization Challenge",
     "gameDescription": [
         "We're going to play a game.",
-        "At the beginning, each of us produces a random word.",
-        "Then, on each turn, we produce a new word that has not been previously produced by either player.",
-        "The goal is to produce the same word, in which case the game ends."
+        "At the beginning, both of us write a word of our choice.",
+        "Then, each turn, we each write a new word that has not been previously used by either player.",
+        "The goal is to synchronize our choices over time, trying to write the same word to win the game."
     ],    
     "enterYourWord": "Enter your word...",
     "startGame": "Start Game",
