@@ -10,8 +10,8 @@ def ensure_numpy_array(embeddings):
 
 # Function to calculate distances
 def calculate_euclidean_distances(row):
-    embeddings_current = get_embeddings(row['Past words current Model'])
-    embeddings_other = get_embeddings(row['Past words other Model'])
+    embeddings_current = get_embeddings(row['wordsPlayed1'])
+    embeddings_other = get_embeddings(row['wordsPlayed2'])
 
     embeddings_current = ensure_numpy_array(embeddings_current)
     embeddings_other = ensure_numpy_array(embeddings_other)
