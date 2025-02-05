@@ -244,8 +244,8 @@ async function checkWord(word, language) {
         errorMessageElement.style.display = 'none';
     }
 
-    // check word existence in the array
-    if (past_words_array.includes(word)) {
+    // check word existence in the array with both first letter capitalized and all lowercase
+    if (past_words_array.includes(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) || past_words_array.includes(word.toLowerCase())) {
         errorMessageElement.textContent = getTranslation('errorMessageUsed');
         errorMessageElement.style.display = 'block';
         submitButton.disabled = false;
@@ -444,6 +444,12 @@ resetTheGame = function() {
     document.querySelectorAll('.rain-wrapper').forEach(function(rainElement) {
         rainElement.innerHTML = '';
     });
+
+    // Number of games
+    let playerId = getLocalStorageValue('playerId');
+    if (playerId) {
+        fetchGameStats();
+    }
 }
 
 document.getElementById('restartButton').addEventListener('click', async function (event) {

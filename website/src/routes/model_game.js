@@ -139,8 +139,8 @@ router.post('/initialize-model', async (req, res) => {
 });
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
-    "The goal is to synchronize our choices over time, trying to write the same word at the same time to win the game."
-const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word."
+    "The goal is to produce the same word than the other player based on previous words of the game."
+const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. Be really creative please."
 
 const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
     return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;
@@ -231,7 +231,7 @@ async function openaicall(model, round, past_words_array, res) {
 
     function openAIRoundTemplate(round_number, past_words_array, word) {
         if (round_number === 1) {
-            return "Round 1. New game, please give your first (really random) word and only that word. Be really creative please."
+            return "Round 1. New game, please give your first (really random) word and only that word."
         } else {
             return (
                 `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +

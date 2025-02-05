@@ -262,6 +262,8 @@ document.getElementById('logoutPlayer').addEventListener('click', function() {
     // Remove user data from localStorage
     localStorage.clear();
 
+    localStorage.setItem('newPlayerID', generateNewPlayerID());
+
     // Reset UI
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('gamesPlayed').style.display = 'none';
