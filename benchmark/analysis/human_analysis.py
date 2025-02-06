@@ -1,127 +1,123 @@
 import pandas as pd
 import numpy as np
-import json
+
 from tqdm import tqdm
-from scipy.spatial.distance import euclidean
+
 import matplotlib.pyplot as plt
-from sqlalchemy import create_engine
 
 # External module imports
-from embeding_visualization import get_embeddings
-from benchmark.analysis.model_strategy import calculate_euclidean_distances
+from embeding_utils import get_openai_embeddings, get_embeddings, get_openai_embedding, load_model
+from data_loading import load_sql_data
 
+from scipy.spatial.distance import cosine
 
-def load_data(database_name: str, base_path: str = "../user_database_sync/databases/"):
+def calculate_player_metrics(games_df):
+    # Filter games where status is 'won' to calculate success rates
+    won_games = games_df[games_df['status'] == 'won']
+
+    # Calculate human_success_rate
+    human_games = won_games[won_games['botId'].isna()]  # Games without a bot involved
+    human_success_count = human_games['player1Id'].value_counts().add(human_games['player2Id'].value_counts(), fill_value=0)
+    total_human_games = games_df[games_df['botId'].isna()]['player1Id'].value_counts().add(games_df[games_df['botId'].isna()]['player2Id'].value_counts(), fill_value=0)
+    human_success_rate = (human_success_count / total_human_games).fillna(0)
+
+    # Calculate bot_success_rate
+    bot_games = won_games[won_games['player2Id'].isna()]  # Assuming bots only play in player2Id's slot
+    bot_success_count = bot_games['player1Id'].value_counts()
+    total_bot_games = games_df[games_df['player2Id'].isna()]['player1Id'].value_counts()
+    bot_success_rate = (bot_success_count / total_bot_games).fillna(0)
+
+    # Calculate average number of rounds per player
+    total_rounds = games_df.groupby('player1Id')['roundCount'].sum().add(games_df.groupby('player2Id')['roundCount'].sum(), fill_value=0)
+    total_games_per_player = games_df['player1Id'].value_counts().add(games_df['player2Id'].value_counts(), fill_value=0)
+    average_num_round = (total_rounds / total_games_per_player).fillna(0)
+
+    # Combine all metrics into a single DataFrame
+    metrics_df = pd.DataFrame({
+        'Human Success Rate': human_success_rate,
+        'Bot Success Rate': bot_success_rate,
+        'Average Number of Rounds': average_num_round
+    })
+
+    return metrics_df
+
+def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
     """
-    Connect to the SQLite database and load Players and Games tables.
-    Also converts the JSON strings for word lists back into Python lists.
+    Get embeddings for the last words played by each player in each game.
     """
-    DATABASE_PATH = base_path + database_name
-    engine = create_engine(f"sqlite:///{DATABASE_PATH}")
+    # check that games_df doesn't contain the embeddings already
 
-    players_df = pd.read_sql("SELECT * FROM Players", con=engine)
-    games_df = pd.read_sql("SELECT * FROM Games", con=engine)
+    if 'embedding1_' + model_name in games_df.columns and 'embedding2_' + model_name in games_df.columns:
+        return games_df
 
-    # Convert JSON stored as text back into lists for each game
-    games_df['wordsPlayed1'] = games_df['wordsPlayed1'].apply(json.loads)
-    games_df['wordsPlayed2'] = games_df['wordsPlayed2'].apply(json.loads)
+    if model_name == "openai":
+        embedding_model = None
+    elif model_name == "word2vec" or model_name == "glove":
+        embedding_model = load_model(model_name=model_name)
+    else:
+        raise ValueError("Unsupported model. Choose 'openai', 'word2vec' or 'glove'")
 
-    return players_df, games_df
+    # Iterate through each game
+    embeddings = []
+    for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Fetching Embeddings"):
+        words_player1 = row['wordsPlayed1']
+        words_player2 = row['wordsPlayed2']
+
+        # Ensure both players have played words
+        if len(words_player1) > 0 and len(words_player2) > 0:
+            # Fetch embeddings for the last words played by each player
+            if model_name == "openai":
+                embeddings_player1 = get_openai_embeddings(words_player1)
+                embeddings_player2 = get_openai_embeddings(words_player2)
+            else:
+                embeddings_player1 = get_embeddings(words_player1, embedding_model)
+                embeddings_player2 = get_embeddings(words_player2, embedding_model)
+
+            embeddings.append({
+                'gameId': row['gameId'],
+                'embedding1_' + model_name: embeddings_player1,
+                'embedding2_' + model_name: embeddings_player2,
+            })
+
+    embeddings_df = pd.DataFrame(embeddings)
+    games_df = games_df.merge(embeddings_df, on='gameId')
+    return games_df
 
 
-def process_games_df(games_df: pd.DataFrame):
+def embedding_distance_analysis(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str ="openai"):
     """
-    Process the games DataFrame by adding calculated columns.
+    Compute and plot the cosine distances between the last words played by two players in each game.
     """
-    # Drop rows where player1Id or player2Id is None
-    games_df = games_df.dropna(subset=['player1Id', 'player2Id'])
+    plt.figure(figsize=(10, 5))
 
-    # Create a new column 'Model Pair' treating player pairs symmetrically
-    games_df['Model Pair'] = games_df.apply(
-        lambda row: tuple(sorted([row['player1Id'], row['player2Id']])),
-        axis=1
-    )
+    # check that games_df contains the embeddings
+    if 'embedding1_' + embedding_model not in games_df.columns or 'embedding2_' + embedding_model not in games_df.columns:
+        raise ValueError("Embeddings not found in the DataFrame. Use the 'get_embeddings_for_table' function to fetch them.")
 
-    # Compute win flag for all games
-    games_df['Win'] = games_df['status'].apply(lambda x: x == 'won')
+    # Iterate through each game
+    for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Analyzing Games"):
+        embedding1 = eval(row['embedding1_' + embedding_model])
+        embedding2 = eval(row['embedding2_' + embedding_model])
 
-    # Compute success rate grouped by model pair
-    success_rate = games_df.groupby('Model Pair').agg(Success_Rate=('Win', 'mean'))
+        # Ensure both players have played words
+        if len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2):
+            distances = []
+            rounds = range(len(embedding1))
 
-    # Filter only winning games and calculate round lengths
-    wins_df = games_df[games_df['status'] == 'won'].copy()  # use copy to avoid warnings
-    wins_df['Round Length 1'] = wins_df['wordsPlayed1'].apply(len)
-    wins_df['Round Length 2'] = wins_df['wordsPlayed2'].apply(len)
-    wins_df['Average Round Length'] = (wins_df['Round Length 1'] + wins_df['Round Length 2']) / 2
+            # Fetch embeddings and calculate distances for each round
+            for w1, w2 in zip(embedding1, embedding2):
+                distance = distance_func(w1, w2)
+                distances.append(distance)
 
-    # Compute average rounds for winning games grouped by model pair
-    avg_rounds = wins_df.groupby('Model Pair').agg(Average_Rounds=('Average Round Length', 'mean'))
+            # Plot the distances for this game
+            plt.plot(rounds, distances, marker='o', linestyle='-', label=f'Game {index + 1}')
 
-    # Merge the success rate and average rounds results
-    result = success_rate.merge(avg_rounds, on='Model Pair')
-    return result
-
-
-def embedding_distance_analysis(games_df: pd.DataFrame, rounds: int = 6):
-    """
-    For winning games, compute the Euclidean distances between embeddings of the last few rounds.
-    Then plot the mean and standard deviation of these distances over the rounds.
-    """
-    model_combinations = {}
-
-    for _, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Embedding Analysis"):
-        # Get embeddings for the last 'rounds' words played by both players
-        embeddings_1 = get_embeddings(row['wordsPlayed1'][-rounds:])
-        embeddings_2 = get_embeddings(row['wordsPlayed2'][-rounds:])
-
-        if len(embeddings_1) >= rounds and len(embeddings_2) >= rounds:
-            row_distances = [euclidean(embeddings_1[i], embeddings_2[i]) for i in range(rounds)]
-            model_key = (row['player1Id'], row['player2Id'])
-            model_combinations.setdefault(model_key, []).append(row_distances)
-
-    # Plotting the results
-    plt.figure(figsize=(14, 8))
-    colors = plt.cm.jet(np.linspace(0, 1, len(model_combinations)))
-
-    for color_index, (model_key, distances_lists) in enumerate(model_combinations.items()):
-        if len(distances_lists) >= rounds:
-            last_games = np.array(distances_lists[-rounds:])
-            mean_of_last_games = np.mean(last_games, axis=0)
-            std_of_last_games = np.std(last_games, axis=0)
-            time_index = np.arange(rounds)
-
-            plt.plot(
-                time_index, mean_of_last_games,
-                label=f'{model_key} Last {rounds}', marker='o',
-                color=colors[color_index]
-            )
-            plt.fill_between(
-                time_index,
-                mean_of_last_games - std_of_last_games,
-                mean_of_last_games + std_of_last_games,
-                color=colors[color_index],
-                alpha=0.3
-
-            )
-
-    plt.xlabel('Game Index')
-    plt.ylabel('Average Euclidean Distance')
+    plt.title('Cosine Distances Between Words Played by Each Player Over Rounds')
+    plt.xlabel('Round Number')
+    plt.ylabel('Cosine Distance')
     plt.legend()
     plt.grid(True)
     plt.show()
-
-
-def safe_calculate_euclidean_distances(row):
-    distances = calculate_euclidean_distances(row)
-    # Ensure the result is a list or tuple
-    if not isinstance(distances, (list, tuple)):
-        distances = [distances]
-    # If fewer than 2 elements, pad with NaN; if more than 2, trim the list.
-    if len(distances) < 2:
-        distances = list(distances) + [np.nan] * (2 - len(distances))
-    elif len(distances) > 2:
-        distances = list(distances)[:2]
-    return pd.Series(distances)
 
 
 def strategy_analysis(games_df: pd.DataFrame, players_df: pd.DataFrame):
@@ -181,16 +177,35 @@ def strategy_analysis(games_df: pd.DataFrame, players_df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    db_name = "downloaded_word_sync_20250204_165640.db"
-    players_df, games_df = load_data(db_name)
+    from scipy.spatial.distance import cosine, euclidean, cityblock, correlation
+    import os
+
+    # 1 Load the data from a database
+    db_name = "merged.db"
+    csv_name = "games.csv"
+    # if csv_name doesn't exist we charge the db_name
+    if not os.path.exists(csv_name):
+        players_df, games_df = load_sql_data(db_name)
+        games_df.to_csv(csv_name, index=False)
+
+    # players_df, games_df = load_sql_data(db_name)
+    games_df = pd.read_csv(csv_name)
+
+    # 2) Get embeddings for the last words played by each player in each game
+    embedding_model = "glove"
+    games_df = get_embeddings_for_table(games_df, model_name=embedding_model)
+    # Save the data to a csv for future use
+    games_df.to_csv(csv_name, index=False)
 
     # Process game data to compute success rates and average rounds for winning games
-    result = process_games_df(games_df)
+    player_metrics = calculate_player_metrics(games_df)
     print("Success Rate and Average Rounds for Winning Games:")
-    print(result)
+    print(player_metrics)
+
+    embedding_distance_analysis(games_df, distance_func=euclidean, embedding_model=embedding_model)
 
     # Perform embedding distance analysis and plot the results
-    embedding_distance_analysis(games_df, rounds=6)
-
-    # Analyze strategies based on Euclidean distance calculations
-    strategy_analysis(games_df, players_df)
+    # embedding_distance_analysis(games_df, rounds=6)
+    #
+    # # Analyze strategies based on Euclidean distance calculations
+    # strategy_analysis(games_df, players_df)

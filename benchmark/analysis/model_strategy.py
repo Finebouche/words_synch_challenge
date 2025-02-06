@@ -1,12 +1,26 @@
 from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
 import numpy as np
-from embeding_visualization import get_embeddings
+from embeding_utils import get_embeddings
 
 # Function to ensure the embeddings are properly formatted as numpy arrays
 def ensure_numpy_array(embeddings):
     # Convert to numpy array if not already
     return np.array(embeddings, dtype=float)
+
+
+def safe_calculate_euclidean_distances(row):
+    distances = calculate_euclidean_distances(row)
+    # Ensure the result is a list or tuple
+    if not isinstance(distances, (list, tuple)):
+        distances = [distances]
+    # If fewer than 2 elements, pad with NaN; if more than 2, trim the list.
+    if len(distances) < 2:
+        distances = list(distances) + [np.nan] * (2 - len(distances))
+    elif len(distances) > 2:
+        distances = list(distances)[:2]
+    return pd.Series(distances)
+
 
 # Function to calculate distances
 def calculate_euclidean_distances(row):
