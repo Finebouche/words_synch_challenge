@@ -268,3 +268,25 @@
     flex-direction: row;
     flex-wrap: wrap;
 }
+
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.checkbox-container label {
+    display: flex;
+    align-items: center; /* Ensures checkbox and first line of text are aligned */
+    white-space: normal; /* Allows text wrapping */
+    width: 32.5%;
+    min-width: 180px; /* Adjusts for consistent alignment */
+}
+
+.checkbox-container input {
+    margin-right: 8px; /* Spaces checkbox from text */
+    align-self: flex-start; /* Ensures alignment with the first line */
+}
+
+.checkbox-container span {
+    text-align: left; /* Ensures proper text alignment */
+}

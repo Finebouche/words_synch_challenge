@@ -178,14 +178,37 @@
         </div>
         <!-- NEW QUESTIONNAIRE SECTION -->
         <div id="questionnaireContainer" style="display: none;">
-            <div>
-                <label for="strategyUsed">What was your main strategy when picking the next word?</label>
-                <input type="text" id="strategyUsed" name="strategyUsed" placeholder="Short answer...">
+
+            <label>What were your main strategies when picking the next word? (Select up to 3)</label>
+            <div class="checkbox-container">
+                <label><span><input type="checkbox" name="strategyUsed" value="mirroring">Mirroring<br>e.g., "cat" → "kitten"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="stayingClose">Staying Close<br>e.g., "apple" → "fruit"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="averaging">Averaging<br>e.g., "ocean" & "lake" → "sea"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="abstraction">Abstraction<br>e.g., "car" & "bicycle" → "vehicle"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="opposition">Opposition<br>e.g., "hot" → "cold"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="association">Association<br>e.g., "star" → "night"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="conceptualExpansion">Expansion<br>e.g., "dog" & "park" → "walk"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="simplification">Simplification<br>e.g., "automobile" → "car"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="random">Random Play<br>e.g., no clear pattern</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="culturalReference">Cultural Ref.<br>e.g., "Shakespeare"</span></label>
+                <label><span><input type="checkbox" name="strategyUsed" value="patternBuilding">Pattern Building<br>e.g., multi-round plan</span></label>
             </div>
 
-            <div style="margin-top: 10px;">
-                <label for="otherPlayerStrategy">What strategy do you think the other player used the most?</label>
-                <input type="text" id="otherPlayerStrategy" name="otherPlayerStrategy" placeholder="Short answer...">
+            <div style="margin-top: 25px;">
+                <label >What strategies do you think the other player used? (Select up to 3)</label>
+                <div class="checkbox-container">
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="mirroring"><span>Mirroring</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="stayingClose"><span>Staying Close</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="averaging"><span>Averaging</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="abstraction"><span>Abstraction</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="opposition"><span>Opposition</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="association"><span>Association</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="conceptualExpansion"><span>Expansion</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="simplification"><span>Simplification</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="random"><span>Random Play</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="culturalReference"><span>Cultural Ref.</span></label>
+                    <label><input type="checkbox" name="otherPlayerStrategy" value="patternBuilding"><span>Pattern Building</span></label>
+                </div>
             </div>
 
             <div style="margin-top: 10px;">

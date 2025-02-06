@@ -5,11 +5,11 @@ import { Op } from 'sequelize';
 const router = express.Router();
 
 // POST /game/answers
-// POST /game/answers
 router.post('/answers', async (req, res) => {
   try {
     const {
       gameId,
+      playerId,  // Now we check which player is submitting the data
       strategyUsed,
       otherPlayerStrategy,
       otherPlayerUnderstoodYourStrategies,
@@ -23,8 +23,20 @@ router.post('/answers', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Game not found.' });
     }
 
-    let existingAnswers = dbGame.surveyAnswers ? JSON.parse(dbGame.surveyAnswers) : [];
+    // 2) Determine if player is Player 1 or Player 2
+    let isPlayer1 = dbGame.player1Id === playerId;
+    let isPlayer2 = dbGame.player2Id === playerId;
 
+    if (!isPlayer1 && !isPlayer2) {
+      return res.status(403).json({ success: false, message: 'Player not part of this game.' });
+    }
+
+    // 3) Select the correct field (surveyAnswers1 or surveyAnswers2)
+    let answerField = isPlayer1 ? 'surveyAnswers1' : 'surveyAnswers2';
+
+    let existingAnswers = [];
+
+    // 4) Append new answers
     existingAnswers.push({
       timestamp: new Date().toISOString(),
       strategyUsed,
@@ -34,10 +46,12 @@ router.post('/answers', async (req, res) => {
       otherPlayerRating
     });
 
-    dbGame.surveyAnswers = JSON.stringify(existingAnswers);
+    // 5) Save back to the correct field
+    dbGame[answerField] = JSON.stringify(existingAnswers);
     await dbGame.save();
 
-    // 3) Return success
+
+    // 6) Return success response
     return res.json({ success: true });
   } catch (err) {
     console.error('Error saving questionnaire answers:', err);

@@ -92,7 +92,12 @@ const Game = sequelize.define('Game', {
     allowNull: false,
     defaultValue: '[]'
   },
-  surveyAnswers: {
+  surveyAnswers1: {
+    type: DataTypes.TEXT,
+    allowNull: true,        // Let it be null if no answers yet
+    defaultValue: '[]'
+  },
+  surveyAnswers2: {
     type: DataTypes.TEXT,
     allowNull: true,        // Let it be null if no answers yet
     defaultValue: '[]'

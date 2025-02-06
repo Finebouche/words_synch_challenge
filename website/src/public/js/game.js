@@ -293,8 +293,8 @@ async function checkWord(word, language) {
 }
 
 function updatePreviousWordsArea() {
-    let previousWordsSorted = past_words_array.slice().sort();
-    document.getElementById('previousWordsArea').innerHTML = previousWordsSorted.join(', ');
+    let previousWords = past_words_array.slice();
+    document.getElementById('previousWordsArea').innerHTML = previousWords.join(', ');
 }
 
 function scrollToBottom() {
@@ -402,9 +402,8 @@ document.getElementById('submitWord').addEventListener('click', async function (
 
 });
 
-cleanPreviousWordsArea = function() {
+cleanPreviousGameArea = function() {
     document.getElementById('conversationArea').innerHTML = '';
-    document.getElementById('previousWordsArea').innerHTML = '';
     document.getElementById('selectedContent').textContent = '';
     document.getElementById('selectedInfo').style.display = 'none';
     document.getElementById('gameWord').value = '';
@@ -422,6 +421,7 @@ resetTheGame = function() {
     myRole = null;
 
     // set selection to default
+    document.getElementById('previousWordsArea').innerHTML = '';
     let languageSelect = document.getElementById('languageSelect');
     if (languageSelect.disabled) {
         document.getElementById('selectLLMGame').style.display = 'block';
@@ -453,7 +453,7 @@ resetTheGame = function() {
 }
 
 document.getElementById('restartButton').addEventListener('click', async function (event) {
-    cleanPreviousWordsArea()
+    cleanPreviousGameArea()
     resetTheGame();
     fetchGameStats();
 });
@@ -462,13 +462,34 @@ document.getElementById('restartButton').addEventListener('click', async functio
 // START QUESTIONNAIRE LOGIC
 document.getElementById('questionsButton').addEventListener('click', function() {
     document.getElementById('questionnaireContainer').style.display = 'block';
-    cleanPreviousWordsArea()
+    cleanPreviousGameArea()
+});
+function limitCheckboxSelection(groupName, maxSelection) {
+    const checkboxes = document.querySelectorAll(`input[name="${groupName}"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+
+            if (checkedBoxes.length > maxSelection) {
+                // Uncheck the first selected checkbox
+                checkedBoxes[0].checked = false;
+            }
+        });
+    });
+}
+
+// Call the function to limit selections to 3 per group
+document.addEventListener('DOMContentLoaded', function () {
+    limitCheckboxSelection('strategyUsed', 3);
+    limitCheckboxSelection('otherPlayerStrategy', 3);
 });
 
 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
-    const strategyUsed = document.getElementById('strategyUsed').value.trim();
-    const otherPlayerStrategy = document.getElementById('otherPlayerStrategy').value.trim();
+    const strategyUsed = Array.from(document.querySelectorAll('input[name="strategyUsed"]:checked'))
+                              .map(cb => cb.value);
+    const otherPlayerStrategy = Array.from(document.querySelectorAll('input[name="otherPlayerStrategy"]:checked'))
+                                     .map(cb => cb.value);
     const otherPlayerUnderstoodElem = document.querySelector('input[name="otherPlayerUnderstoodYourStrategies"]:checked');
     const otherPlayerUnderstood = otherPlayerUnderstoodElem ? otherPlayerUnderstoodElem.value : '';
     const didYouUnderstandElem = document.querySelector('input[name="didYouUnderstandOtherPlayerStrategy"]:checked');
@@ -481,6 +502,8 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             gameId: gameId,
+            role: myRole,
+            playerId: getLocalStorageValue('playerId'),
             strategyUsed: strategyUsed,
             otherPlayerStrategy: otherPlayerStrategy,
             otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
