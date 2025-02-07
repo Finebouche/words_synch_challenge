@@ -83,8 +83,7 @@ def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
     games_df = games_df.merge(embeddings_df, on='gameId')
     return games_df
 
-
-def embedding_distance_analysis(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str ="openai"):
+def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str ="openai"):
     """
     Compute and plot the cosine distances between the last words played by two players in each game.
     """
@@ -119,62 +118,173 @@ def embedding_distance_analysis(games_df: pd.DataFrame, distance_func: callable 
     plt.grid(True)
     plt.show()
 
+def strategy_analysis(games_df, embedding_model):
+    """
+    Analyze game strategy and store distance metrics as arrays
+    for each game row (player perspective).
 
-def strategy_analysis(games_df: pd.DataFrame, players_df: pd.DataFrame):
+    For each row (i.e., each game a player participates in):
+      - mirroring_distance: distance to the opponent's previous word each round
+      - balancing_distance: distance to the player's own previous word each round
+      - staying_close_distance: distance to the player's own previous word each round
+      * The first element of each array is NaN (no previous word).
     """
-    Analyze game strategy by computing the Euclidean distances using
-    the 'calculate_euclidean_distances' function from the benchmark module.
-    For each model, determine whether a mirroring or balancing strategy is predominant.
-    """
-    players = players_df['playerId'].unique()
+    # Get all unique players
+    players = pd.concat([games_df['player1Id'], games_df['player2Id']]).unique()
+
     results = []
 
-    tqdm.pandas(desc="Processing models")
-
     for player in players:
-        # Select games (won or lost) involving the current model
-        players_games = games_df[
-            ((games_df['player1Id'] == player) | (games_df['player2Id'] == player))
-        ].copy()
+        try:
+            # Select games where this player is involved
+            player_games = games_df[
+                (games_df['player1Id'] == player) | (games_df['player2Id'] == player)
+            ].copy()
 
-        # Calculate distances and expand into separate columns using progress_apply
-        distances_series = players_games.progress_apply(safe_calculate_euclidean_distances, axis=1)
-        distances_df = pd.DataFrame(distances_series, index=distances_series.index)
-        players_games[['Distances to Previous', 'Distances to Average']] = distances_df
+            # Assign the playerId column so each row knows which player is being analyzed
+            player_games['playerId'] = player
 
-        # Compute average and standard deviation for both distance types
-        players_games['Average Distance to Previous'] = players_games['Distances to Previous'].apply(
-            lambda x: np.mean(x) if hasattr(x, 'size') and x.size else 0)
-        players_games['Average Distance to Average'] = players_games['Distances to Average'].apply(
-            lambda x: np.mean(x) if hasattr(x, 'size') and x.size else 0)
-        players_games['Std Dev Distance to Previous'] = players_games['Distances to Previous'].apply(
-            lambda x: np.std(x) if hasattr(x, 'size') and x.size else 0)
-        players_games['Std Dev Distance to Average'] = players_games['Distances to Average'].apply(
-            lambda x: np.std(x) if hasattr(x, 'size') and x.size else 0)
+            # Identify the embeddings for "my" words vs. "opponent" words in each game
+            player_games['embedding_my'] = player_games.apply(
+                lambda row: np.array(eval(row[f'embedding1_{embedding_model}']))
+                if row['player1Id'] == player
+                else np.array(eval(row[f'embedding2_{embedding_model}'])),
+                axis=1
+            )
+            player_games['embedding_opponent'] = player_games.apply(
+                lambda row: np.array(eval(row[f'embedding2_{embedding_model}']))
+                if row['player1Id'] == player
+                else np.array(eval(row[f'embedding1_{embedding_model}'])),
+                axis=1
+            )
 
-        mean_distance_to_previous = players_games['Average Distance to Previous'].mean()
-        mean_distance_to_average = players_games['Average Distance to Average'].mean()
-        std_distance_to_previous = players_games['Std Dev Distance to Previous'].mean()
-        std_distance_to_average = players_games['Std Dev Distance to Average'].mean()
-        sample_size = len(players_games)
+            # Prepare new columns to store the arrays of strategy distances
+            player_games['mirroring_distance'] = None
+            player_games['balancing_distance'] = None
+            player_games['staying_close_distance'] = None
 
-        # Decide on strategy based on the comparison of the distances
-        strategy = ("Mirroring Strategy" if mean_distance_to_previous < mean_distance_to_average
-                    else "Balancing Strategy")
+            # For each game row, compute the distance arrays
+            for index, game in player_games.iterrows():
+                embedding_my = game['embedding_my']
+                embedding_opponent = game['embedding_opponent']
 
-        results.append({
-            "Model": player,
-            "Mean Distance to Previous": mean_distance_to_previous,
-            "Mean Distance to Average": mean_distance_to_average,
-            "Std Dev Distance to Previous": std_distance_to_previous,
-            "Std Dev Distance to Average": std_distance_to_average,
-            "Number of Samples": sample_size,
-            "Predominant Strategy": strategy
-        })
+                # Ensure we don't exceed the length of either embeddings array
+                num_rounds = min(len(embedding_my), len(embedding_opponent))
 
-    results_df = pd.DataFrame(results)
-    print(results_df)
+                # Initialize empty lists to store round-by-round distances
+                mirroring_list = []
+                balancing_list = []
+                staying_close_list = []
 
+                for i in range(num_rounds):
+                    # If i=0 => no "previous" word for either side, so store NaN
+                    if i == 0:
+                        mirroring_list.append(np.nan)
+                        balancing_list.append(np.nan)
+                        staying_close_list.append(np.nan)
+                    else:
+                        current_word_embed = embedding_my[i]
+                        prev_opponent_word_embed = embedding_opponent[i - 1]
+                        prev_my_word_embed = embedding_my[i - 1]
+
+                        # 1) Mirroring: distance to opponent's previous word
+                        mirroring_dist = cosine(current_word_embed, prev_opponent_word_embed)
+                        mirroring_list.append(mirroring_dist)
+
+                        # 2) Balancing: distance to the player's own previous word
+                        balancing_dist = cosine(current_word_embed, prev_my_word_embed)
+                        balancing_list.append(balancing_dist)
+
+                        # 3) Staying close: same as balancing above?
+                        staying_close_dist = cosine(current_word_embed, prev_my_word_embed)
+                        staying_close_list.append(staying_close_dist)
+
+                # Store the lists (arrays) back into the DataFrame row
+                player_games.at[index, 'mirroring_distance'] = mirroring_list
+                player_games.at[index, 'balancing_distance'] = balancing_list
+                player_games.at[index, 'staying_close_distance'] = staying_close_list
+
+            results.append(player_games)
+
+        except Exception as e:
+            print(f"Error processing player {player}: {e}")
+
+    # Combine the per-player DataFrames
+    return pd.concat(results, ignore_index=True)
+
+
+def plot_strategy_heatmap(results_df):
+    """
+    Plot a heatmap showing the average distance for each strategy (mirroring,
+    balancing, staying_close) per player.
+
+    'results_df' is the DataFrame returned by 'strategy_analysis', which has:
+      - playerId
+      - mirroring_distance        (list of round-by-round distances)
+      - balancing_distance        (list of round-by-round distances)
+      - staying_close_distance    (list of round-by-round distances)
+      - plus other columns like gameId, embedding_my, etc.
+    """
+
+    # The three array-type columns added in strategy_analysis
+    strategy_columns = ["mirroring_distance", "balancing_distance", "staying_close_distance"]
+
+    # Build a list of rows for a new "long" DataFrame:
+    #   [playerId, strategy, distance]
+    # where 'distance' is the per-game average ignoring NaNs.
+    rows = []
+    for idx, row in results_df.iterrows():
+        player_id = row["playerId"]
+
+        for strategy_col in strategy_columns:
+            if strategy_col in row:
+                round_values = row[strategy_col]
+
+                # Ensure we have a list/array; could be None for some rows
+                if isinstance(round_values, (list, np.ndarray)):
+                    # Convert to float array
+                    arr = np.array(round_values, dtype=float)
+                    # Compute mean ignoring NaNs
+                    avg_dist = np.nanmean(arr) if len(arr) > 0 else np.nan
+                else:
+                    # If it's not a list, just set distance to NaN
+                    avg_dist = np.nan
+
+                rows.append({
+                    "playerId": player_id,
+                    "strategy": strategy_col,
+                    "distance": avg_dist
+                })
+
+    # Create a DataFrame of these long rows
+    long_df = pd.DataFrame(rows)
+    # If each (player, game) row is repeated, you can group to get
+    # a single average value per (playerId, strategy) across all games.
+    grouped = long_df.groupby(["playerId", "strategy"])["distance"].mean().reset_index()
+
+    # Pivot so that each playerId is a row, each strategy is a column
+    strategy_usage = grouped.pivot(index="playerId", columns="strategy", values="distance")
+    strategy_usage = strategy_usage.div(strategy_usage.sum(axis=1), axis=0)
+
+    # Ensure columns are numeric for plotting
+    strategy_usage = strategy_usage.apply(pd.to_numeric, errors="coerce")
+
+    # Plot as a heatmap using matshow
+    fig, ax = plt.subplots(figsize=(10, 6))
+    cax = ax.matshow(strategy_usage, cmap="coolwarm", interpolation="nearest")
+    fig.colorbar(cax)
+
+    # Set tick labels
+    ax.set_xticks(np.arange(len(strategy_usage.columns)))
+    ax.set_yticks(np.arange(len(strategy_usage.index)))
+    ax.set_xticklabels(strategy_usage.columns, rotation=90)
+    ax.set_yticklabels(strategy_usage.index)
+
+    ax.set_xlabel("Strategy")
+    ax.set_ylabel("Player ID")
+    ax.set_title("Average Distance per Strategy (by Player)")
+
+    plt.show()
 
 if __name__ == "__main__":
     from scipy.spatial.distance import cosine, euclidean, cityblock, correlation
@@ -202,10 +312,9 @@ if __name__ == "__main__":
     print("Success Rate and Average Rounds for Winning Games:")
     print(player_metrics)
 
-    embedding_distance_analysis(games_df, distance_func=euclidean, embedding_model=embedding_model)
+    # plot_embedding_distance_during_game(games_df, distance_func=euclidean, embedding_model=embedding_model)
 
-    # Perform embedding distance analysis and plot the results
-    # embedding_distance_analysis(games_df, rounds=6)
-    #
-    # # Analyze strategies based on Euclidean distance calculations
-    # strategy_analysis(games_df, players_df)
+    # Analyze strategies based on Euclidean distance calculations
+    results_df = strategy_analysis(games_df, embedding_model)
+
+    plot_strategy_heatmap(results_df)

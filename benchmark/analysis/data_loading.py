@@ -32,3 +32,8 @@ def load_csv(path: str):
     games_df['wordsPlayed2'] = games_df['wordsPlayed2'].apply(json.loads)
 
     return games_df
+
+if __name__ == '__main__':
+    import gensim.downloader as api
+
+    print(api.base_dir)

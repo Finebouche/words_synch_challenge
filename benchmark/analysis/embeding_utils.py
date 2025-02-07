@@ -1,4 +1,3 @@
-import numpy as np
 import openai
 import gensim.downloader as api
 
