@@ -6,14 +6,13 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 # External module imports
-from embeding_utils import get_openai_embeddings, get_embeddings, get_openai_embedding, load_model
 from data_loading import load_sql_data
 
 from scipy.spatial.distance import cosine
 from sklearn.decomposition import PCA
 
 
-def calculate_player_metrics(games_df):
+def calculate_game_metrics_per_player(games_df):
     # Filter games where status is 'won' to calculate success rates
     won_games = games_df[games_df['status'] == 'won']
 
@@ -43,66 +42,6 @@ def calculate_player_metrics(games_df):
 
     return metrics_df
 
-
-
-
-
-def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
-    """
-    Get embeddings for the last words played by each player in each game.
-    Optionally reduce them with PCA to a smaller dimension.
-
-    - If pca_components is not None, we fit a PCA on all the round-level embeddings
-      across all games, then create new columns with the PCA-reduced embeddings.
-    """
-    # Check if the original embeddings are already present
-    embed_col1 = f"embedding1_{model_name}"
-    embed_col2 = f"embedding2_{model_name}"
-    if embed_col1 in games_df.columns and embed_col2 in games_df.columns:
-        print(f"Embeddings for '{model_name}' already exist in DataFrame.")
-    else:
-        # Otherwise, load the model if needed
-        if model_name == "openai":
-            embedding_model = None
-        elif model_name in ("word2vec", "glove"):
-            embedding_model = load_model(model_name=model_name)
-        else:
-            raise ValueError("Unsupported model. Choose 'openai', 'word2vec' or 'glove'")
-
-        # We'll store new rows in a list to merge later
-        embeddings_list = []
-        for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Fetching Embeddings"):
-            words_player1 = row['wordsPlayed1']
-            words_player2 = row['wordsPlayed2']
-
-            # Ensure both players have played words
-            if len(words_player1) > 0 and len(words_player2) > 0:
-                # Fetch embeddings for the last words played by each player
-                if model_name == "openai":
-                    embeddings_player1 = get_openai_embeddings(words_player1)
-                    embeddings_player2 = get_openai_embeddings(words_player2)
-                else:
-                    embeddings_player1 = get_embeddings(words_player1, embedding_model)
-                    embeddings_player2 = get_embeddings(words_player2, embedding_model)
-
-                embeddings_list.append({
-                    'gameId': row['gameId'],
-                    embed_col1: embeddings_player1,
-                    embed_col2: embeddings_player2,
-                })
-            else:
-                # If there's no data, you can decide how to handle;
-                # here we'll just store empty lists
-                embeddings_list.append({
-                    'gameId': row['gameId'],
-                    embed_col1: [],
-                    embed_col2: [],
-                })
-
-        # Merge the new embeddings back into games_df
-        embeddings_df = pd.DataFrame(embeddings_list)
-        games_df = games_df.merge(embeddings_df, on='gameId', how='left')
-    return games_df
 
 def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", num_pca_components=None):
 
@@ -220,18 +159,17 @@ def plot_embedding_distance_during_game(games_df: pd.DataFrame,
 
     # Iterate through each game
     for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Analyzing Games"):
-        # Depending on how your data is stored, you might need to parse strings to lists.
-        # If it's already a Python list, you can use them directly. If they're strings, do:
-        #
-        # embedding1 = eval(row[col1])   # or json.loads, depending on how they're stored
-        # embedding2 = eval(row[col2])
-        #
-        # If your merging pipeline keeps them as lists, just do:
-        embedding1 = row[col1]
-        embedding2 = row[col2]
+        # Depending on how data is stored, we might need to parse strings to lists.
+        # If it's already a Python list, you can use them directly. If they're strings, we use eval:
+        if isinstance(row[col1], list):
+            embedding1 = row[col1]
+            embedding2 = row[col2]
+        else:
+            embedding1 = eval(row[col1])
+            embedding2 = eval(row[col2])
 
         # Ensure both players have embedding lists and they're the same length
-        if (isinstance(embedding1, list) and isinstance(embedding2, list) and len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2)):
+        if (len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2)):
 
             distances = []
             rounds = range(len(embedding1))
@@ -424,6 +362,7 @@ def plot_strategy_heatmap(results_df):
 if __name__ == "__main__":
     import os
     from scipy.spatial.distance import cosine, euclidean, cityblock, correlation
+    from embeding_utils import get_embeddings_for_table
 
     db_name = "merged.db"
     csv_name = "games.csv"
@@ -449,18 +388,23 @@ if __name__ == "__main__":
     games_df.to_csv(csv_name, index=False)
 
     # 3) Calculate player metrics
-    player_metrics = calculate_player_metrics(games_df)
+    player_metrics = calculate_game_metrics_per_player(games_df)
     print("Success Rate and Average Rounds for Winning Games:")
     print(player_metrics)
 
     # 4) Plot distances with the original or PCA embeddings
     plot_embedding_distance_during_game(
         games_df,
-        distance_func=euclidean,
+        distance_func=cosine,
         embedding_model="glove",
         use_pca=True
     )
-
+    plot_embedding_distance_during_game(
+        games_df,
+        distance_func=cosine,
+        embedding_model="glove",
+        use_pca=False
+    )
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
     plot_strategy_heatmap(results_df)
