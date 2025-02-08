@@ -9,8 +9,8 @@ def ensure_numpy_array(embeddings):
     return np.array(embeddings, dtype=float)
 
 
-def safe_calculate_euclidean_distances(row):
-    distances = calculate_euclidean_distances(row)
+def safe_calculate_distances(row):
+    distances = calculate_distances(row)
     # Ensure the result is a list or tuple
     if not isinstance(distances, (list, tuple)):
         distances = [distances]
@@ -23,7 +23,7 @@ def safe_calculate_euclidean_distances(row):
 
 
 # Function to calculate distances
-def calculate_euclidean_distances(row):
+def calculate_distances(row):
     embeddings_current = get_embeddings(row['wordsPlayed1'])
     embeddings_other = get_embeddings(row['wordsPlayed2'])
 
