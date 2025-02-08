@@ -300,15 +300,35 @@ def expansion_score(vec_new, vec_a, vec_b):
 # QUANTITATIVE (DISTANCES)  #
 ##############################
 
+
+def min_max_normalize(values):
+    """
+    Given a list of numeric values (with possible np.nan),
+    perform min–max normalization so that the non-nan values fall in [0, 1].
+    If all values are nan or constant, returns a list with the original values.
+    """
+    arr = np.array(values, dtype=float)
+    # Identify valid (non-NaN) values:
+    mask = ~np.isnan(arr)
+    if mask.sum() == 0:
+        return values
+    vmin = np.min(arr[mask])
+    vmax = np.max(arr[mask])
+    # Avoid division by zero: if constant, return zeros for non-nan entries.
+    if vmax == vmin:
+        return [0 if not np.isnan(v) else np.nan for v in arr]
+    norm = (arr - vmin) / (vmax - vmin)
+    return norm.tolist()
+
 def quantitative_analysis(player_games):
     """
     Computes round-by-round numeric distances or similarities:
-      - mirroring_distance: distance to opponent's previous word's embedding
-      - balancing_distance: distance to average(own_prev, opp_prev)
-      - staying_close_distance: distance to own previous word
-      - conceptual_expansion_distance: *similarity* to average(own_prev, opp_prev)
+      - mirroring_distance: cosine distance to opponent's previous word's embedding
+      - balancing_distance: cosine distance to average(own_prev, opp_prev)
+      - staying_close_distance: cosine distance to own previous word
+      - conceptual_expansion_distance: similarity (later inverted to act like a distance)
       - phonetic_distance: normalized phoneme distance to opponent's previous word (text-based)
-    Each of these is stored as a list in columns of the DataFrame.
+    Also computes normalized versions of these measures (per game).
     """
     player_games['mirroring_distance'] = None
     player_games['balancing_distance'] = None
@@ -316,10 +336,16 @@ def quantitative_analysis(player_games):
     player_games['conceptual_expansion_distance'] = None
     player_games['phonetic_distance'] = None
 
+    # New normalized columns:
+    player_games['mirroring_distance_norm'] = None
+    player_games['balancing_distance_norm'] = None
+    player_games['staying_close_distance_norm'] = None
+    player_games['conceptual_expansion_distance_norm'] = None
+    player_games['phonetic_distance_norm'] = None
+
     for index, game in player_games.iterrows():
         embedding_my = game['embedding_my']
         embedding_opponent = game['embedding_opponent']
-
         word_my = eval(game['word_my'])
         word_opponent = eval(game['word_opponent'])
 
@@ -333,7 +359,6 @@ def quantitative_analysis(player_games):
 
         for i in range(num_rounds):
             if i == 0:
-                # Round 0 => no "previous word"
                 mirroring_list.append(np.nan)
                 balancing_list.append(np.nan)
                 staying_close_list.append(np.nan)
@@ -344,34 +369,46 @@ def quantitative_analysis(player_games):
                 prev_opp_embed = embedding_opponent[i - 1]
                 prev_my_embed = embedding_my[i - 1]
 
-                # Distances (cosine)
+                # Compute cosine distances (lower is "closer")
                 mirroring_dist = cosine(current_word_embed, prev_opp_embed)
-                mirroring_list.append(mirroring_dist)
-
                 balancing_dist = cosine(current_word_embed, (prev_my_embed + prev_opp_embed) / 2)
-                balancing_list.append(balancing_dist)
-
                 staying_close_dist = cosine(current_word_embed, prev_my_embed)
+
+                mirroring_list.append(mirroring_dist)
+                balancing_list.append(balancing_dist)
                 staying_close_list.append(staying_close_dist)
 
-                # Conceptual expansion: we store it as a *similarity*, so let's invert it (1 - sim) if we want distance
+                # Conceptual expansion: computed as cosine similarity.
                 sim_expansion = expansion_score(current_word_embed, prev_my_embed, prev_opp_embed)
-                # If you want to store it as "distance," you might do expansion_dist = 1.0 - sim_expansion
-                # but let's store the raw similarity
-                expansion_list.append(sim_expansion)
+                # Convert similarity to a distance measure:
+                expansion_distance = 1.0 - sim_expansion
+                expansion_list.append(expansion_distance)
 
-                # Phonetic distance: normalized phoneme distance between current_word & opponent's previous word (text-based)
+                # Phonetic distance:
                 curr_word_text = word_my[i]
                 prev_opp_text = word_opponent[i - 1]
                 ph_dist = normalized_phoneme_distance(curr_word_text, prev_opp_text)
                 phonetic_list.append(ph_dist)
 
-        # Store results
+        # Store raw results:
         player_games.at[index, 'mirroring_distance'] = mirroring_list
         player_games.at[index, 'balancing_distance'] = balancing_list
         player_games.at[index, 'staying_close_distance'] = staying_close_list
         player_games.at[index, 'conceptual_expansion_distance'] = expansion_list
         player_games.at[index, 'phonetic_distance'] = phonetic_list
+
+        # Normalize each measure for this game (per row normalization across rounds)
+        norm_mirroring = min_max_normalize(mirroring_list)
+        norm_balancing = min_max_normalize(balancing_list)
+        norm_staying_close = min_max_normalize(staying_close_list)
+        norm_expansion = min_max_normalize(expansion_list)
+        norm_phonetic = min_max_normalize(phonetic_list)
+
+        player_games.at[index, 'mirroring_distance'] = norm_mirroring
+        player_games.at[index, 'balancing_distance'] = norm_balancing
+        player_games.at[index, 'staying_close_distance'] = norm_staying_close
+        player_games.at[index, 'conceptual_expansion_distance'] = norm_expansion
+        player_games.at[index, 'phonetic_distance'] = norm_phonetic
 
     return player_games
 
