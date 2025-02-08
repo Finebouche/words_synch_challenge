@@ -6,11 +6,14 @@ from tqdm import tqdm
 
 from sklearn.decomposition import PCA
 
-# Get open_ai api key from open_ai_key.txt
-with open('../../open_ai_key.txt', 'r') as file:
-    openai.api_key = file.read().replace('\n', '')
+# Get open_ai api key from open_ai_key.txt in ../../ directory
+def get_openai_key():
+    with open('../../open_ai_key.txt', 'r') as f:
+        key = f.readline().strip()
+    return key
 
 def get_openai_embedding(word):
+    openai.api_key = get_openai_key()
     response = openai.embeddings.create(
         input=word,
         model="text-embedding-ada-002"  # Choose the appropriate embedding model
@@ -22,7 +25,6 @@ def get_openai_embeddings(words):
     for word in words:
         embeddings.append(get_openai_embedding(word))
     return embeddings
-
 
 def load_model(model_name):
     """

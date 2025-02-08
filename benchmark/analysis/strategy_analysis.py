@@ -505,6 +505,139 @@ def plot_strategy_heatmap(results_df):
     plt.tight_layout()
     plt.show()
 
+
+def plot_strategy_heatmap_human_vs_bot(results_df):
+    """
+    Plot a heatmap showing the average winning strategy for each game configuration,
+    using the winning_strategy_encoding column.
+
+    Each entry in the 'winning_strategy_encoding' column is a list (over rounds)
+    of binary vectors (length=6) following the fixed order:
+       [mirroring_distance, balancing_distance, staying_close_distance,
+        abstraction_measure, contrast_measure, synonym_measure]
+
+    The heatmap shows, for each game configuration (Human vs Bot or Human vs Human),
+    the fraction of rounds in which each strategy was the winner.
+    Each cell is annotated with the percentage value, and the colorbar is formatted in percentages.
+    """
+    # Define the fixed ordering of strategies.
+    strategy_order = [
+        "mirroring_distance",
+        "balancing_distance",
+        "staying_close_distance",
+        "abstraction_measure",
+        "contrast_measure",
+        "synonym_measure"
+    ]
+
+    # Build a long-form DataFrame: each row = (game_type, strategy, average_value)
+    rows = []
+    for idx, row in results_df.iterrows():
+        # Determine game configuration using the 'BotId' column.
+        if "botId" in row:
+            if pd.isna(row["botId"]) or row["botId"] == "":
+                game_type = "Human vs Human"
+            else:
+                game_type = "Human vs Bot"
+        else:
+            game_type = "Unknown"
+
+        encoding_list = row.get("winning_strategy_encoding", None)
+
+        if encoding_list is not None and isinstance(encoding_list, (list, np.ndarray)):
+            # Convert the list of binary vectors to a NumPy array.
+            # Each inner vector should be of length 6.
+            arr = np.array(encoding_list, dtype=float)  # shape: (num_rounds, 6)
+            # Compute the average over rounds (ignoring NaNs)
+            avg_vals = np.nanmean(arr, axis=0)  # shape: (6,)
+        else:
+            avg_vals = np.full(len(strategy_order), np.nan)
+
+        # For each strategy (by fixed order), record its average value.
+        for i, strategy in enumerate(strategy_order):
+            rows.append({
+                "game_type": game_type,
+                "strategy": strategy,
+                "value": avg_vals[i]
+            })
+
+    long_df = pd.DataFrame(rows)
+
+    # Group by game configuration and strategy, averaging over games.
+    grouped = long_df.groupby(["game_type", "strategy"])["value"].mean().reset_index()
+
+    # Pivot so that rows = game configuration, columns = strategies.
+    strategy_usage = grouped.pivot(index="game_type", columns="strategy", values="value")
+
+    # Create the heatmap.
+    fig, ax = plt.subplots(figsize=(8, 4))
+    cax = ax.matshow(strategy_usage.values,
+                     cmap="coolwarm",
+                     aspect="auto",
+                     interpolation="nearest")
+
+    # Add a colorbar with percentage formatting.
+    cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
+    cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
+
+    # Set tick labels: strategies on x-axis, game configuration on y-axis.
+    ax.set_xticks(np.arange(len(strategy_usage.columns)))
+    ax.set_yticks(np.arange(len(strategy_usage.index)))
+    ax.set_xticklabels(strategy_usage.columns, rotation=90)
+    ax.set_yticklabels(strategy_usage.index)
+    ax.set_xlabel("Strategy")
+    ax.set_ylabel("Game Configuration")
+    ax.set_title("Average Winning Strategy Measures by Game Configuration (Percentage)")
+
+    # Annotate each cell with percentage values.
+    for i in range(strategy_usage.shape[0]):
+        for j in range(strategy_usage.shape[1]):
+            val = strategy_usage.values[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f"{val * 100:.0f}%", ha="center", va="center", color="black")
+
+    plt.tight_layout()
+    plt.show()
+
+def print_game_turns(results_df, n=20):
+    """
+    For the first n games in results_df, print for each turn (except turn 0):
+      - The words from the previous turn (player's and opponent's)
+      - An arrow ("->")
+      - The player's current turn word
+      - The winning strategy name for that turn
+
+    Assumes that each row in results_df has the following columns:
+      - 'word_my': list of words played by the player (in order)
+      - 'word_opponent': list of words played by the opponent (in order)
+      - 'winning_strategy_name': list of winning strategy names per round (with round 0 as None)
+    """
+    # Select only the first n games
+    for game_idx, row in results_df.head(n).iterrows():
+        print(f"Game {game_idx}:")
+        word_my = eval(row['word_my'])
+        word_opponent = eval(row['word_opponent'])
+        winning_strats = row['winning_strategy_name']
+
+        # Determine the number of rounds for this game (based on the minimum length of the lists)
+        num_rounds = min(len(word_my), len(word_opponent), len(winning_strats))
+        if num_rounds < 2:
+            print("  Not enough rounds to display details.")
+            continue
+
+        # For each turn except the first one, print the desired info.
+        for i in range(1, num_rounds):
+            prev_player_word = word_my[i - 1]
+            prev_opponent_word = word_opponent[i - 1]
+            current_word = word_my[i]
+            winning_strategy = winning_strats[i]
+
+            print(
+                f"  Turn {i}: [{prev_player_word} / {prev_opponent_word}] -> {current_word}  (winning strategy: {winning_strategy})")
+        print()  # Blank line between games
+
+
+
 if __name__ == "__main__":
     import os
     from scipy.spatial.distance import cosine
@@ -555,4 +688,7 @@ if __name__ == "__main__":
 
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
-    plot_strategy_heatmap(results_df)
+    plot_strategy_heatmap_human_vs_bot(results_df)
+    # plot_strategy_heatmap(results_df)
+
+    # print_game_turns(results_df, n=20)
