@@ -420,20 +420,23 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
     return pd.concat(results, ignore_index=True)
 
 
-
-
-def plot_strategy_heatmap(results_df):
+def plot_strategy_heatmap(results_df, groupby='player'):
     """
-    Plot a heatmap showing the average winning strategy for each player,
-    using the winning_strategy_encoding column.
+    Plot a heatmap showing the average winning strategy using the winning_strategy_encoding column.
 
-    Each entry in the 'winning_strategy_encoding' column is a list (over rounds)
-    of binary vectors (length=6) following the fixed order:
-       [mirroring_distance, balancing_distance, staying_close_distance,
-        abstraction_measure, contrast_measure, synonym_measure]
+    Parameters:
+      - results_df: A DataFrame that must contain the column "winning_strategy_encoding".
+        Each entry in that column is a list (over rounds) of binary vectors (length=6) in the fixed order:
+          [mirroring_distance, balancing_distance, staying_close_distance,
+           abstraction_measure, contrast_measure, synonym_measure]
+      - groupby: A string indicating the grouping key. Use 'player' to group by playerId,
+        or 'game' to group by game configuration (determined from the botId column).
 
-    The heatmap shows, for each player, the fraction of rounds in which each strategy was the winner.
-    Each cell is annotated with the percentage value, and the colorbar is formatted in percentages.
+    For groupby='player', the x-axis represents strategies and the y-axis represents player IDs.
+    For groupby='game', the y-axis shows the game configuration (Human vs Bot or Human vs Human).
+
+    Each cell is annotated with the percentage value (fraction of rounds where that strategy won)
+    and the colorbar is formatted in percentages.
     """
     # Define the fixed ordering of strategies.
     strategy_order = [
@@ -445,12 +448,25 @@ def plot_strategy_heatmap(results_df):
         "synonym_measure"
     ]
 
-    # Build a long-form DataFrame: each row = (playerId, strategy, average_value)
+    # Build a long-form DataFrame: each row = (group, strategy, average_value)
     rows = []
     for idx, row in results_df.iterrows():
-        player_id = row["playerId"]
-        encoding_list = row.get("winning_strategy_encoding", None)
+        # Decide the grouping key based on the 'groupby' parameter.
+        if groupby == 'player':
+            group_val = row.get("playerId", "Unknown")
+        elif groupby == 'game':
+            # Determine game configuration using the 'botId' column.
+            if "botId" in row:
+                if pd.isna(row["botId"]) or row["botId"] == "":
+                    group_val = "Human vs Human"
+                else:
+                    group_val = "Human vs Bot"
+            else:
+                group_val = "Unknown"
+        else:
+            raise ValueError("groupby must be either 'player' or 'game'")
 
+        encoding_list = row.get("winning_strategy_encoding", None)
         if encoding_list is not None and isinstance(encoding_list, (list, np.ndarray)):
             # Convert the list of binary vectors to a NumPy array.
             # Each inner vector should be of length 6.
@@ -463,16 +479,17 @@ def plot_strategy_heatmap(results_df):
         # For each strategy (by fixed order), record its average value.
         for i, strategy in enumerate(strategy_order):
             rows.append({
-                "playerId": player_id,
+                "group": group_val,
                 "strategy": strategy,
                 "value": avg_vals[i]
             })
 
     long_df = pd.DataFrame(rows)
-    # If a player played multiple games, average across games.
-    grouped = long_df.groupby(["playerId", "strategy"])["value"].mean().reset_index()
-    # Pivot: rows = playerId, columns = strategies.
-    strategy_usage = grouped.pivot(index="playerId", columns="strategy", values="value")
+
+    # Group by the chosen grouping key and strategy, averaging across games if necessary.
+    grouped = long_df.groupby(["group", "strategy"])["value"].mean().reset_index()
+    # Pivot so that rows = group and columns = strategies.
+    strategy_usage = grouped.pivot(index="group", columns="strategy", values="value")
 
     # Create the heatmap.
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -485,115 +502,26 @@ def plot_strategy_heatmap(results_df):
     cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
 
-    # Set tick labels: strategies on x-axis, player IDs on y-axis.
+    # Set tick labels: strategies on x-axis, group (playerId or game configuration) on y-axis.
     ax.set_xticks(np.arange(len(strategy_usage.columns)))
     ax.set_yticks(np.arange(len(strategy_usage.index)))
     ax.set_xticklabels(strategy_usage.columns, rotation=90)
     ax.set_yticklabels(strategy_usage.index)
+    if groupby == 'player':
+        ax.set_ylabel("Player ID")
+        ax.set_title("Average Winning Strategy Measures by Player (Percentage)")
+    elif groupby == 'game':
+        ax.set_ylabel("Game Configuration")
+        ax.set_title("Average Winning Strategy Measures by Game Configuration (Percentage)")
+
     ax.set_xlabel("Strategy")
-    ax.set_ylabel("Player ID")
-    ax.set_title("Average Winning Strategy Measures by Player (Percentage)")
 
     # Annotate each cell with percentage values.
     for i in range(strategy_usage.shape[0]):
         for j in range(strategy_usage.shape[1]):
             val = strategy_usage.values[i, j]
             if not np.isnan(val):
-                # Multiply by 100 to show a percentage.
-                ax.text(j, i, f"{val * 100:.0f}%", ha="center", va="center", color="black")
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_strategy_heatmap_human_vs_bot(results_df):
-    """
-    Plot a heatmap showing the average winning strategy for each game configuration,
-    using the winning_strategy_encoding column.
-
-    Each entry in the 'winning_strategy_encoding' column is a list (over rounds)
-    of binary vectors (length=6) following the fixed order:
-       [mirroring_distance, balancing_distance, staying_close_distance,
-        abstraction_measure, contrast_measure, synonym_measure]
-
-    The heatmap shows, for each game configuration (Human vs Bot or Human vs Human),
-    the fraction of rounds in which each strategy was the winner.
-    Each cell is annotated with the percentage value, and the colorbar is formatted in percentages.
-    """
-    # Define the fixed ordering of strategies.
-    strategy_order = [
-        "mirroring_distance",
-        "balancing_distance",
-        "staying_close_distance",
-        "abstraction_measure",
-        "contrast_measure",
-        "synonym_measure"
-    ]
-
-    # Build a long-form DataFrame: each row = (game_type, strategy, average_value)
-    rows = []
-    for idx, row in results_df.iterrows():
-        # Determine game configuration using the 'BotId' column.
-        if "botId" in row:
-            if pd.isna(row["botId"]) or row["botId"] == "":
-                game_type = "Human vs Human"
-            else:
-                game_type = "Human vs Bot"
-        else:
-            game_type = "Unknown"
-
-        encoding_list = row.get("winning_strategy_encoding", None)
-
-        if encoding_list is not None and isinstance(encoding_list, (list, np.ndarray)):
-            # Convert the list of binary vectors to a NumPy array.
-            # Each inner vector should be of length 6.
-            arr = np.array(encoding_list, dtype=float)  # shape: (num_rounds, 6)
-            # Compute the average over rounds (ignoring NaNs)
-            avg_vals = np.nanmean(arr, axis=0)  # shape: (6,)
-        else:
-            avg_vals = np.full(len(strategy_order), np.nan)
-
-        # For each strategy (by fixed order), record its average value.
-        for i, strategy in enumerate(strategy_order):
-            rows.append({
-                "game_type": game_type,
-                "strategy": strategy,
-                "value": avg_vals[i]
-            })
-
-    long_df = pd.DataFrame(rows)
-
-    # Group by game configuration and strategy, averaging over games.
-    grouped = long_df.groupby(["game_type", "strategy"])["value"].mean().reset_index()
-
-    # Pivot so that rows = game configuration, columns = strategies.
-    strategy_usage = grouped.pivot(index="game_type", columns="strategy", values="value")
-
-    # Create the heatmap.
-    fig, ax = plt.subplots(figsize=(8, 4))
-    cax = ax.matshow(strategy_usage.values,
-                     cmap="coolwarm",
-                     aspect="auto",
-                     interpolation="nearest")
-
-    # Add a colorbar with percentage formatting.
-    cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
-    cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
-
-    # Set tick labels: strategies on x-axis, game configuration on y-axis.
-    ax.set_xticks(np.arange(len(strategy_usage.columns)))
-    ax.set_yticks(np.arange(len(strategy_usage.index)))
-    ax.set_xticklabels(strategy_usage.columns, rotation=90)
-    ax.set_yticklabels(strategy_usage.index)
-    ax.set_xlabel("Strategy")
-    ax.set_ylabel("Game Configuration")
-    ax.set_title("Average Winning Strategy Measures by Game Configuration (Percentage)")
-
-    # Annotate each cell with percentage values.
-    for i in range(strategy_usage.shape[0]):
-        for j in range(strategy_usage.shape[1]):
-            val = strategy_usage.values[i, j]
-            if not np.isnan(val):
+                # Multiply by 100 to display as a percentage.
                 ax.text(j, i, f"{val * 100:.0f}%", ha="center", va="center", color="black")
 
     plt.tight_layout()
@@ -688,7 +616,7 @@ if __name__ == "__main__":
 
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
-    plot_strategy_heatmap_human_vs_bot(results_df)
+    plot_strategy_heatmap(results_df, groupby='game')
     # plot_strategy_heatmap(results_df)
 
     # print_game_turns(results_df, n=20)
