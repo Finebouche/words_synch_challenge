@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 # External module imports
-from data_loading import load_sql_data
+from benchmark.analysis.utils.data_loading import load_sql_data
 
 from scipy.spatial.distance import cosine
 
@@ -507,8 +507,8 @@ def plot_strategy_heatmap(results_df):
 
 if __name__ == "__main__":
     import os
-    from scipy.spatial.distance import cosine, euclidean, cityblock, correlation
-    from embeding_utils import get_embeddings_for_table, calculate_pca_for_embeddings
+    from scipy.spatial.distance import cosine
+    from benchmark.analysis.utils.embeding_utils import get_embeddings_for_table, calculate_pca_for_embeddings
     from game_statistics import calculate_game_metrics_per_player
 
     db_name = "merged.db"

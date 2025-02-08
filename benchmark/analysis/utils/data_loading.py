@@ -2,7 +2,6 @@
 from sqlalchemy import create_engine
 import pandas as pd
 import json
-from ast import literal_eval
 
 
 def load_sql_data(database_name: str, base_path: str = "../user_database_sync/databases/"):

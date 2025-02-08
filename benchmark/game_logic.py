@@ -114,7 +114,7 @@ def play_game(model_1, model_2):
 
 def save_results_to_csv(results):
     # Open the file in append mode; this ensures data is added to the end of the file without deleting existing content
-    with open('analysis/game_results.csv', 'a', newline='') as file:
+    with open('analysis/llm_game_results.csv', 'a', newline='') as file:
         writer = csv.writer(file)
 
         # Optional: Only write headers if the file is newly created

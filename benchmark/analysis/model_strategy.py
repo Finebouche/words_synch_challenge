@@ -1,7 +1,7 @@
 from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
 import numpy as np
-from embeding_utils import get_embeddings
+from benchmark.analysis.utils.embeding_utils import get_embeddings
 
 # Function to ensure the embeddings are properly formatted as numpy arrays
 def ensure_numpy_array(embeddings):

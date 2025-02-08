@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sklearn.decomposition import PCA
 
 # Get open_ai api key from open_ai_key.txt
-with open('../open_ai_key.txt', 'r') as file:
+with open('../../open_ai_key.txt', 'r') as file:
     openai.api_key = file.read().replace('\n', '')
 
 def get_openai_embedding(word):
