@@ -10,11 +10,17 @@ import matplotlib.ticker as mticker
 from benchmark.analysis.utils.data_loading import load_sql_data
 
 from scipy.spatial.distance import cosine
+import Levenshtein
 
-def plot_embedding_distance_during_game(games_df: pd.DataFrame,
-                                        distance_func: callable = cosine,
-                                        embedding_model: str = "openai",
-                                        use_pca: bool = False):
+
+import nltk
+nltk.download('wordnet')
+nltk.download('cmudict')
+from nltk.corpus import wordnet as wn
+from nltk.corpus import cmudict
+cmu = cmudict.dict() # CMU Pronouncing Dictionary
+
+def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str = "openai",  use_pca: bool = False):
     """
     Compute and plot the distance (by default, cosine) between the last words
     played by two players in each game (round by round).
@@ -75,63 +81,88 @@ def plot_embedding_distance_during_game(games_df: pd.DataFrame,
     plt.grid(True)
     plt.show()
 
-import nltk
-nltk.download('wordnet')
-from nltk.corpus import wordnet as wn
 
 
-def get_all_lemmas(synset):
+########################
+#  PHONETIC FUNCTIONS  #
+########################
+
+cmu = cmudict.dict()  # Load the CMU Pronouncing Dict once
+
+def get_phonemes(word):
     """
-    Return a set of all lower-cased lemma names for a given synset.
+    Return a list of phonemes for the *first* pronunciation
+    variant of the given word using CMUdict.
+    If the word is not found, return an empty list.
     """
-    return set(lemma.name().lower() for lemma in synset.lemmas())
+    word = word.lower()
+    if word in cmu:
+        # cmu[word] could have multiple pronunciations
+        # We'll just take the first for simplicity.
+        return cmu[word][0]
+    else:
+        return []
 
+def phoneme_levenshtein_distance(word_a, word_b):
+    """
+    Returns the Levenshtein distance between the ARPAbet phoneme
+    sequences of word_a and word_b. Lower = more phonetically similar.
+    If either word is missing from cmudict, returns None.
+    """
+    phons_a = get_phonemes(word_a)
+    phons_b = get_phonemes(word_b)
+    if not phons_a or not phons_b:
+        return None
+
+    seq_a = " ".join(phons_a)
+    seq_b = " ".join(phons_b)
+    return Levenshtein.distance(seq_a, seq_b)
+
+def normalized_phoneme_distance(word_a, word_b):
+    """
+    Returns a normalized distance in [0..1], where 0 means identical
+    phoneme sequences and 1 means completely different or missing.
+    """
+    dist = phoneme_levenshtein_distance(word_a, word_b)
+    if dist is None:
+        return 1.0  # or np.nan, if you prefer
+    length_sum = len(get_phonemes(word_a)) + len(get_phonemes(word_b))
+    if length_sum == 0:
+        return 1.0
+    return dist / length_sum
+
+
+#########################
+# WORDNET RELATIONSHIP  #
+#########################
 
 def is_hypernym(candidate_word, original_word):
     """
-    Return True if candidate_word is a hypernym of original_word.
-    This function checks not only whether candidate_word's synsets
-    appear in any hypernym path of original_word's synsets, but it also
-    compares lemma names (to catch synonyms, adjectival forms, or morphological variants).
+    Return True if any synset of `candidate_word` appears in
+    the hypernym paths of any synset of `original_word`.
     """
     candidate_word = candidate_word.lower()
     original_word = original_word.lower()
-
     candidate_synsets = wn.synsets(candidate_word)
     original_synsets = wn.synsets(original_word)
 
-    # Optionally include morphological variant(s) for candidate_word.
-    candidate_morph = wn.morphy(candidate_word)
-    if candidate_morph:
-        candidate_forms = {candidate_word, candidate_morph.lower()}
-    else:
-        candidate_forms = {candidate_word}
-
-    # Iterate over each synset of the original word.
-    for orig_syn in original_synsets:
-        for path in orig_syn.hypernym_paths():
-            # For each synset in the hypernym path, gather all lemma names.
-            path_lemmas = set()
-            for syn in path:
-                path_lemmas |= get_all_lemmas(syn)
-            # If any candidate form is present in the hypernym path, return True.
-            if candidate_forms & path_lemmas:
+    for o_syn in original_synsets:
+        for path in o_syn.hypernym_paths():
+            if any(c_syn in path for c_syn in candidate_synsets):
                 return True
     return False
-
 
 def is_hyponym(candidate_word, original_word):
     """
     Return True if candidate_word is a hyponym of original_word.
-    This is equivalent to checking if original_word is a hypernym of candidate_word.
+    i.e., original_word is a hypernym of candidate_word.
     """
     return is_hypernym(original_word, candidate_word)
-
 
 def is_antonym(word_a, word_b):
     """
     Return True if word_b is an antonym of word_a.
-    The check is case-insensitive and uses WordNet's antonym relationships.
+    Uses WordNet antonym relationships.
     """
     word_a = word_a.lower()
     word_b = word_b.lower()
@@ -143,56 +174,90 @@ def is_antonym(word_a, word_b):
                     return True
     return False
 
-
 def is_synonym(word_a, word_b):
     """
-    Return True if word_b is a synonym of word_a.
-    This function checks if word_b appears in any of the lemma names for word_a's synsets,
-    and also includes a morphological variant for word_a if available.
+    Return True if there's at least one synset that includes both
+    word_a and word_b as lemma names for the same sense.
+    """
+    word_a = word_a.lower()
+    word_b = word_b.lower()
+    synsets_a = wn.synsets(word_a)
+    synsets_b = wn.synsets(word_b)
+
+    for syn_a in synsets_a:
+        lemmas_a = set(lemma.name().lower() for lemma in syn_a.lemmas())
+        # If word_b is directly one of the lemma names in syn_a,
+        # check if syn_a is also in synsets_b
+        if word_b in lemmas_a and syn_a in synsets_b:
+            return True
+    return False
+
+###########################
+# THEMATIC ALIGNMENT TEST #
+###########################
+
+def share_broad_category(word_a, word_b, depth_threshold=2):
+    """
+    Returns True if `word_a` and `word_b` share a common hypernym
+    within `depth_threshold` levels up the hypernym tree.
     """
     word_a = word_a.lower()
     word_b = word_b.lower()
     syns_a = wn.synsets(word_a)
-    synonyms_a = set()
-    for syn in syns_a:
-        for lemma in syn.lemmas():
-            synonyms_a.add(lemma.name().lower())
-    word_a_morph = wn.morphy(word_a)
-    if word_a_morph:
-        synonyms_a.add(word_a_morph.lower())
-    return word_b in synonyms_a
+    syns_b = wn.synsets(word_b)
 
+    for syn_a in syns_a:
+        paths_a = syn_a.hypernym_paths()
+        up_a = set()
+        for path in paths_a:
+            for i in range(len(path)-1, max(-1, len(path)-1 - depth_threshold), -1):
+                up_a.add(path[i])
+
+        for syn_b in syns_b:
+            paths_b = syn_b.hypernym_paths()
+            up_b = set()
+            for path in paths_b:
+                for i in range(len(path)-1, max(-1, len(path)-1 - depth_threshold), -1):
+                    up_b.add(path[i])
+
+            if up_a.intersection(up_b):
+                return True
+    return False
+
+def is_thematic_alignment(word_a, word_b):
+    return share_broad_category(word_a, word_b, depth_threshold=2)
+
+##############################
+#  QUALITATIVE (BOOLEAN)    #
+##############################
 
 def qualitative_analysis(player_games):
     """
-    For each game (row), compute qualitative measures:
-      - abstraction_measure: whether the current word is a hypernym (or its variant)
-        of the opponent's previous word.
-      - contrast_measure: whether the current word is an antonym of the opponent's previous word.
-      - synonym_measure: whether the current word is a synonym of the player's previous word.
-    The function converts boolean values to integers (1 for True, 0 for False) and stores
-    a list per game.
+    Compute 3 boolean-based measures per round:
+      - abstraction_measure: is current_word a hypernym of opponent's prev word?
+      - contrast_measure: is current_word an antonym of opponent's prev word?
+      - synonym_measure: is current_word a synonym of player's own prev word?
+
+    Stores results in columns:
+      - 'abstraction_measure'
+      - 'contrast_measure'
+      - 'synonym_measure'
+    Each is a list of length = #rounds with 0/1 or np.nan for round 0.
     """
-    # Prepare new columns to store the arrays of strategy measures.
     player_games['abstraction_measure'] = None
     player_games['contrast_measure'] = None
     player_games['synonym_measure'] = None
 
-    # Iterate over each game row.
     for index, game in player_games.iterrows():
         word_my = eval(game['word_my'])
         word_opponent = eval(game['word_opponent'])
-
-        # Ensure we only iterate up to the length of the shortest word list.
         num_rounds = min(len(word_my), len(word_opponent))
 
-        # Initialize lists to store round-by-round measures.
         abstraction_list = []
         contrast_list = []
         synonym_list = []
 
         for i in range(num_rounds):
-            # For round 0, there is no previous word, so record NaN.
             if i == 0:
                 abstraction_list.append(np.nan)
                 contrast_list.append(np.nan)
@@ -202,194 +267,153 @@ def qualitative_analysis(player_games):
                 prev_opponent_word = word_opponent[i - 1]
                 prev_my_word = word_my[i - 1]
 
-                # 1) Abstraction: check if current_word is a hypernym (or related variant)
-                #    of the opponent's previous word.
                 abstraction_score = int(is_hypernym(current_word, prev_opponent_word))
-                abstraction_list.append(abstraction_score)
-
-                # 2) Contrast: check if current_word is an antonym of the opponent's previous word.
                 contrast_score = int(is_antonym(current_word, prev_opponent_word))
-                contrast_list.append(contrast_score)
-
-                # 3) Synonym: check if current_word is a synonym of the player's previous word.
                 synonym_score = int(is_synonym(current_word, prev_my_word))
+
+                abstraction_list.append(abstraction_score)
+                contrast_list.append(contrast_score)
                 synonym_list.append(synonym_score)
 
-        # Store the lists back into the DataFrame row.
         player_games.at[index, 'abstraction_measure'] = abstraction_list
         player_games.at[index, 'contrast_measure'] = contrast_list
         player_games.at[index, 'synonym_measure'] = synonym_list
 
     return player_games
 
+###########################
+#   CONCEPT EXPANSION     #
+###########################
+
+def expansion_score(vec_new, vec_a, vec_b):
+    """
+    Returns the cosine similarity between vec_new and the average of vec_a + vec_b.
+    Higher => more of a 'bridge' or expansion between a & b.
+    """
+    from numpy.linalg import norm
+    avg_vec = (vec_a + vec_b) / 2.0
+    dot = np.dot(vec_new, avg_vec)
+    sim = dot / (norm(vec_new)*norm(avg_vec) + 1e-9)
+    return sim
+
+##############################
+# QUANTITATIVE (DISTANCES)  #
+##############################
+
 def quantitative_analysis(player_games):
-    # Prepare new columns to store the arrays of strategy distances
+    """
+    Computes round-by-round numeric distances or similarities:
+      - mirroring_distance: distance to opponent's previous word's embedding
+      - balancing_distance: distance to average(own_prev, opp_prev)
+      - staying_close_distance: distance to own previous word
+      - conceptual_expansion_distance: *similarity* to average(own_prev, opp_prev)
+      - phonetic_distance: normalized phoneme distance to opponent's previous word (text-based)
+    Each of these is stored as a list in columns of the DataFrame.
+    """
     player_games['mirroring_distance'] = None
     player_games['balancing_distance'] = None
     player_games['staying_close_distance'] = None
+    player_games['conceptual_expansion_distance'] = None
+    player_games['phonetic_distance'] = None
 
-    # For each game row, compute the distance arrays
     for index, game in player_games.iterrows():
         embedding_my = game['embedding_my']
         embedding_opponent = game['embedding_opponent']
 
-        # Ensure we don't exceed the length of either embeddings array
-        num_rounds = min(len(embedding_my), len(embedding_opponent))
+        word_my = eval(game['word_my'])
+        word_opponent = eval(game['word_opponent'])
 
-        # Initialize empty lists to store round-by-round distances
+        num_rounds = min(len(embedding_my), len(embedding_opponent), len(word_my), len(word_opponent))
+
         mirroring_list = []
         balancing_list = []
         staying_close_list = []
+        expansion_list = []
+        phonetic_list = []
 
         for i in range(num_rounds):
-            # If i=0 => no "previous" word for either side, so store NaN
             if i == 0:
+                # Round 0 => no "previous word"
                 mirroring_list.append(np.nan)
                 balancing_list.append(np.nan)
                 staying_close_list.append(np.nan)
+                expansion_list.append(np.nan)
+                phonetic_list.append(np.nan)
             else:
                 current_word_embed = embedding_my[i]
-                prev_opponent_word_embed = embedding_opponent[i - 1]
-                prev_my_word_embed = embedding_my[i - 1]
+                prev_opp_embed = embedding_opponent[i - 1]
+                prev_my_embed = embedding_my[i - 1]
 
-                # 1) Mirroring: distance to opponent's previous word
-                mirroring_dist = cosine(current_word_embed, prev_opponent_word_embed)
+                # Distances (cosine)
+                mirroring_dist = cosine(current_word_embed, prev_opp_embed)
                 mirroring_list.append(mirroring_dist)
 
-                # 2) Balancing: distance to the average of the two previous words
-                balancing_dist = cosine(current_word_embed, (prev_my_word_embed + prev_opponent_word_embed) / 2)
+                balancing_dist = cosine(current_word_embed, (prev_my_embed + prev_opp_embed) / 2)
                 balancing_list.append(balancing_dist)
 
-                # 3) Staying close: distance to the player's own previous word
-                staying_close_dist = cosine(current_word_embed, prev_my_word_embed)
+                staying_close_dist = cosine(current_word_embed, prev_my_embed)
                 staying_close_list.append(staying_close_dist)
 
-        # Store the lists (arrays) back into the DataFrame row
+                # Conceptual expansion: we store it as a *similarity*, so let's invert it (1 - sim) if we want distance
+                sim_expansion = expansion_score(current_word_embed, prev_my_embed, prev_opp_embed)
+                # If you want to store it as "distance," you might do expansion_dist = 1.0 - sim_expansion
+                # but let's store the raw similarity
+                expansion_list.append(sim_expansion)
+
+                # Phonetic distance: normalized phoneme distance between current_word & opponent's previous word (text-based)
+                curr_word_text = word_my[i]
+                prev_opp_text = word_opponent[i - 1]
+                ph_dist = normalized_phoneme_distance(curr_word_text, prev_opp_text)
+                phonetic_list.append(ph_dist)
+
+        # Store results
         player_games.at[index, 'mirroring_distance'] = mirroring_list
         player_games.at[index, 'balancing_distance'] = balancing_list
         player_games.at[index, 'staying_close_distance'] = staying_close_list
+        player_games.at[index, 'conceptual_expansion_distance'] = expansion_list
+        player_games.at[index, 'phonetic_distance'] = phonetic_list
 
     return player_games
 
-
-
-def decide_winning_strategy(row):
-    """
-    For each round in the game row, decide which strategy 'wins' (i.e., is marked as 1)
-    and generate both:
-      1. A list of winning strategy names (one per round)
-      2. A list of binary encodings (one per round) where the winning strategy position is 1 and the rest are 0.
-
-    Decision rules:
-      - For round 0, no decision is possible (output NaN).
-      - If any of the qualitative measures (abstraction, contrast, synonym) is 1,
-        choose the winning strategy among these according to the priority:
-          synonym > abstraction > contrast.
-        In that case, all distance-based strategies are forced to 0.
-      - Otherwise, select the distance-based strategy (mirroring, balancing, staying_close)
-        with the smallest distance.
-
-    Returns:
-      A tuple (winning_strategy_names, winning_strategy_encodings), where each is a list
-      of length equal to the number of rounds.
-    """
-    # Retrieve per-round lists for each measure.
-    mirroring = row['mirroring_distance']
-    balancing = row['balancing_distance']
-    staying_close = row['staying_close_distance']
-    abstraction = row['abstraction_measure']
-    contrast = row['contrast_measure']
-    synonym = row['synonym_measure']
-
-    num_rounds = len(mirroring)  # assuming all lists have the same length
-
-    # The fixed ordering of strategies for encoding.
-    strategy_order = [
-        "mirroring_distance",
-        "balancing_distance",
-        "staying_close_distance",
-        "abstraction_measure",
-        "contrast_measure",
-        "synonym_measure"
-    ]
-
-    winning_strategy_names = []  # List of winning strategy names per round.
-    winning_strategy_encodings = []  # List of binary arrays per round.
-
-    for i in range(num_rounds):
-        if i == 0:
-            # No decision possible in round 0.
-            winning_strategy_names.append(None)
-            winning_strategy_encodings.append([np.nan] * len(strategy_order))
-        else:
-            # Get the qualitative (boolean) measures for this round.
-            bool_syn = synonym[i]
-            bool_abs = abstraction[i]
-            bool_con = contrast[i]
-
-            # If any qualitative measure is triggered, override the distance-based ones.
-            if bool_syn == 1 or bool_abs == 1 or bool_con == 1:
-                if bool_syn == 1:
-                    winning_strategy = "synonym_measure"
-                elif bool_abs == 1:
-                    winning_strategy = "abstraction_measure"
-                else:
-                    winning_strategy = "contrast_measure"
-            else:
-                # Otherwise, choose the best among the distance-based strategies.
-                distances = {
-                    "mirroring_distance": mirroring[i],
-                    "balancing_distance": balancing[i],
-                    "staying_close_distance": staying_close[i]
-                }
-                winning_strategy = min(distances, key=distances.get)
-
-            # Record the winning strategy name.
-            winning_strategy_names.append(winning_strategy)
-
-            # Build the binary encoding: for each strategy in the fixed order, mark 1 if it matches.
-            encoding = [1 if strat == winning_strategy else 0 for strat in strategy_order]
-            winning_strategy_encodings.append(encoding)
-
-    return (winning_strategy_names, winning_strategy_encodings)
-
+##################################
+#  MAIN STRATEGY ANALYSIS LOOP   #
+##################################
 
 def strategy_analysis(games_df, embedding_model, use_pca=False):
     """
-    Analyze game strategy and store distance metrics as arrays
-    for each game row (player perspective).
+    Process each game from the perspective of each player:
+      1) Build columns 'embedding_my'/'embedding_opponent'
+      2) Run quantitative_analysis (distance-based) -> columns of lists
+      3) Run qualitative_analysis (boolean WordNet-based) -> columns of lists
+      4) decide_winning_strategy -> final per-round label
     """
-    # Decide which embedding columns to use
     emb_col1 = f"embedding1_{embedding_model}"
     emb_col2 = f"embedding2_{embedding_model}"
     if use_pca:
         emb_col1 += "_pca"
         emb_col2 += "_pca"
 
-    # Get all unique players
     players = pd.concat([games_df['player1Id'], games_df['player2Id']]).unique()
 
     results = []
 
     for player in players:
         try:
-            # Select games where this player is involved
             player_games = games_df[
                 (games_df['player1Id'] == player) | (games_df['player2Id'] == player)
-                ].copy()
+            ].copy()
 
             player_games['playerId'] = player
 
+            # Build the "my" vs "opponent" embeddings & words
             player_games['embedding_my'] = player_games.apply(
                 lambda row: np.array(row[emb_col1], dtype=float)
-                if row['player1Id'] == player
-                else np.array(row[emb_col2], dtype=float),
+                            if row['player1Id'] == player else np.array(row[emb_col2], dtype=float),
                 axis=1
             )
             player_games['embedding_opponent'] = player_games.apply(
                 lambda row: np.array(row[emb_col2], dtype=float)
-                if row['player1Id'] == player
-                else np.array(row[emb_col1], dtype=float),
+                            if row['player1Id'] == player else np.array(row[emb_col1], dtype=float),
                 axis=1
             )
             player_games['word_my'] = player_games.apply(
@@ -400,13 +424,14 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
                 lambda row: row['wordsPlayed2'] if row['player1Id'] == player else row['wordsPlayed1'],
                 axis=1
             )
-            # Compute distance-based metrics.
+
+            # 1) Quantitative
             player_games = quantitative_analysis(player_games)
-            # Compute qualitative measures (converted to 0/1).
+
+            # 2) Qualitative
             player_games = qualitative_analysis(player_games)
 
-            # For each game row, decide the winning strategy per round.
-            # This returns a tuple: (winning_strategy_names, winning_strategy_encodings)
+            # 3) Decide winning strategy
             win_strat = player_games.apply(decide_winning_strategy, axis=1)
             player_games['winning_strategy_name'] = win_strat.apply(lambda x: x[0])
             player_games['winning_strategy_encoding'] = win_strat.apply(lambda x: x[1])
@@ -416,46 +441,139 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
         except Exception as e:
             print(f"Error processing player {player}: {e}")
 
-    # Combine the per-player DataFrames
     return pd.concat(results, ignore_index=True)
 
 
-def plot_strategy_heatmap(results_df, groupby='player'):
+##################################
+#  CHOOSING THE 'WINNING' STRAT  #
+##################################
+
+def decide_winning_strategy(row):
     """
-    Plot a heatmap showing the average winning strategy using the winning_strategy_encoding column.
-
-    Parameters:
-      - results_df: A DataFrame that must contain the column "winning_strategy_encoding".
-        Each entry in that column is a list (over rounds) of binary vectors (length=6) in the fixed order:
-          [mirroring_distance, balancing_distance, staying_close_distance,
-           abstraction_measure, contrast_measure, synonym_measure]
-      - groupby: A string indicating the grouping key. Use 'player' to group by playerId,
-        or 'game' to group by game configuration (determined from the botId column).
-
-    For groupby='player', the x-axis represents strategies and the y-axis represents player IDs.
-    For groupby='game', the y-axis shows the game configuration (Human vs Bot or Human vs Human).
-
-    Each cell is annotated with the percentage value (fraction of rounds where that strategy won)
-    and the colorbar is formatted in percentages.
+    For each round in the game row, decide which strategy 'wins'.
+    Priority:
+      1) If any of (synonym, abstraction, contrast) is 1 => choose among them in order: synonym > abstraction > contrast
+      2) Otherwise pick the min among the distance-based strategies:
+         mirroring, balancing, staying_close, phonetic_distance, conceptual_expansion_distance
+         (Be mindful that conceptual_expansion_distance is actually a *similarity*, so if you want
+          to interpret "lowest distance" logic, you might do 1 - expansion_distance or handle it separately).
     """
-    # Define the fixed ordering of strategies.
+    mirroring = row['mirroring_distance']
+    balancing = row['balancing_distance']
+    staying_close = row['staying_close_distance']
+    expansion = row['conceptual_expansion_distance']  # this is a similarity
+    phonetic = row['phonetic_distance']
+
+    abstraction = row['abstraction_measure']
+    contrast = row['contrast_measure']
+    synonym = row['synonym_measure']
+
+    num_rounds = len(mirroring)  # they should all have the same length
+
+    # We'll define a fixed order for encoding
     strategy_order = [
         "mirroring_distance",
         "balancing_distance",
         "staying_close_distance",
+        "phonetic_distance",
+        "conceptual_expansion_distance",
         "abstraction_measure",
         "contrast_measure",
         "synonym_measure"
     ]
 
-    # Build a long-form DataFrame: each row = (group, strategy, average_value)
+    winning_names = []
+    winning_encodings = []
+
+    for i in range(num_rounds):
+        if i == 0:
+            winning_names.append(None)
+            winning_encodings.append([np.nan]*len(strategy_order))
+        else:
+            bool_syn = synonym[i]
+            bool_abs = abstraction[i]
+            bool_con = contrast[i]
+
+            if bool_syn == 1 or bool_abs == 1 or bool_con == 1:
+                if bool_syn == 1:
+                    chosen = "synonym_measure"
+                elif bool_abs == 1:
+                    chosen = "abstraction_measure"
+                else:
+                    chosen = "contrast_measure"
+            else:
+                # Among the distance-based fields, we have 4 that are "distance" (lower=closer)
+                # and 1 that is "expansion" which is a *similarity* (higher=closer).
+                # So we must unify them. Let's invert expansion so we can pick min.
+                # We'll put them in a dict with consistent "distance" logic.
+                # For expansion, distance = 1 - expansion[i].
+                d_mirroring = mirroring[i]
+                d_balancing = balancing[i]
+                d_staying_close = staying_close[i]
+                d_phonetic = phonetic[i]
+                sim_expansion = expansion[i]
+
+                # If sim_expansion is np.nan, treat it as large distance
+                d_expansion = 1 - sim_expansion if not np.isnan(sim_expansion) else 9999
+
+                distances = {
+                    "mirroring_distance": d_mirroring,
+                    "balancing_distance": d_balancing,
+                    "staying_close_distance": d_staying_close,
+                    "phonetic_distance": d_phonetic,
+                    "conceptual_expansion_distance": d_expansion
+                }
+
+                # Pick whichever strategy has the smallest 'distance' value
+                chosen = min(distances, key=distances.get)
+
+            # Record
+            winning_names.append(chosen)
+            encoding = [1 if s == chosen else 0 for s in strategy_order]
+            winning_encodings.append(encoding)
+
+    return (winning_names, winning_encodings)
+
+
+###################################
+#    HEATMAP + PRINTING RESULTS   #
+###################################
+
+def plot_strategy_heatmap(results_df, groupby='player'):
+    """
+    Plot a heatmap showing the average winning strategy usage,
+    based on winning_strategy_encoding, which is a list of binary vectors per row.
+
+    Strategy order (internal):
+      [
+         "mirroring_distance",
+         "balancing_distance",
+         "staying_close_distance",
+         "phonetic_distance",
+         "conceptual_expansion_distance",
+         "abstraction_measure",
+         "contrast_measure",
+         "synonym_measure"
+      ]
+    """
+    display_mapping = {
+        "mirroring_distance": "mirroring",
+        "balancing_distance": "balancing",
+        "staying_close_distance": "staying_close",
+        "phonetic_distance": "phonetic",
+        "conceptual_expansion_distance": "conceptual_expansion",
+        "abstraction_measure": "abstraction",
+        "contrast_measure": "contrast",
+        "synonym_measure": "synonym"
+    }
+
+    strategy_order = list(display_mapping.keys())
+
     rows = []
     for idx, row in results_df.iterrows():
-        # Decide the grouping key based on the 'groupby' parameter.
         if groupby == 'player':
             group_val = row.get("playerId", "Unknown")
         elif groupby == 'game':
-            # Determine game configuration using the 'botId' column.
             if "botId" in row:
                 if pd.isna(row["botId"]) or row["botId"] == "":
                     group_val = "Human vs Human"
@@ -467,16 +585,12 @@ def plot_strategy_heatmap(results_df, groupby='player'):
             raise ValueError("groupby must be either 'player' or 'game'")
 
         encoding_list = row.get("winning_strategy_encoding", None)
-        if encoding_list is not None and isinstance(encoding_list, (list, np.ndarray)):
-            # Convert the list of binary vectors to a NumPy array.
-            # Each inner vector should be of length 6.
-            arr = np.array(encoding_list, dtype=float)  # shape: (num_rounds, 6)
-            # Compute the average over rounds (ignoring NaNs)
-            avg_vals = np.nanmean(arr, axis=0)  # shape: (6,)
+        if encoding_list is not None and isinstance(encoding_list, list):
+            arr = np.array(encoding_list, dtype=float)  # shape (num_rounds, 8)
+            avg_vals = np.nanmean(arr, axis=0)  # mean across rounds
         else:
             avg_vals = np.full(len(strategy_order), np.nan)
 
-        # For each strategy (by fixed order), record its average value.
         for i, strategy in enumerate(strategy_order):
             rows.append({
                 "group": group_val,
@@ -485,86 +599,81 @@ def plot_strategy_heatmap(results_df, groupby='player'):
             })
 
     long_df = pd.DataFrame(rows)
-
-    # Group by the chosen grouping key and strategy, averaging across games if necessary.
     grouped = long_df.groupby(["group", "strategy"])["value"].mean().reset_index()
-    # Pivot so that rows = group and columns = strategies.
-    strategy_usage = grouped.pivot(index="group", columns="strategy", values="value")
+    pivoted = grouped.pivot(index="group", columns="strategy", values="value")
+    pivoted.rename(columns=display_mapping, inplace=True)
 
-    # Create the heatmap.
     fig, ax = plt.subplots(figsize=(10, 6))
-    cax = ax.matshow(strategy_usage.values,
-                     cmap="coolwarm",
-                     aspect="auto",
-                     interpolation="nearest")
+    cax = ax.matshow(pivoted.values, cmap="coolwarm", aspect="auto", interpolation="nearest")
 
-    # Add a colorbar with percentage formatting.
     cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
 
-    # Set tick labels: strategies on x-axis, group (playerId or game configuration) on y-axis.
-    ax.set_xticks(np.arange(len(strategy_usage.columns)))
-    ax.set_yticks(np.arange(len(strategy_usage.index)))
-    ax.set_xticklabels(strategy_usage.columns, rotation=90)
-    ax.set_yticklabels(strategy_usage.index)
+    ax.set_xticks(np.arange(len(pivoted.columns)))
+    ax.set_yticks(np.arange(len(pivoted.index)))
+    ax.set_xticklabels(pivoted.columns, rotation=90)
+    ax.set_yticklabels(pivoted.index)
+
     if groupby == 'player':
         ax.set_ylabel("Player ID")
         ax.set_title("Average Winning Strategy Measures by Player (Percentage)")
-    elif groupby == 'game':
+    else:
         ax.set_ylabel("Game Configuration")
         ax.set_title("Average Winning Strategy Measures by Game Configuration (Percentage)")
 
     ax.set_xlabel("Strategy")
 
-    # Annotate each cell with percentage values.
-    for i in range(strategy_usage.shape[0]):
-        for j in range(strategy_usage.shape[1]):
-            val = strategy_usage.values[i, j]
+    # Annotate cells with percentage
+    for i in range(pivoted.shape[0]):
+        for j in range(pivoted.shape[1]):
+            val = pivoted.values[i, j]
             if not np.isnan(val):
-                # Multiply by 100 to display as a percentage.
                 ax.text(j, i, f"{val * 100:.0f}%", ha="center", va="center", color="black")
 
     plt.tight_layout()
     plt.show()
 
-def print_game_turns(results_df, n=20):
+def print_game_turns(results_df, n=20, filter_strategies=None):
     """
-    For the first n games in results_df, print for each turn (except turn 0):
-      - The words from the previous turn (player's and opponent's)
-      - An arrow ("->")
-      - The player's current turn word
-      - The winning strategy name for that turn
+    Print turn details for the first n rows (games) in results_df.
+    If filter_strategies is provided, only print turns whose winning strategy is in that set.
+    """
+    display_mapping = {
+        "mirroring_distance": "mirroring",
+        "balancing_distance": "balancing",
+        "staying_close_distance": "staying_close",
+        "phonetic_distance": "phonetic",
+        "conceptual_expansion_distance": "conceptual_expansion",
+        "abstraction_measure": "abstraction",
+        "contrast_measure": "contrast",
+        "synonym_measure": "synonym"
+    }
 
-    Assumes that each row in results_df has the following columns:
-      - 'word_my': list of words played by the player (in order)
-      - 'word_opponent': list of words played by the opponent (in order)
-      - 'winning_strategy_name': list of winning strategy names per round (with round 0 as None)
-    """
-    # Select only the first n games
-    for game_idx, row in results_df.head(n).iterrows():
-        print(f"Game {game_idx}:")
+    for idx, row in results_df.head(n).iterrows():
+        print(f"Game {idx}:")
         word_my = eval(row['word_my'])
         word_opponent = eval(row['word_opponent'])
         winning_strats = row['winning_strategy_name']
+        rounds = min(len(word_my), len(word_opponent), len(winning_strats))
 
-        # Determine the number of rounds for this game (based on the minimum length of the lists)
-        num_rounds = min(len(word_my), len(word_opponent), len(winning_strats))
-        if num_rounds < 2:
-            print("  Not enough rounds to display details.")
+        if rounds < 2:
+            print("  Not enough rounds to display details.\n")
             continue
 
-        # For each turn except the first one, print the desired info.
-        for i in range(1, num_rounds):
-            prev_player_word = word_my[i - 1]
-            prev_opponent_word = word_opponent[i - 1]
-            current_word = word_my[i]
-            winning_strategy = winning_strats[i]
+        for i in range(1, rounds):
+            prev_pword = word_my[i-1]
+            prev_oword = word_opponent[i-1]
+            curr_pword = word_my[i]
+            strat = winning_strats[i]
 
-            print(
-                f"  Turn {i}: [{prev_player_word} / {prev_opponent_word}] -> {current_word}  (winning strategy: {winning_strategy})")
-        print()  # Blank line between games
+            if strat is None:
+                continue
+            if filter_strategies and strat not in filter_strategies:
+                continue
 
-
+            readable_strat = display_mapping.get(strat, strat)
+            print(f"  Turn {i}: [{prev_pword} / {prev_oword}] -> {curr_pword}  (winning strategy: {readable_strat})")
+        print()
 
 if __name__ == "__main__":
     import os
@@ -619,4 +728,4 @@ if __name__ == "__main__":
     plot_strategy_heatmap(results_df, groupby='game')
     # plot_strategy_heatmap(results_df)
 
-    # print_game_turns(results_df, n=20)
+    print_game_turns(results_df, n=5)
