@@ -1,7 +1,10 @@
 import openai
 import gensim.downloader as api
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
+
+from sklearn.decomposition import PCA
 
 # Get open_ai api key from open_ai_key.txt
 with open('../open_ai_key.txt', 'r') as file:
@@ -103,3 +106,88 @@ def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
         embeddings_df = pd.DataFrame(embeddings_list)
         games_df = games_df.merge(embeddings_df, on='gameId', how='left')
     return games_df
+
+
+def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", num_pca_components=None):
+
+    embed_col1 = f"embedding1_{model_name}"
+    embed_col2 = f"embedding2_{model_name}"
+
+    # Check that the embeddings columns exist
+    if embed_col1 not in games_df.columns or embed_col2 not in games_df.columns:
+        raise ValueError(
+            f"Embeddings not found in the DataFrame. Columns '{embed_col1}' or '{embed_col2}' missing. "
+            f"Make sure you ran 'get_embeddings_for_table' first."
+        )
+    #    We create new columns: e.g. 'embedding1_glove_pca'
+    new_col1 = f"{embed_col1}_pca"
+    new_col2 = f"{embed_col2}_pca"
+
+    # If user specifies a number of PCA components, reduce the dimension.
+    if num_pca_components is not None:
+        print(f"Performing PCA to reduce embeddings to {num_pca_components} dimensions.")
+
+        # 1) Collect *all* round-level embeddings across all games for both players
+        #    in a big list. We'll store them separately as:
+        all_vectors = []  # shape: (N * R, D)  where R is #rounds in a game, D is original dimension
+
+        # We'll also need to keep an index (game, 'player1'/'player2', round_id)
+        # so we can reconstruct the data after PCA transform
+        index_info = []
+
+        for idx, row in games_df.iterrows():
+            emb1 = eval(row.get(embed_col1, []))
+            emb2 = eval(row.get(embed_col2, []))
+
+            # Convert to np.array if not empty
+            emb1_arr = np.array(emb1, dtype=float) if len(emb1) > 0 else np.empty((0, 0))
+            emb2_arr = np.array(emb2, dtype=float) if len(emb2) > 0 else np.empty((0, 0))
+
+            # Player1
+            for r_i in range(emb1_arr.shape[0]):
+                all_vectors.append(emb1_arr[r_i])
+                index_info.append((idx, 'player1', r_i))
+            # Player2
+            for r_i in range(emb2_arr.shape[0]):
+                all_vectors.append(emb2_arr[r_i])
+                index_info.append((idx, 'player2', r_i))
+
+        # Convert all_vectors to numpy array
+        if len(all_vectors) > 0:
+            all_vectors_np = np.array(all_vectors, dtype=float)
+        else:
+            all_vectors_np = np.empty((0, 0))
+
+        # 2) Fit PCA
+        if all_vectors_np.shape[0] > 0:
+            pca = PCA(n_components=num_pca_components)
+            pca.fit(all_vectors_np)
+
+            # 3) Transform all vectors
+            transformed_embeddings = pca.transform(all_vectors_np)
+
+            # 4) Rebuild them into lists-of-rounds for each row/player
+            # We'll store the new columns in memory and then assign to DataFrame at the end
+            # to avoid repeated rewriting of rows.
+            new_emb1_series = [[] for _ in range(len(games_df))]
+            new_emb2_series = [[] for _ in range(len(games_df))]
+
+            for (df_idx, player, round_idx), pca_vec in zip(index_info, transformed_embeddings):
+                if player == 'player1':
+                    new_emb1_series[df_idx].append(pca_vec.tolist())
+                else:
+                    new_emb2_series[df_idx].append(pca_vec.tolist())
+
+            # Now save these lists into games_df
+            games_df[new_col1] = new_emb1_series
+            games_df[new_col2] = new_emb2_series
+
+        else:
+            # If no data, just create empty columns
+            new_col1 = f"{embed_col1}_pca"
+            new_col2 = f"{embed_col2}_pca"
+            games_df[new_col1] = [[] for _ in range(len(games_df))]
+            games_df[new_col2] = [[] for _ in range(len(games_df))]
+
+    return games_df
+
