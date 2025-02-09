@@ -3,6 +3,7 @@ import gensim.downloader as api
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import ast
 
 from sklearn.decomposition import PCA
 
@@ -81,8 +82,12 @@ def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
         # We'll store new rows in a list to merge later
         embeddings_list = []
         for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Fetching Embeddings"):
-            words_player1 = row['wordsPlayed1']
-            words_player2 = row['wordsPlayed2']
+            if isinstance(row['wordsPlayed1'], str):
+                words_player1 = eval(row['wordsPlayed1'])
+                words_player2 = eval(row['wordsPlayed2'])
+            else:
+                words_player1 = row['wordsPlayed1']
+                words_player2 = row['wordsPlayed2']
 
             # Ensure both players have played words
             if len(words_player1) > 0 and len(words_player2) > 0:
@@ -142,8 +147,12 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
         index_info = []
 
         for idx, row in games_df.iterrows():
-            emb1 = eval(row.get(embed_col1, []))
-            emb2 = eval(row.get(embed_col2, []))
+            if isinstance(row[embed_col1], list):
+                emb1 = row[embed_col1]
+                emb2 = row[embed_col2]
+            else:
+                emb1 = eval(row[embed_col1])
+                emb2 = eval(row[embed_col2])
 
             # Convert to np.array if not empty
             emb1_arr = np.array(emb1, dtype=float) if len(emb1) > 0 else np.empty((0, 0))
@@ -199,7 +208,7 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
 
 
 
-def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str = "openai",  use_pca: bool = False):
+def plot_embedding_distance_during_game(games_df, distance_func = cosine, embedding_model = "openai",  use_pca= False, align_end = True):
     """
     Compute and plot the distance (by default, cosine) between the last words
     played by two players in each game (round by round).
@@ -224,6 +233,8 @@ def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: c
             f"Make sure you ran 'get_embeddings_for_table' with PCA if use_pca=True."
         )
 
+    max_rounds = games_df.apply(lambda row: len(row[col1]), axis=1).max()
+
     plt.figure(figsize=(10, 5))
 
     # Iterate through each game
@@ -237,20 +248,15 @@ def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: c
             embedding1 = eval(row[col1])
             embedding2 = eval(row[col2])
 
-        # Ensure both players have embedding lists and they're the same length
-        if (len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2)):
+        if 0 < len(embedding1) == len(embedding2) > 0:
+            distances = [distance_func(np.array(w1, dtype=float), np.array(w2, dtype=float)) for w1, w2 in
+                         zip(embedding1, embedding2)]
+            if align_end:
+                rounds = np.arange(max_rounds - len(distances), max_rounds)
+            else:
+                rounds = np.arange(len(distances))
 
-            distances = []
-            rounds = range(len(embedding1))
-
-            for w1, w2 in zip(embedding1, embedding2):
-                # Convert to numpy just in case
-                w1_arr = np.array(w1, dtype=float)
-                w2_arr = np.array(w2, dtype=float)
-                distances.append(distance_func(w1_arr, w2_arr))
-
-            # Plot the distances for this game
-            plt.plot(rounds, distances, marker='o', linestyle='-', label=f'Game {row["gameId"]}')
+            plt.plot(rounds, distances, marker='o', linestyle='-', label=f'Game {index}')
 
     plt.title(f'{distance_func.__name__.capitalize()} Distance Over Rounds\n'
               f'({"PCA" if use_pca else "Original"}) - Embeddings: {embedding_model}')
@@ -261,4 +267,113 @@ def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: c
     plt.show()
 
 
+
+def plot_distance_evolution_per_player(games_df: pd.DataFrame, distance_func: callable,
+                                       embedding_model: str = "openai", use_pca: bool = False,
+                                       last_rounds: int = 5):
+    """
+    For each player, compute and plot the evolution of the distance between their
+    embeddings and their opponent's embeddings over the last few rounds (averaged across games).
+
+    The function:
+      - Extracts unique players from the dataframe.
+      - For each player, selects all games in which they participated.
+      - Constructs the player's own embedding ("embedding_my") and the opponent's embedding
+        ("embedding_opponent") using the appropriate embedding columns.
+      - For each game, computes the round-by-round distance between the two embeddings.
+      - Uses only the last `last_rounds` rounds (if a game has fewer rounds, pads with NaN).
+      - Aggregates (averages) the distances at each relative round index (1, 2, …, last_rounds)
+        over all of that player's games.
+      - Plots a line (with error bars) for each player showing the evolution over these rounds.
+
+    :param games_df: DataFrame with game data. Must include 'player1Id' and 'player2Id' and the embedding columns.
+    :param distance_func: A callable that takes two numpy arrays and returns a distance.
+    :param embedding_model: The base name for embedding columns (e.g., "openai").
+    :param use_pca: If True, the embedding column names have '_pca' appended.
+    :param last_rounds: Number of final rounds to include from each game.
+    """
+    # Define the embedding column names.
+    emb_col1 = f"embedding1_{embedding_model}" + ("_pca" if use_pca else "")
+    emb_col2 = f"embedding2_{embedding_model}" + ("_pca" if use_pca else "")
+
+    # Get the unique players from both columns.
+    players = pd.concat([games_df['player1Id'], games_df['player2Id']]).unique()
+
+    # This dictionary will hold, for each player, a mapping:
+    #    relative round index (1 ... last_rounds) -> list of distances from different games.
+    player_rounds_data = {}
+
+    for player in tqdm(players, desc="Processing players"):
+        # Select games in which this player participated.
+        player_games = games_df[(games_df['player1Id'] == player) | (games_df['player2Id'] == player)].copy()
+        # Annotate with player id (for clarity if needed).
+        player_games['playerId'] = player
+
+        # Build the "my" and "opponent" embeddings.
+        player_games['embedding_my'] = player_games.apply(
+            lambda row: np.array(row[emb_col1], dtype=float)
+            if row['player1Id'] == player else np.array(row[emb_col2], dtype=float),
+            axis=1
+        )
+        player_games['embedding_opponent'] = player_games.apply(
+            lambda row: np.array(row[emb_col2], dtype=float)
+            if row['player1Id'] == player else np.array(row[emb_col1], dtype=float),
+            axis=1
+        )
+
+        # Dictionary to collect distances per relative round index for this player.
+        rounds_data = {}  # keys: 1, 2, ..., last_rounds
+        for idx, row in player_games.iterrows():
+            # Retrieve the embedding sequences.
+            # (If your embeddings are stored as strings, you might need to use eval())
+            emb_my = row['embedding_my']
+            emb_opp = row['embedding_opponent']
+            if not isinstance(emb_my, list):
+                emb_my = ast.literal_eval(emb_my) if isinstance(emb_my, str) else emb_my
+            if not isinstance(emb_opp, list):
+                emb_opp = ast.literal_eval(emb_opp) if isinstance(emb_opp, str) else emb_opp
+
+            # Compute distances for each round in the game.
+            distances = []
+            for vec_my, vec_opp in zip(emb_my, emb_opp):
+                d = distance_func(np.array(vec_my, dtype=float), np.array(vec_opp, dtype=float))
+                distances.append(d)
+
+            # Select only the last `last_rounds` rounds.
+            if len(distances) >= last_rounds:
+                distances = distances[-last_rounds:]
+            else:
+                # If a game has fewer rounds than last_rounds, we pad at the beginning with NaN.
+                distances = [np.nan] * (last_rounds - len(distances)) + distances
+
+            # Now, for each round position in the selected window, add the distance.
+            # We use relative indices 1 ... last_rounds.
+            for rel_round, dist in enumerate(distances, start=1):
+                rounds_data.setdefault(rel_round, []).append(dist)
+
+        # Store the aggregated round data for the player.
+        player_rounds_data[player] = rounds_data
+
+    # Now, plot the evolution for each player.
+    plt.figure(figsize=(10, 5))
+    for player, rounds_data in player_rounds_data.items():
+        # Prepare lists for relative round indices, average distances, and standard deviations.
+        rel_rounds = sorted(rounds_data.keys())
+        avg_dists = []
+        std_dists = []
+        for r in rel_rounds:
+            # Use nanmean and nanstd in case some games did not have enough rounds.
+            avg_dists.append(np.nanmean(rounds_data[r]))
+            std_dists.append(np.nanstd(rounds_data[r]))
+
+        # Plot using error bars to show standard deviation.
+        plt.errorbar(rel_rounds, avg_dists, yerr=std_dists, marker='o', linestyle='-',
+                     capsize=5, label=f'Player {player}')
+
+    plt.xlabel('Relative Round in Selected Window')
+    plt.ylabel(f'{distance_func.__name__.capitalize()} Distance')
+    plt.title(f'Distance Evolution Over Last {last_rounds} Rounds (Averaged over Games)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 

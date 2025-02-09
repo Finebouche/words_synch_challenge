@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def calculate_game_metrics_per_player(games_df):
+def calculate_game_metrics_per_configuration(games_df):
     # Filter games where status is 'won' to calculate success rates
     won_games = games_df[games_df['status'] == 'won']
 
@@ -27,6 +27,24 @@ def calculate_game_metrics_per_player(games_df):
         'Human Success Rate': human_success_rate,
         'Bot Success Rate': bot_success_rate,
         'Average Number of Rounds': average_num_round
+    })
+
+    return metrics_df
+
+
+# same function but without bot but player versus player rates
+def calculate_game_metrics_per_player(games_df):
+
+    # Calculate average number of rounds per player and success rate per player
+    total_rounds = games_df.groupby('player1Id')['roundCount'].sum().add(games_df.groupby('player2Id')['roundCount'].sum(), fill_value=0)
+    total_games_per_player = games_df['player1Id'].value_counts().add(games_df['player2Id'].value_counts(), fill_value=0)
+    average_num_round = (total_rounds / total_games_per_player).fillna(0)
+    average_success_rate = (games_df[games_df['status'] == 'won']['player1Id'].value_counts().add(games_df[games_df['status'] == 'won']['player2Id'].value_counts(), fill_value=0) / total_games_per_player).fillna(0)
+
+    # Combine all metrics into a single DataFrame
+    metrics_df = pd.DataFrame({
+        'Average Number of Rounds': average_num_round,
+        'Average Success Rate': average_success_rate
     })
 
     return metrics_df

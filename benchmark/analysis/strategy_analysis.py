@@ -608,8 +608,10 @@ def print_game_turns(results_df, n=20, filter_strategies=None):
 if __name__ == "__main__":
     import os
     from scipy.spatial.distance import cosine
-    from benchmark.analysis.utils.embeding_utils import get_embeddings_for_table, calculate_pca_for_embeddings, plot_embedding_distance_during_game
-    from game_statistics import calculate_game_metrics_per_player
+    from utils.embeding_utils import (get_embeddings_for_table, calculate_pca_for_embeddings,
+                                     plot_embedding_distance_during_game,
+                                     plot_distance_evolution_per_player)
+    from game_statistics import calculate_game_metrics_per_configuration
 
     db_name = "merged.db"
     csv_name = "games.csv"
@@ -635,27 +637,36 @@ if __name__ == "__main__":
     games_df.to_csv(csv_name, index=False)
 
     # 3) Calculate player metrics
-    player_metrics = calculate_game_metrics_per_player(games_df)
+    player_metrics = calculate_game_metrics_per_configuration(games_df)
     print("Success Rate and Average Rounds for Winning Games:")
     print(player_metrics)
-
-    # 4) Plot distances with the original or PCA embeddings
-    # plot_embedding_distance_during_game(
-    #     games_df,
-    #     distance_func=cosine,
-    #     embedding_model="glove",
-    #     use_pca=True
-    # )
-    # plot_embedding_distance_during_game(
-    #     games_df,
-    #     distance_func=cosine,
-    #     embedding_model="glove",
-    #     use_pca=False
-    # )
 
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
     plot_strategy_heatmap(results_df, groupby='game')
     # plot_strategy_heatmap(results_df)
+
+    # 4) Plot distances with the original or PCA embeddings
+    plot_embedding_distance_during_game(
+        results_df,
+        distance_func=cosine,
+        embedding_model="glove",
+        use_pca=True,
+        align_end=True,
+    )
+    plot_embedding_distance_during_game(
+        results_df,
+        distance_func=cosine,
+        embedding_model="glove",
+        use_pca=False,
+        align_end=True,
+    )
+    plot_distance_evolution_per_player(
+        results_df,
+        distance_func=cosine,
+        embedding_model="glove",
+        use_pca=True,
+        last_rounds=5,
+    )
 
     print_game_turns(results_df, n=5)

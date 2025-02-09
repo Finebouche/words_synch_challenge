@@ -27,9 +27,6 @@ def load_csv(path: str):
     """
     games_df = pd.read_csv(path)
 
-    games_df['wordsPlayed1'] = games_df['wordsPlayed1'].apply(json.loads)
-    games_df['wordsPlayed2'] = games_df['wordsPlayed2'].apply(json.loads)
-
     return games_df
 
 if __name__ == '__main__':
