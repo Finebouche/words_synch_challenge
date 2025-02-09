@@ -6,6 +6,10 @@ from tqdm import tqdm
 
 from sklearn.decomposition import PCA
 
+
+from scipy.spatial.distance import cosine
+import matplotlib.pyplot as plt
+
 # Get open_ai api key from open_ai_key.txt in ../../ directory
 def get_openai_key():
     with open('../../open_ai_key.txt', 'r') as f:
@@ -192,4 +196,69 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
             games_df[new_col2] = [[] for _ in range(len(games_df))]
 
     return games_df
+
+
+
+def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str = "openai",  use_pca: bool = False):
+    """
+    Compute and plot the distance (by default, cosine) between the last words
+    played by two players in each game (round by round).
+
+    :param games_df: The dataframe containing game data, including embeddings.
+    :param distance_func: The distance function to use (e.g., cosine, euclidean).
+    :param embedding_model: The base name of the embedding columns (e.g. 'openai', 'glove').
+    :param use_pca: If True, use the PCA-reduced embeddings (i.e., '..._pca' columns).
+    """
+
+    # Decide which columns to use
+    col1 = f"embedding1_{embedding_model}"
+    col2 = f"embedding2_{embedding_model}"
+    if use_pca:
+        col1 += "_pca"
+        col2 += "_pca"
+
+    # Check if the columns exist
+    if col1 not in games_df.columns or col2 not in games_df.columns:
+        raise ValueError(
+            f"Embeddings not found in the DataFrame. Columns '{col1}' or '{col2}' missing. "
+            f"Make sure you ran 'get_embeddings_for_table' with PCA if use_pca=True."
+        )
+
+    plt.figure(figsize=(10, 5))
+
+    # Iterate through each game
+    for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Analyzing Games"):
+        # Depending on how data is stored, we might need to parse strings to lists.
+        # If it's already a Python list, we can use them directly. If they're strings, we use eval:
+        if isinstance(row[col1], list):
+            embedding1 = row[col1]
+            embedding2 = row[col2]
+        else:
+            embedding1 = eval(row[col1])
+            embedding2 = eval(row[col2])
+
+        # Ensure both players have embedding lists and they're the same length
+        if (len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2)):
+
+            distances = []
+            rounds = range(len(embedding1))
+
+            for w1, w2 in zip(embedding1, embedding2):
+                # Convert to numpy just in case
+                w1_arr = np.array(w1, dtype=float)
+                w2_arr = np.array(w2, dtype=float)
+                distances.append(distance_func(w1_arr, w2_arr))
+
+            # Plot the distances for this game
+            plt.plot(rounds, distances, marker='o', linestyle='-', label=f'Game {row["gameId"]}')
+
+    plt.title(f'{distance_func.__name__.capitalize()} Distance Over Rounds\n'
+              f'({"PCA" if use_pca else "Original"}) - Embeddings: {embedding_model}')
+    plt.xlabel('Round Number')
+    plt.ylabel(f'{distance_func.__name__.capitalize()} Distance')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 

@@ -9,127 +9,10 @@ import matplotlib.ticker as mticker
 # External module imports
 from benchmark.analysis.utils.data_loading import load_sql_data
 
-from scipy.spatial.distance import cosine
-import Levenshtein
-
 
 import nltk
 nltk.download('wordnet')
-nltk.download('cmudict')
 from nltk.corpus import wordnet as wn
-from nltk.corpus import cmudict
-cmu = cmudict.dict() # CMU Pronouncing Dictionary
-
-def plot_embedding_distance_during_game(games_df: pd.DataFrame, distance_func: callable = cosine, embedding_model: str = "openai",  use_pca: bool = False):
-    """
-    Compute and plot the distance (by default, cosine) between the last words
-    played by two players in each game (round by round).
-
-    :param games_df: The dataframe containing game data, including embeddings.
-    :param distance_func: The distance function to use (e.g., cosine, euclidean).
-    :param embedding_model: The base name of the embedding columns (e.g. 'openai', 'glove').
-    :param use_pca: If True, use the PCA-reduced embeddings (i.e., '..._pca' columns).
-    """
-
-    # Decide which columns to use
-    col1 = f"embedding1_{embedding_model}"
-    col2 = f"embedding2_{embedding_model}"
-    if use_pca:
-        col1 += "_pca"
-        col2 += "_pca"
-
-    # Check if the columns exist
-    if col1 not in games_df.columns or col2 not in games_df.columns:
-        raise ValueError(
-            f"Embeddings not found in the DataFrame. Columns '{col1}' or '{col2}' missing. "
-            f"Make sure you ran 'get_embeddings_for_table' with PCA if use_pca=True."
-        )
-
-    plt.figure(figsize=(10, 5))
-
-    # Iterate through each game
-    for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Analyzing Games"):
-        # Depending on how data is stored, we might need to parse strings to lists.
-        # If it's already a Python list, we can use them directly. If they're strings, we use eval:
-        if isinstance(row[col1], list):
-            embedding1 = row[col1]
-            embedding2 = row[col2]
-        else:
-            embedding1 = eval(row[col1])
-            embedding2 = eval(row[col2])
-
-        # Ensure both players have embedding lists and they're the same length
-        if (len(embedding1) > 0 and len(embedding2) > 0 and len(embedding1) == len(embedding2)):
-
-            distances = []
-            rounds = range(len(embedding1))
-
-            for w1, w2 in zip(embedding1, embedding2):
-                # Convert to numpy just in case
-                w1_arr = np.array(w1, dtype=float)
-                w2_arr = np.array(w2, dtype=float)
-                distances.append(distance_func(w1_arr, w2_arr))
-
-            # Plot the distances for this game
-            plt.plot(rounds, distances, marker='o', linestyle='-', label=f'Game {row["gameId"]}')
-
-    plt.title(f'{distance_func.__name__.capitalize()} Distance Over Rounds\n'
-              f'({"PCA" if use_pca else "Original"}) - Embeddings: {embedding_model}')
-    plt.xlabel('Round Number')
-    plt.ylabel(f'{distance_func.__name__.capitalize()} Distance')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-
-########################
-#  PHONETIC FUNCTIONS  #
-########################
-
-cmu = cmudict.dict()  # Load the CMU Pronouncing Dict once
-
-def get_phonemes(word):
-    """
-    Return a list of phonemes for the *first* pronunciation
-    variant of the given word using CMUdict.
-    If the word is not found, return an empty list.
-    """
-    word = word.lower()
-    if word in cmu:
-        # cmu[word] could have multiple pronunciations
-        # We'll just take the first for simplicity.
-        return cmu[word][0]
-    else:
-        return []
-
-def phoneme_levenshtein_distance(word_a, word_b):
-    """
-    Returns the Levenshtein distance between the ARPAbet phoneme
-    sequences of word_a and word_b. Lower = more phonetically similar.
-    If either word is missing from cmudict, returns None.
-    """
-    phons_a = get_phonemes(word_a)
-    phons_b = get_phonemes(word_b)
-    if not phons_a or not phons_b:
-        return None
-
-    seq_a = " ".join(phons_a)
-    seq_b = " ".join(phons_b)
-    return Levenshtein.distance(seq_a, seq_b)
-
-def normalized_phoneme_distance(word_a, word_b):
-    """
-    Returns a normalized distance in [0..1], where 0 means identical
-    phoneme sequences and 1 means completely different or missing.
-    """
-    dist = phoneme_levenshtein_distance(word_a, word_b)
-    if dist is None:
-        return 1.0  # or np.nan, if you prefer
-    length_sum = len(get_phonemes(word_a)) + len(get_phonemes(word_b))
-    if length_sum == 0:
-        return 1.0
-    return dist / length_sum
 
 
 #########################
@@ -174,23 +57,56 @@ def is_antonym(word_a, word_b):
                     return True
     return False
 
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
+nltk.download('averaged_perceptron_tagger_eng')
+lemmatizer = WordNetLemmatizer()
+
+def get_wordnet_pos(treebank_tag):
+    """
+    Convert POS tag from the Penn Treebank or similar to a
+    simplified WordNet tag: (n)oun, (v)erb, (a)djective, (r)adverb.
+    """
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return None
+
+def is_morphological_variation(word_a, word_b):
+    # Step 1: POS-tag the words
+    tokens = [word_a, word_b]
+    tagged = nltk.pos_tag(tokens)  # e.g. [('stronger', 'JJR'), ('strong', 'JJ')]
+
+    w_a, pos_a = tagged[0]
+    w_b, pos_b = tagged[1]
+
+    # Step 2: Convert the Treebank tag to a WordNet tag
+    wn_pos_a = get_wordnet_pos(pos_a) or wordnet.NOUN  # fallback = NOUN
+    wn_pos_b = get_wordnet_pos(pos_b) or wordnet.NOUN
+
+    # Step 3: Lemmatize with the correct POS
+    lem_a = lemmatizer.lemmatize(w_a.lower(), wn_pos_a)
+    lem_b = lemmatizer.lemmatize(w_b.lower(), wn_pos_b)
+
+    # Step 4: Check if they share the same lemma, but differ as strings
+    return (lem_a == lem_b)
+
 def is_synonym(word_a, word_b):
     """
-    Return True if there's at least one synset that includes both
-    word_a and word_b as lemma names for the same sense.
+    Return True if word_a and word_b share at least one synset in WordNet.
     """
     word_a = word_a.lower()
     word_b = word_b.lower()
-    synsets_a = wn.synsets(word_a)
-    synsets_b = wn.synsets(word_b)
-
-    for syn_a in synsets_a:
-        lemmas_a = set(lemma.name().lower() for lemma in syn_a.lemmas())
-        # If word_b is directly one of the lemma names in syn_a,
-        # check if syn_a is also in synsets_b
-        if word_b in lemmas_a and syn_a in synsets_b:
-            return True
-    return False
+    synsets_a = set(wn.synsets(word_a))
+    synsets_b = set(wn.synsets(word_b))
+    # If there's any overlap, it indicates a shared sense (synonym in at least one sense).
+    return len(synsets_a.intersection(synsets_b)) > 0
 
 ###########################
 # THEMATIC ALIGNMENT TEST #
@@ -242,11 +158,13 @@ def qualitative_analysis(player_games):
       - 'abstraction_measure'
       - 'contrast_measure'
       - 'synonym_measure'
+      - 'morhological_variation_measure'
     Each is a list of length = #rounds with 0/1 or np.nan for round 0.
     """
     player_games['abstraction_measure'] = None
     player_games['contrast_measure'] = None
     player_games['synonym_measure'] = None
+    player_games['morphological_variation_measure'] = None
 
     for index, game in player_games.iterrows():
         word_my = eval(game['word_my'])
@@ -256,12 +174,14 @@ def qualitative_analysis(player_games):
         abstraction_list = []
         contrast_list = []
         synonym_list = []
+        morph_variation_list = []
 
         for i in range(num_rounds):
             if i == 0:
                 abstraction_list.append(np.nan)
                 contrast_list.append(np.nan)
                 synonym_list.append(np.nan)
+                morph_variation_list.append(np.nan)
             else:
                 current_word = word_my[i]
                 prev_opponent_word = word_opponent[i - 1]
@@ -270,20 +190,24 @@ def qualitative_analysis(player_games):
                 abstraction_score = int(is_hypernym(current_word, prev_opponent_word))
                 contrast_score = int(is_antonym(current_word, prev_opponent_word))
                 synonym_score = int(is_synonym(current_word, prev_my_word))
+                morph_variation_score = int(is_morphological_variation(current_word, prev_my_word))
 
                 abstraction_list.append(abstraction_score)
                 contrast_list.append(contrast_score)
                 synonym_list.append(synonym_score)
+                morph_variation_list.append(morph_variation_score)
 
         player_games.at[index, 'abstraction_measure'] = abstraction_list
         player_games.at[index, 'contrast_measure'] = contrast_list
         player_games.at[index, 'synonym_measure'] = synonym_list
+        player_games.at[index, 'morphological_variation_measure'] = morph_variation_list
 
     return player_games
 
-###########################
-#   CONCEPT EXPANSION     #
-###########################
+##############################
+# QUANTITATIVE (DISTANCES)  #
+##############################
+
 
 def expansion_score(vec_new, vec_a, vec_b):
     """
@@ -295,11 +219,6 @@ def expansion_score(vec_new, vec_a, vec_b):
     dot = np.dot(vec_new, avg_vec)
     sim = dot / (norm(vec_new)*norm(avg_vec) + 1e-9)
     return sim
-
-##############################
-# QUANTITATIVE (DISTANCES)  #
-##############################
-
 
 def min_max_normalize(values):
     """
@@ -327,21 +246,12 @@ def quantitative_analysis(player_games):
       - balancing_distance: cosine distance to average(own_prev, opp_prev)
       - staying_close_distance: cosine distance to own previous word
       - conceptual_expansion_distance: similarity (later inverted to act like a distance)
-      - phonetic_distance: normalized phoneme distance to opponent's previous word (text-based)
     Also computes normalized versions of these measures (per game).
     """
     player_games['mirroring_distance'] = None
     player_games['balancing_distance'] = None
     player_games['staying_close_distance'] = None
     player_games['conceptual_expansion_distance'] = None
-    player_games['phonetic_distance'] = None
-
-    # New normalized columns:
-    player_games['mirroring_distance_norm'] = None
-    player_games['balancing_distance_norm'] = None
-    player_games['staying_close_distance_norm'] = None
-    player_games['conceptual_expansion_distance_norm'] = None
-    player_games['phonetic_distance_norm'] = None
 
     for index, game in player_games.iterrows():
         embedding_my = game['embedding_my']
@@ -355,7 +265,6 @@ def quantitative_analysis(player_games):
         balancing_list = []
         staying_close_list = []
         expansion_list = []
-        phonetic_list = []
 
         for i in range(num_rounds):
             if i == 0:
@@ -363,7 +272,6 @@ def quantitative_analysis(player_games):
                 balancing_list.append(np.nan)
                 staying_close_list.append(np.nan)
                 expansion_list.append(np.nan)
-                phonetic_list.append(np.nan)
             else:
                 current_word_embed = embedding_my[i]
                 prev_opp_embed = embedding_opponent[i - 1]
@@ -384,31 +292,22 @@ def quantitative_analysis(player_games):
                 expansion_distance = 1.0 - sim_expansion
                 expansion_list.append(expansion_distance)
 
-                # Phonetic distance:
-                curr_word_text = word_my[i]
-                prev_opp_text = word_opponent[i - 1]
-                ph_dist = normalized_phoneme_distance(curr_word_text, prev_opp_text)
-                phonetic_list.append(ph_dist)
-
         # Store raw results:
         player_games.at[index, 'mirroring_distance'] = mirroring_list
         player_games.at[index, 'balancing_distance'] = balancing_list
         player_games.at[index, 'staying_close_distance'] = staying_close_list
         player_games.at[index, 'conceptual_expansion_distance'] = expansion_list
-        player_games.at[index, 'phonetic_distance'] = phonetic_list
 
         # Normalize each measure for this game (per row normalization across rounds)
         norm_mirroring = min_max_normalize(mirroring_list)
         norm_balancing = min_max_normalize(balancing_list)
         norm_staying_close = min_max_normalize(staying_close_list)
         norm_expansion = min_max_normalize(expansion_list)
-        norm_phonetic = min_max_normalize(phonetic_list)
 
         player_games.at[index, 'mirroring_distance'] = norm_mirroring
         player_games.at[index, 'balancing_distance'] = norm_balancing
         player_games.at[index, 'staying_close_distance'] = norm_staying_close
         player_games.at[index, 'conceptual_expansion_distance'] = norm_expansion
-        player_games.at[index, 'phonetic_distance'] = norm_phonetic
 
     return player_games
 
@@ -489,7 +388,7 @@ def decide_winning_strategy(row):
     """
     For each round in the game row, decide which strategy 'wins'.
     Priority:
-      1) If any of (synonym, abstraction, contrast) is 1 => choose among them in order: synonym > abstraction > contrast
+      1) If any of (synonym, abstraction, contrast) is 1 => choose among them in order: synonym > abstraction > contrast > morphological_variation
       2) Otherwise pick the min among the distance-based strategies:
          mirroring, balancing, staying_close, phonetic_distance, conceptual_expansion_distance
          (Be mindful that conceptual_expansion_distance is actually a *similarity*, so if you want
@@ -499,11 +398,12 @@ def decide_winning_strategy(row):
     balancing = row['balancing_distance']
     staying_close = row['staying_close_distance']
     expansion = row['conceptual_expansion_distance']  # this is a similarity
-    phonetic = row['phonetic_distance']
 
     abstraction = row['abstraction_measure']
     contrast = row['contrast_measure']
     synonym = row['synonym_measure']
+    morph_variation = row['morphological_variation_measure']
+
 
     num_rounds = len(mirroring)  # they should all have the same length
 
@@ -512,11 +412,11 @@ def decide_winning_strategy(row):
         "mirroring_distance",
         "balancing_distance",
         "staying_close_distance",
-        "phonetic_distance",
         "conceptual_expansion_distance",
         "abstraction_measure",
         "contrast_measure",
-        "synonym_measure"
+        "synonym_measure",
+        "morphological_variation_measure"
     ]
 
     winning_names = []
@@ -530,38 +430,31 @@ def decide_winning_strategy(row):
             bool_syn = synonym[i]
             bool_abs = abstraction[i]
             bool_con = contrast[i]
+            bool_morph = morph_variation[i]
 
-            if bool_syn == 1 or bool_abs == 1 or bool_con == 1:
-                if bool_syn == 1:
+            if bool_syn == 1 or bool_abs == 1 or bool_con == 1 or bool_morph == 1:
+                if bool_morph == 1:
+                    chosen = "morphological_variation_measure"
+                elif bool_syn == 1:
                     chosen = "synonym_measure"
                 elif bool_abs == 1:
                     chosen = "abstraction_measure"
-                else:
+                elif bool_con == 1:
                     chosen = "contrast_measure"
+
             else:
-                # Among the distance-based fields, we have 4 that are "distance" (lower=closer)
-                # and 1 that is "expansion" which is a *similarity* (higher=closer).
-                # So we must unify them. Let's invert expansion so we can pick min.
-                # We'll put them in a dict with consistent "distance" logic.
-                # For expansion, distance = 1 - expansion[i].
                 d_mirroring = mirroring[i]
                 d_balancing = balancing[i]
                 d_staying_close = staying_close[i]
-                d_phonetic = phonetic[i]
                 sim_expansion = expansion[i]
-
-                # If sim_expansion is np.nan, treat it as large distance
-                d_expansion = 1 - sim_expansion if not np.isnan(sim_expansion) else 9999
+                d_expansion = 1 - sim_expansion if not np.isnan(sim_expansion) else float('inf')
 
                 distances = {
                     "mirroring_distance": d_mirroring,
                     "balancing_distance": d_balancing,
                     "staying_close_distance": d_staying_close,
-                    "phonetic_distance": d_phonetic,
                     "conceptual_expansion_distance": d_expansion
                 }
-
-                # Pick whichever strategy has the smallest 'distance' value
                 chosen = min(distances, key=distances.get)
 
             # Record
@@ -586,22 +479,22 @@ def plot_strategy_heatmap(results_df, groupby='player'):
          "mirroring_distance",
          "balancing_distance",
          "staying_close_distance",
-         "phonetic_distance",
          "conceptual_expansion_distance",
          "abstraction_measure",
          "contrast_measure",
          "synonym_measure"
+         "morphological_variation_measure"
       ]
     """
     display_mapping = {
         "mirroring_distance": "mirroring",
         "balancing_distance": "balancing",
         "staying_close_distance": "staying_close",
-        "phonetic_distance": "phonetic",
         "conceptual_expansion_distance": "conceptual_expansion",
         "abstraction_measure": "abstraction",
         "contrast_measure": "contrast",
-        "synonym_measure": "synonym"
+        "synonym_measure": "synonym",
+        "morphological_variation_measure": "morphological_variation"
     }
 
     strategy_order = list(display_mapping.keys())
@@ -679,11 +572,11 @@ def print_game_turns(results_df, n=20, filter_strategies=None):
         "mirroring_distance": "mirroring",
         "balancing_distance": "balancing",
         "staying_close_distance": "staying_close",
-        "phonetic_distance": "phonetic",
         "conceptual_expansion_distance": "conceptual_expansion",
         "abstraction_measure": "abstraction",
         "contrast_measure": "contrast",
-        "synonym_measure": "synonym"
+        "synonym_measure": "synonym",
+        "morphological_variation_measure": "morphological_variation"
     }
 
     for idx, row in results_df.head(n).iterrows():
@@ -715,7 +608,7 @@ def print_game_turns(results_df, n=20, filter_strategies=None):
 if __name__ == "__main__":
     import os
     from scipy.spatial.distance import cosine
-    from benchmark.analysis.utils.embeding_utils import get_embeddings_for_table, calculate_pca_for_embeddings
+    from benchmark.analysis.utils.embeding_utils import get_embeddings_for_table, calculate_pca_for_embeddings, plot_embedding_distance_during_game
     from game_statistics import calculate_game_metrics_per_player
 
     db_name = "merged.db"
