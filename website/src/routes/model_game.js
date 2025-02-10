@@ -258,7 +258,6 @@ async function openaicall(model, round, past_words_array, res) {
     try {
         let temp = round === 1 ? 1.6 : 1.1;
         let max_tokens = round === 1 ? 50 : 20;
-        console.log(messages)
         const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,
