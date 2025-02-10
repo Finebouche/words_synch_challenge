@@ -22,6 +22,8 @@ export default function initPlayersSocket(server) {
   io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
+    socket.emit('lobbyCountUpdate', getWaitingPlayersCount());
+
     /**
      * 1) Player indicates their identity and language, then joins queue
      */

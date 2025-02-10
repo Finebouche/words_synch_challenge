@@ -184,11 +184,11 @@
         <!-- NEW QUESTIONNAIRE SECTION -->
         <div id="questionnaireContainer" style="display: none;">
 
-            <label>How were you accounting for the other player next word mainly ?</label>
+            <label>How did you mainly take into account the other player words ?</label>
             <div class="checkbox-container">
-                <label><span><input type="radio" name="quantitativeStrategyUsed" value="mirroring">Going Close to their word<br>e.g., "cat" → "kitten"</span></label>
-                <label><span><input type="radio" name="quantitativeStrategyUsed" value="stayingClose">Staying Close to my word<br>e.g., "apple" → "fruit"</span></label>
-                <label><span><input type="radio" name="quantitativeStrategyUsed" value="averaging">Saying something in between<br>e.g., "ocean" & "lake" → "sea"</span></label>
+                <label><span><input type="radio" name="quantitativeStrategyUsed" value="mirroring">Going Close to their word</span></label>
+                <label><span><input type="radio" name="quantitativeStrategyUsed" value="stayingClose">Staying Close to my word</span></label>
+                <label><span><input type="radio" name="quantitativeStrategyUsed" value="averaging">Saying something in between</span></label>
             </div>
             <div style="margin-top: 15px;">
                 <label>What strategies when picking the next word? (Select up to 3)</label>
@@ -199,12 +199,12 @@
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="conceptualExpansion">Expansion<br>e.g., "dog" & "park" → "walk"</span></label>
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="simplification">Simplification<br>e.g., "automobile" → "car"</span></label>
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="random">Random Play<br>e.g., no clear pattern</span></label>
-                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="culturalReference">Cultural Ref.<br>e.g., "Shakespeare"</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="culturalReference">Cultural Ref.<br>e.g., "play" & "old" → "Shakespeare"</span></label>
                 </div>
             </div>
 
             <div style="margin-top: 25px;">
-                <label>How was the other player accounting for your word mainly ?</label>
+                <label>How did the other player take into account your words ?</label>
                 <div class="checkbox-container">
                     <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="mirroring">Going Close to your word</span></label>
                     <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="stayingClose">Staying Close to their word</span></label>
@@ -224,35 +224,25 @@
             </div>
 
             <div style="margin-top: 10px;">
-                <p>Do you think the other player understood your strategies?</p>
-                <label>
-                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="yes">
-                    Yes
-                </label>
-                <label>
-                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="no">
-                    No
-                </label>
-                <label>
-                    <input type="radio" name="otherPlayerUnderstoodYourStrategies" value="somewhat">
-                    Somewhat
-                </label>
+                <label for="otherPlayerUnderstoodYourStrategies">Do you think the other player understood your strategies?</label>
+                <select id="otherPlayerUnderstoodYourStrategies" name="otherPlayerUnderstoodYourStrategies">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
             </div>
 
             <div style="margin-top: 10px;">
-                <p>Did you understand the other player's strategy?</p>
-                <label>
-                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="yes">
-                    Yes
-                </label>
-                <label>
-                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="no">
-                    No
-                </label>
-                <label>
-                    <input type="radio" name="didYouUnderstandOtherPlayerStrategy" value="somewhat">
-                    Somewhat
-                </label>
+                <label for="didYouUnderstandOtherPlayerStrategy">Did you understand the other player's strategy?</label>
+                <select id="didYouUnderstandOtherPlayerStrategy" name="didYouUnderstandOtherPlayerStrategy">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
             </div>
 
             <div style="margin-top: 10px;">
@@ -266,19 +256,14 @@
                 </select>
             </div>
             <div style="margin-top: 10px;">
-                <p>Did you feel connected with the other player ?</p>
-                <label>
-                    <input type="radio" name="connectionFeeling" value="yes">
-                    Yes
-                </label>
-                <label>
-                    <input type="radio" name="connectionFeeling" value="no">
-                    No
-                </label>
-                <label>
-                    <input type="radio" name="connectionFeeling" value="somewhat">
-                    Somewhat
-                </label>
+                <label for="connectionFeeling">Did you feel connected with the other player ?</label>
+                <select id="connectionFeeling" name="connectionFeeling">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
             </div>
 
             <button class="button small-button" id="submitQuestionnaire" style="margin-top: 10px;">Submit Answers</button>

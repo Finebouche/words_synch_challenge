@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     socket = io(); // Initialize WebSocket connection
 
+
     socket.on('lobbyCountUpdate', (count) => {
       const waitingBadge = document.getElementById('waitingBadge');
       if (!waitingBadge) return;
@@ -517,13 +518,10 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
                                      .map(cb => cb.value);
     const qualitativeOtherPlayerStrategy = document.querySelector('input[name="qualitativeOtherPlayerStrategy"]:checked');
 
-    const otherPlayerUnderstoodElem = document.querySelector('input[name="otherPlayerUnderstoodYourStrategies"]:checked');
-    const otherPlayerUnderstood = otherPlayerUnderstoodElem ? otherPlayerUnderstoodElem.value : '';
-    const didYouUnderstandElem = document.querySelector('input[name="didYouUnderstandOtherPlayerStrategy"]:checked');
-    const didYouUnderstandOtherPlayerStrategy = didYouUnderstandElem ? didYouUnderstandElem.value : '';
+    const otherPlayerUnderstood = document.getElementById('otherPlayerRating').value;
+    const didYouUnderstandOtherPlayerStrategy = document.getElementById('otherPlayerRating').value;
     const otherPlayerRating = document.getElementById('otherPlayerRating').value;
-    const connectionFeelingElem = document.querySelector('input[name="connectionFeeling"]:checked');
-    const connectionFeeling = connectionFeelingElem ? connectionFeelingElem.value : '';
+    const connectionFeeling = document.getElementById('otherPlayerRating').value;
 
 
     // Post the data to the server
@@ -553,10 +551,10 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="otherPlayerUnderstoodYourStrategies"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="didYouUnderstandOtherPlayerStrategy"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="connectionFeeling"]').forEach(input => input.checked = false);
+            document.getElementById('otherPlayerUnderstoodYourStrategies').value = '1';
+            document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '1';
             document.getElementById('otherPlayerRating').value = '1';
+            document.getElementById('connectionFeeling').value = '1';
         } else {
             console.error('Failed to save questionnaire answers.', data);
         }
