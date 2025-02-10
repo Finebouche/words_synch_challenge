@@ -104,7 +104,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // llmSelect.addEventListener('change', function () {
         //     startGameButton.style.display = this.value ? '' : 'none';
         // });
-        loadModelAndStartGame("gpt-4o");
+        selectedModelName = 'gpt-4o';
+        loadModelAndStartGame(selectedModelName);
     });
 
     /**
