@@ -534,10 +534,10 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         if (data.success) {
             console.log('Questionnaire answers saved successfully!', data);
             document.getElementById('questionnaireContainer').style.display = 'none';
-            document.getElementById('quantitativeStrategyUsed').value = '';
-            document.getElementById('qualitativeStrategyUsed').value = '';
-            document.getElementById('quantitativeOtherPlayerStrategy').value = '';
-            document.getElementById('qualitativeOtherPlayerStrategy').value = '';
+            document.querySelectorAll('input[name="quantitativeStrategyUsed"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="otherPlayerUnderstoodYourStrategies"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="didYouUnderstandOtherPlayerStrategy"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="connectionFeeling"]').forEach(input => input.checked = false);
@@ -553,11 +553,15 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
     // Optionally show a thank-you container after submission
     document.getElementById('questionnaireContainer').style.display = 'none';
     document.getElementById('thankYouContainer').style.display = 'block';
+
+    fetchGameStats();
+
 });
 
 document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
     document.getElementById('thankYouContainer').style.display = 'none';
 
     resetTheGame();
+
 });
 // END QUESTIONNAIRE LOGIC

@@ -57,6 +57,13 @@ function fetchGameStats() {
                     🤖  bot  : ${data.gamesPlayedAgainstBot}
                 </div>
             `;
+            // update local storage with the new game stats
+            localStorage.setItem('gamesPlayedAgainstHuman', data.gamesPlayedAgainstHuman);
+            localStorage.setItem('gamesPlayedAgainstBot', data.gamesPlayedAgainstBot);
+            // if the total number of game played is bigger than 10, show the return to prolific button
+            if (parseInt(localStorage.getItem("gamesPlayedAgainstHuman")) >= 5 && localStorage.getItem("gamesPlayedAgainstBot") >= 5) {
+                document.getElementById('returnToProlific').style.display = 'block';
+            }
         }
     })
     .catch(error => console.error('Failed to fetch game stats:', error));

@@ -252,7 +252,7 @@ async function openaicall(model, round, past_words_array, res) {
     }
 
     try {
-        let temp = round === 1 ? 2.0 : 1.2;
+        let temp = round === 1 ? 1.8 : 1.2;
         const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,

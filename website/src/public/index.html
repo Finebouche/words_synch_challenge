@@ -282,16 +282,23 @@
 
             <button class="button small-button" id="submitQuestionnaire" style="margin-top: 10px;">Submit Answers</button>
         </div>
-        <div id="thankYouContainer" style="display: none;">
-            <div id="messageThanks" class="gameMessage">
-                Thank you for your answers!
-            </div>
-            <button class="button big-button" id="restartButtonTwo" data-translate="restart">Play again</button>
-        </div>
-        <div id="gameStatus"></div>
-
     </div>
-
+    <div id="thankYouContainer" style="display: none;">
+        <div id="messageThanks" class="gameMessage">
+            Thank you for your answers!
+        </div>
+        <button class="button big-button" id="restartButtonTwo" data-translate="restart">Play again</button>
+    </div>
+    <!-- Return to Prolific button -->
+    <div id="returnToProlific" style="display: none;">
+        <div class="gameMessage">
+            Thank you for your help, you can return to prolific or continue to play if you want. The prolific code is : C13KMI81
+        </div>
+        <a href="https://app.prolific.com/submissions/complete?cc=C13KMI81" target="_blank" rel="noopener noreferrer">
+            <button class="button small-button" id="prolificButton" data-translate="prolificButton">Return to Prolific</button>
+        </a>
+    </div>
+    <div id="gameStatus"></div>
     <!-- GITHUB BUTTON -->
     <div id="github-button" class="selector">
         <a href="https://github.com/Finebouche/words_synch_challenge"
