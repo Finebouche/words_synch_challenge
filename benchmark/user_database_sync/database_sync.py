@@ -90,11 +90,11 @@ if __name__ == '__main__':
     subdir = 'databases'
 
     # merge two databases
-    database1 = "downloaded_word_sync_20250205_161200.db"
-    database2 = "downloaded_word_sync_20250206_144759.db"
-    output_database = "merged.db"
-    combine_databases(subdir, database1, database2, output_database)
+    # database1 = "downloaded_word_sync_20250205_161200.db"
+    # database2 = "downloaded_word_sync_20250206_144759.db"
+    # output_database = "merged.db"
+    # combine_databases(subdir, database1, database2, output_database)
 
     # # Download the database into the subdirectory
-    # download_url = 'https://word-sync.games//database/download-database'  # URL to download the database
-    # download_database(download_url, token, subdir)
+    download_url = 'https://word-sync.games//database/download-database'  # URL to download the database
+    download_database(download_url, token, subdir)

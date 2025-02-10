@@ -42,8 +42,12 @@ def quantitative_analysis(player_games):
     for index, game in player_games.iterrows():
         embedding_my = game['embedding_my']
         embedding_opponent = game['embedding_opponent']
-        word_my = eval(game['word_my'])
-        word_opponent = eval(game['word_opponent'])
+        if isinstance(embedding_my, list):
+            word_my = game['word_my']
+            word_opponent = game['word_opponent']
+        else:
+            word_my = eval(game['word_my'])
+            word_opponent = eval(game['word_opponent'])
 
         num_rounds = min(len(embedding_my), len(embedding_opponent), len(word_my), len(word_opponent))
 

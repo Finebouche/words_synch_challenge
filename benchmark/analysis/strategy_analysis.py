@@ -294,9 +294,9 @@ if __name__ == "__main__":
     from utils.embeding_utils import (get_embeddings_for_table, calculate_pca_for_embeddings,
                                      plot_embedding_distance_during_game,
                                      plot_distance_evolution_per_player)
-    from game_statistics import calculate_game_metrics_per_configuration
+    from game_statistics import calculate_game_metrics_per_configuration, calculate_game_metrics_per_player
 
-    db_name = "merged.db"
+    db_name = "downloaded_word_sync_20250210_195900.db"
     csv_name = "games.csv"
 
     # 1) Load the data
@@ -307,7 +307,7 @@ if __name__ == "__main__":
         games_df = pd.read_csv(csv_name)
 
     # 2) Get embeddings (and do PCA with e.g. 50 components)
-    embedding_model = "glove"
+    embedding_model = "word2vec"
     games_df = get_embeddings_for_table( games_df, model_name=embedding_model,)
 
     game_df = calculate_pca_for_embeddings(
@@ -323,6 +323,12 @@ if __name__ == "__main__":
     player_metrics = calculate_game_metrics_per_configuration(games_df)
     print("Success Rate and Average Rounds for Winning Games:")
     print(player_metrics)
+
+    # 4) Calculate player metrics
+    player_metrics = calculate_game_metrics_per_player(games_df)
+    print("Average Number of Rounds and Success Rate per Player:")
+    print(player_metrics)
+
 
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
