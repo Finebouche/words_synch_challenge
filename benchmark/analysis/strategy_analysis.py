@@ -16,7 +16,7 @@ from nltk.corpus import wordnet as wn
 
 
 #########################
-# WORDNET RELATIONSHIP  #
+# QUALITATIVE ANALYSIS  #
 #########################
 
 def is_hypernym(candidate_word, original_word):
@@ -108,6 +108,92 @@ def is_synonym(word_a, word_b):
     # If there's any overlap, it indicates a shared sense (synonym in at least one sense).
     return len(synsets_a.intersection(synsets_b)) > 0
 
+
+##############################
+# NEW LEXICAL RELATIONS      #
+##############################
+
+def is_meronym(candidate_word, original_word):
+    """
+    Return True if candidate_word is a meronym of original_word.
+    Checks if any synset of candidate_word appears in any of the meronym lists
+    (part, substance, or member meronyms) of any synset of original_word.
+    """
+    candidate_word = candidate_word.lower()
+    original_word = original_word.lower()
+    candidate_synsets = wn.synsets(candidate_word)
+    original_synsets = wn.synsets(original_word)
+
+    for o_syn in original_synsets:
+        for meronym_func in [lambda s: s.part_meronyms(),
+                             lambda s: s.substance_meronyms(),
+                             lambda s: s.member_meronyms()]:
+            meronyms = meronym_func(o_syn)
+            if any(c_syn in meronyms for c_syn in candidate_synsets):
+                return True
+    return False
+
+
+def is_holonym(candidate_word, original_word):
+    """
+    Return True if candidate_word is a holonym of original_word.
+    Checks if any synset of candidate_word appears in any of the holonym lists
+    (part, substance, or member holonyms) of any synset of original_word.
+    """
+    candidate_word = candidate_word.lower()
+    original_word = original_word.lower()
+    candidate_synsets = wn.synsets(candidate_word)
+    original_synsets = wn.synsets(original_word)
+
+    for o_syn in original_synsets:
+        for holonym_func in [lambda s: s.part_holonyms(),
+                             lambda s: s.substance_holonyms(),
+                             lambda s: s.member_holonyms()]:
+            holonyms = holonym_func(o_syn)
+            if any(c_syn in holonyms for c_syn in candidate_synsets):
+                return True
+    return False
+
+
+def is_troponym(candidate_word, original_word):
+    """
+    Return True if candidate_word is a troponym of original_word.
+    (Troponyms capture the manner of performing a verb.)
+    Applicable for verbs.
+    """
+    candidate_word = candidate_word.lower()
+    original_word = original_word.lower()
+    candidate_synsets = wn.synsets(candidate_word, pos=wn.VERB)
+    original_synsets = wn.synsets(original_word, pos=wn.VERB)
+
+    for o_syn in original_synsets:
+        # Use try/except to handle if 'troponyms' is not available
+        try:
+            troponyms = o_syn.troponyms()
+        except AttributeError:
+            troponyms = []  # Fallback if not implemented
+        if any(c_syn in troponyms for c_syn in candidate_synsets):
+            return True
+    return False
+
+
+def is_entailment(candidate_word, original_word):
+    """
+    Return True if candidate_word is entailed by original_word.
+    (Entailment in verbs indicates that the occurrence of one action implies another.)
+    Applicable for verbs.
+    """
+    candidate_word = candidate_word.lower()
+    original_word = original_word.lower()
+    candidate_synsets = wn.synsets(candidate_word, pos=wn.VERB)
+    original_synsets = wn.synsets(original_word, pos=wn.VERB)
+
+    for o_syn in original_synsets:
+        entailments = o_syn.entailments()
+        if any(c_syn in entailments for c_syn in candidate_synsets):
+            return True
+    return False
+
 ###########################
 # THEMATIC ALIGNMENT TEST #
 ###########################
@@ -149,24 +235,29 @@ def is_thematic_alignment(word_a, word_b):
 
 def qualitative_analysis(player_games):
     """
-    Compute 3 boolean-based measures per round:
-      - abstraction_measure: is current_word a hypernym of opponent's prev word?
-      - contrast_measure: is current_word an antonym of opponent's prev word?
-      - synonym_measure: is current_word a synonym of player's own prev word?
+    Compute multiple boolean-based measures per round, including:
+      - abstraction_measure: is current_word a hypernym of opponent's prev word OR hyponym of player's own prev word?
+      - contrast_measure: is current_word an antonym of opponent's prev word OR player's own prev word?
+      - synonym_measure: is current_word a synonym of opponent's prev word OR player's own prev word?
+      - morphological_variation_measure: are current_word and previous words morphological variations?
+      - thematic_alignment_measure: do current_word and previous words share a broad category?
+      - meronym_measure: is current_word a meronym of opponent's prev word OR a holonym of player's own prev word?
+      - troponymy_measure: (for verbs) is current_word a troponym of opponent's prev word OR entailed by player's own prev word?
 
-    Stores results in columns:
-      - 'abstraction_measure'
-      - 'contrast_measure'
-      - 'synonym_measure'
-      - 'morhological_variation_measure'
-    Each is a list of length = #rounds with 0/1 or np.nan for round 0.
+    Each measure is stored as a list (with length = number of rounds) containing 0/1 values
+    (or np.nan for round 0).
     """
+    # Initialize new columns
     player_games['abstraction_measure'] = None
     player_games['contrast_measure'] = None
     player_games['synonym_measure'] = None
     player_games['morphological_variation_measure'] = None
+    player_games['thematic_alignment_measure'] = None
+    player_games['meronym_measure'] = None
+    player_games['troponymy_measure'] = None
 
     for index, game in player_games.iterrows():
+        # Convert string representations to lists if necessary
         word_my = eval(game['word_my'])
         word_opponent = eval(game['word_opponent'])
         num_rounds = min(len(word_my), len(word_opponent))
@@ -175,6 +266,9 @@ def qualitative_analysis(player_games):
         contrast_list = []
         synonym_list = []
         morph_variation_list = []
+        thematic_alignment_list = []
+        meronym_list = []
+        troponymy_list = []
 
         for i in range(num_rounds):
             if i == 0:
@@ -182,43 +276,50 @@ def qualitative_analysis(player_games):
                 contrast_list.append(np.nan)
                 synonym_list.append(np.nan)
                 morph_variation_list.append(np.nan)
+                thematic_alignment_list.append(np.nan)
+                meronym_list.append(np.nan)
+                troponymy_list.append(np.nan)
             else:
                 current_word = word_my[i]
                 prev_opponent_word = word_opponent[i - 1]
                 prev_my_word = word_my[i - 1]
 
-                abstraction_score = int(is_hypernym(current_word, prev_opponent_word))
-                contrast_score = int(is_antonym(current_word, prev_opponent_word))
-                synonym_score = int(is_synonym(current_word, prev_my_word))
-                morph_variation_score = int(is_morphological_variation(current_word, prev_my_word))
+                abstraction_score = int(is_hypernym(current_word, prev_opponent_word)) + int(
+                    is_hyponym(current_word, prev_my_word))
+                contrast_score = int(is_antonym(current_word, prev_opponent_word)) + int(
+                    is_antonym(current_word, prev_my_word))
+                synonym_score = int(is_synonym(current_word, prev_opponent_word)) + int(
+                    is_synonym(current_word, prev_my_word))
+                morph_variation_score = int(is_morphological_variation(current_word, prev_opponent_word)) + int(
+                    is_morphological_variation(current_word, prev_my_word))
+                thematic_alignment_score = int(is_thematic_alignment(current_word, prev_opponent_word)) + int(
+                    is_thematic_alignment(current_word, prev_my_word))
+                meronym_score = int(is_meronym(current_word, prev_opponent_word)) + int(
+                    is_holonym(current_word, prev_my_word))
+                troponymy_score = int(is_troponym(current_word, prev_opponent_word)) + int(
+                    is_entailment(current_word, prev_my_word))
 
                 abstraction_list.append(abstraction_score)
                 contrast_list.append(contrast_score)
                 synonym_list.append(synonym_score)
                 morph_variation_list.append(morph_variation_score)
+                thematic_alignment_list.append(thematic_alignment_score)
+                meronym_list.append(meronym_score)
+                troponymy_list.append(troponymy_score)
 
         player_games.at[index, 'abstraction_measure'] = abstraction_list
         player_games.at[index, 'contrast_measure'] = contrast_list
         player_games.at[index, 'synonym_measure'] = synonym_list
         player_games.at[index, 'morphological_variation_measure'] = morph_variation_list
+        player_games.at[index, 'thematic_alignment_measure'] = thematic_alignment_list
+        player_games.at[index, 'meronym_measure'] = meronym_list
+        player_games.at[index, 'troponymy_measure'] = troponymy_list
 
     return player_games
 
 ##############################
 # QUANTITATIVE (DISTANCES)  #
 ##############################
-
-
-def expansion_score(vec_new, vec_a, vec_b):
-    """
-    Returns the cosine similarity between vec_new and the average of vec_a + vec_b.
-    Higher => more of a 'bridge' or expansion between a & b.
-    """
-    from numpy.linalg import norm
-    avg_vec = (vec_a + vec_b) / 2.0
-    dot = np.dot(vec_new, avg_vec)
-    sim = dot / (norm(vec_new)*norm(avg_vec) + 1e-9)
-    return sim
 
 def min_max_normalize(values):
     """
@@ -251,7 +352,6 @@ def quantitative_analysis(player_games):
     player_games['mirroring_distance'] = None
     player_games['balancing_distance'] = None
     player_games['staying_close_distance'] = None
-    player_games['conceptual_expansion_distance'] = None
 
     for index, game in player_games.iterrows():
         embedding_my = game['embedding_my']
@@ -264,14 +364,12 @@ def quantitative_analysis(player_games):
         mirroring_list = []
         balancing_list = []
         staying_close_list = []
-        expansion_list = []
 
         for i in range(num_rounds):
             if i == 0:
                 mirroring_list.append(np.nan)
                 balancing_list.append(np.nan)
                 staying_close_list.append(np.nan)
-                expansion_list.append(np.nan)
             else:
                 current_word_embed = embedding_my[i]
                 prev_opp_embed = embedding_opponent[i - 1]
@@ -286,34 +384,135 @@ def quantitative_analysis(player_games):
                 balancing_list.append(balancing_dist)
                 staying_close_list.append(staying_close_dist)
 
-                # Conceptual expansion: computed as cosine similarity.
-                sim_expansion = expansion_score(current_word_embed, prev_my_embed, prev_opp_embed)
-                # Convert similarity to a distance measure:
-                expansion_distance = 1.0 - sim_expansion
-                expansion_list.append(expansion_distance)
-
         # Store raw results:
         player_games.at[index, 'mirroring_distance'] = mirroring_list
         player_games.at[index, 'balancing_distance'] = balancing_list
         player_games.at[index, 'staying_close_distance'] = staying_close_list
-        player_games.at[index, 'conceptual_expansion_distance'] = expansion_list
 
         # Normalize each measure for this game (per row normalization across rounds)
         norm_mirroring = min_max_normalize(mirroring_list)
         norm_balancing = min_max_normalize(balancing_list)
         norm_staying_close = min_max_normalize(staying_close_list)
-        norm_expansion = min_max_normalize(expansion_list)
 
         player_games.at[index, 'mirroring_distance'] = norm_mirroring
         player_games.at[index, 'balancing_distance'] = norm_balancing
         player_games.at[index, 'staying_close_distance'] = norm_staying_close
-        player_games.at[index, 'conceptual_expansion_distance'] = norm_expansion
 
     return player_games
 
 ##################################
 #  MAIN STRATEGY ANALYSIS LOOP   #
 ##################################
+
+def assign_qualitative_strategy(row):
+    """
+    For each round in the game, assign one OR MORE labels based on the boolean-like
+    WordNet measures. We now accept multiple 'winning' strategies if they tie
+    for the highest numeric score in that round.
+
+    Measures (and their meaning):
+        - abstraction_measure         (hypernym/hyponym checks)
+        - contrast_measure            (antonym checks)
+        - synonym_measure             (synonym checks)
+        - morphological_variation_measure
+        - thematic_alignment_measure
+        - meronym_measure
+        - troponymy_measure
+
+    Behavior:
+        - If all measures are zero, store ["none"].
+        - Otherwise, find the maximum integer score among these measures
+        (e.g., 2) and collect ALL measure names that match that max score (> 0).
+        - Append that list for each round, so we end up with a list of lists:
+          [ ["none"], ["synonym", "contrast"], ["abstraction"], ... ]
+    """
+    # Retrieve the lists from the row (each is a list of per-round integers or np.nan)
+    abstraction = row['abstraction_measure']
+    contrast = row['contrast_measure']
+    synonym = row['synonym_measure']
+    morph = row['morphological_variation_measure']
+    thematic = row['thematic_alignment_measure']
+    meronym = row['meronym_measure']
+    troponymy = row['troponymy_measure']
+
+    num_rounds = len(abstraction)  # all should have the same length
+    strategy_labels = []
+
+    for i in range(num_rounds):
+        # If round i is NaN (often round 0), just store None
+        if pd.isna(abstraction[i]):
+            strategy_labels.append(None)
+            continue
+
+        # Build a dict: measure_name -> measure_value
+        measure_values = {
+            'synonym': synonym[i],
+            'morphological_variation': morph[i],
+            'abstraction': abstraction[i],
+            'contrast': contrast[i],
+            'thematic_alignment': thematic[i],
+            'meronym': meronym[i],
+            'troponymy': troponymy[i],
+        }
+
+        # If all measures == 0, store ["none"]
+        if all(val == 0 for val in measure_values.values()):
+            winning_strats = ["none"]
+        else:
+            # Determine the maximum integer value
+            max_value = max(measure_values.values())
+
+            # Collect all measure names that match max_value (and > 0)
+            winning_strats = [
+                mname
+                for mname, mval in measure_values.items()
+                if mval == max_value and mval > 0
+            ]
+
+            # If the max_value is 0, or for some reason no measures qualified, fallback to ["none"]
+            if not winning_strats:
+                winning_strats = ["none"]
+
+        # Append the list of winning strategies (could be 1 or multiple)
+        strategy_labels.append(winning_strats)
+
+    return strategy_labels
+
+def assign_quantitative_strategy(row):
+    """
+    For each round, pick the label corresponding to the *lowest distance* among
+    the quantitative distance measures.
+
+    Measures:
+     - mirroring_distance
+     - balancing_distance
+     - staying_close_distance
+    """
+    mirroring = row['mirroring_distance']
+    balancing = row['balancing_distance']
+    staying_close = row['staying_close_distance']
+
+    num_rounds = len(mirroring)  # they should have the same length
+    strategy_labels = []
+
+    for i in range(num_rounds):
+        if pd.isna(mirroring[i]):
+            strategy_labels.append(None)
+            continue
+
+        # We pick the measure with minimum distance.
+        distances = {
+            'mirroring': mirroring[i],
+            'balancing': balancing[i],
+            'staying_close': staying_close[i]
+        }
+
+        # If all are valid floats, find the minimum
+        chosen = min(distances, key=distances.get)
+        strategy_labels.append(chosen)
+
+    return strategy_labels
+
 
 def strategy_analysis(games_df, embedding_model, use_pca=False):
     """
@@ -367,10 +566,10 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
             # 2) Qualitative
             player_games = qualitative_analysis(player_games)
 
-            # 3) Decide winning strategy
-            win_strat = player_games.apply(decide_winning_strategy, axis=1)
-            player_games['winning_strategy_name'] = win_strat.apply(lambda x: x[0])
-            player_games['winning_strategy_encoding'] = win_strat.apply(lambda x: x[1])
+            # 3) Decide winning strategies
+            # Apply to each row
+            player_games['qualitative_strategy_name'] = player_games.apply(assign_qualitative_strategy, axis=1)
+            player_games['quantitative_strategy_name'] = player_games.apply(assign_quantitative_strategy, axis=1)
 
             results.append(player_games)
 
@@ -380,130 +579,65 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
     return pd.concat(results, ignore_index=True)
 
 
-##################################
-#  CHOOSING THE 'WINNING' STRAT  #
-##################################
-
-def decide_winning_strategy(row):
+def plot_strategy_heatmap(
+    results_df,
+    strategy_col="qualitative_strategy_name",
+    groupby='player'
+):
     """
-    For each round in the game row, decide which strategy 'wins'.
-    Priority:
-      1) If any of (synonym, abstraction, contrast) is 1 => choose among them in order: synonym > abstraction > contrast > morphological_variation
-      2) Otherwise pick the min among the distance-based strategies:
-         mirroring, balancing, staying_close, phonetic_distance, conceptual_expansion_distance
-         (Be mindful that conceptual_expansion_distance is actually a *similarity*, so if you want
-          to interpret "lowest distance" logic, you might do 1 - expansion_distance or handle it separately).
+    Plot a heatmap showing average usage frequency of each strategy label
+    in `strategy_col`, grouped by either 'player' or 'game'.
+
+    Parameters
+    ----------
+    results_df : pd.DataFrame
+        DataFrame containing at least:
+            - 'playerId' or 'botId' columns (for grouping),
+            - a column `strategy_col` that is a list of lists of labels,
+              one sub-list per round (for multi-strategy ties),
+            - 'word_my'/'word_opponent' (or at least consistent # of rounds).
+    strategy_col : str
+        The DataFrame column name that holds a list of *lists* of strategy labels,
+        e.g. "qualitative_strategy_name" or "quantitative_strategy_name".
+    groupby : {'player', 'game'}
+        How to group the data in the heatmap.
     """
-    mirroring = row['mirroring_distance']
-    balancing = row['balancing_distance']
-    staying_close = row['staying_close_distance']
-    expansion = row['conceptual_expansion_distance']  # this is a similarity
 
-    abstraction = row['abstraction_measure']
-    contrast = row['contrast_measure']
-    synonym = row['synonym_measure']
-    morph_variation = row['morphological_variation_measure']
+    # 1) Define the set of possible labels for your chosen strategy_col.
+    #    Adjust as needed to match your actual labels.
+    if strategy_col == "qualitative_strategy_name":
+        possible_strategies = [
+            "none",
+            "synonym",
+            "morphological_variation",
+            "abstraction",
+            "contrast",
+            "thematic_alignment",
+            "meronym",
+            "troponymy",
+        ]
+    elif strategy_col == "quantitative_strategy_name":
+        possible_strategies = [
+            "mirroring",
+            "balancing",
+            "staying_close",
+        ]
+    else:
+        # Fallback or a custom list. E.g., you could parse the unique labels:
+        # possible_strategies = find_unique_strategies(results_df[strategy_col])
+        raise ValueError(f"Unknown strategy column: {strategy_col}")
 
-
-    num_rounds = len(mirroring)  # they should all have the same length
-
-    # We'll define a fixed order for encoding
-    strategy_order = [
-        "mirroring_distance",
-        "balancing_distance",
-        "staying_close_distance",
-        "conceptual_expansion_distance",
-        "abstraction_measure",
-        "contrast_measure",
-        "synonym_measure",
-        "morphological_variation_measure"
-    ]
-
-    winning_names = []
-    winning_encodings = []
-
-    for i in range(num_rounds):
-        if i == 0:
-            winning_names.append(None)
-            winning_encodings.append([np.nan]*len(strategy_order))
-        else:
-            bool_syn = synonym[i]
-            bool_abs = abstraction[i]
-            bool_con = contrast[i]
-            bool_morph = morph_variation[i]
-
-            if bool_syn == 1 or bool_abs == 1 or bool_con == 1 or bool_morph == 1:
-                if bool_morph == 1:
-                    chosen = "morphological_variation_measure"
-                elif bool_syn == 1:
-                    chosen = "synonym_measure"
-                elif bool_abs == 1:
-                    chosen = "abstraction_measure"
-                elif bool_con == 1:
-                    chosen = "contrast_measure"
-
-            else:
-                d_mirroring = mirroring[i]
-                d_balancing = balancing[i]
-                d_staying_close = staying_close[i]
-                sim_expansion = expansion[i]
-                d_expansion = 1 - sim_expansion if not np.isnan(sim_expansion) else float('inf')
-
-                distances = {
-                    "mirroring_distance": d_mirroring,
-                    "balancing_distance": d_balancing,
-                    "staying_close_distance": d_staying_close,
-                    "conceptual_expansion_distance": d_expansion
-                }
-                chosen = min(distances, key=distances.get)
-
-            # Record
-            winning_names.append(chosen)
-            encoding = [1 if s == chosen else 0 for s in strategy_order]
-            winning_encodings.append(encoding)
-
-    return (winning_names, winning_encodings)
-
-
-###################################
-#    HEATMAP + PRINTING RESULTS   #
-###################################
-
-def plot_strategy_heatmap(results_df, groupby='player'):
-    """
-    Plot a heatmap showing the average winning strategy usage,
-    based on winning_strategy_encoding, which is a list of binary vectors per row.
-
-    Strategy order (internal):
-      [
-         "mirroring_distance",
-         "balancing_distance",
-         "staying_close_distance",
-         "conceptual_expansion_distance",
-         "abstraction_measure",
-         "contrast_measure",
-         "synonym_measure"
-         "morphological_variation_measure"
-      ]
-    """
-    display_mapping = {
-        "mirroring_distance": "mirroring",
-        "balancing_distance": "balancing",
-        "staying_close_distance": "staying_close",
-        "conceptual_expansion_distance": "conceptual_expansion",
-        "abstraction_measure": "abstraction",
-        "contrast_measure": "contrast",
-        "synonym_measure": "synonym",
-        "morphological_variation_measure": "morphological_variation"
-    }
-
-    strategy_order = list(display_mapping.keys())
-
+    # 2) Prepare to accumulate rows => we'll build a "long format" table.
     rows = []
+
+    # 3) For each row (one game from one player's perspective),
+    #    compute the frequency of each label across the rounds.
     for idx, row in results_df.iterrows():
+        # Determine the group value for this row
         if groupby == 'player':
             group_val = row.get("playerId", "Unknown")
         elif groupby == 'game':
+            # Example: Distinguish 'Human vs Bot' vs. 'Human vs Human'
             if "botId" in row:
                 if pd.isna(row["botId"]) or row["botId"] == "":
                     group_val = "Human vs Human"
@@ -512,29 +646,70 @@ def plot_strategy_heatmap(results_df, groupby='player'):
             else:
                 group_val = "Unknown"
         else:
-            raise ValueError("groupby must be either 'player' or 'game'")
+            raise ValueError("groupby must be either 'player' or 'game'.")
 
-        encoding_list = row.get("winning_strategy_encoding", None)
-        if encoding_list is not None and isinstance(encoding_list, list):
-            arr = np.array(encoding_list, dtype=float)  # shape (num_rounds, 8)
-            avg_vals = np.nanmean(arr, axis=0)  # mean across rounds
+        # Get the "strategy_list", which should be a list of lists,
+        # e.g. [ ["synonym"], ["synonym","contrast"], ["none"], ... ]
+        strategy_list = row.get(strategy_col, None)
+
+        # Initialize a frequency dict for the possible strategies
+        freq_dict = {s: 0 for s in possible_strategies}
+        total_count = 0  # total number of label occurrences across all rounds
+
+        if isinstance(strategy_list, list) and len(strategy_list) > 0:
+            # For each round's sub-list of labels
+            for round_labels in strategy_list:
+                # If it's None, empty, or not a list, handle accordingly
+                if not round_labels:
+                    # e.g., None or []
+                    continue
+                if not isinstance(round_labels, list):
+                    # If for some reason it's a single string, wrap in a list
+                    round_labels = [round_labels]
+
+                # Count how many labels appear this round
+                total_count += len(round_labels)
+                for lab in round_labels:
+                    # If label is recognized, increment it; otherwise, increment "none"
+                    if lab in freq_dict:
+                        freq_dict[lab] += 1
+                    else:
+                        freq_dict["none"] += 1
         else:
-            avg_vals = np.full(len(strategy_order), np.nan)
+            # If no data for this row, mark everything as NaN
+            total_count = 0
 
-        for i, strategy in enumerate(strategy_order):
+        # Convert raw counts to frequencies
+        if total_count > 0:
+            for s in possible_strategies:
+                freq_dict[s] = freq_dict[s] / total_count
+        else:
+            for s in possible_strategies:
+                freq_dict[s] = np.nan
+
+        # Collect rows for "long format"
+        for s in possible_strategies:
             rows.append({
                 "group": group_val,
-                "strategy": strategy,
-                "value": avg_vals[i]
+                "strategy": s,
+                "value": freq_dict[s]
             })
 
+    # 4) Convert to DataFrame, then group by ("group","strategy"), compute mean, pivot
     long_df = pd.DataFrame(rows)
     grouped = long_df.groupby(["group", "strategy"])["value"].mean().reset_index()
     pivoted = grouped.pivot(index="group", columns="strategy", values="value")
-    pivoted.rename(columns=display_mapping, inplace=True)
 
+    # 5) Plot the heatmap
     fig, ax = plt.subplots(figsize=(10, 6))
-    cax = ax.matshow(pivoted.values, cmap="coolwarm", aspect="auto", interpolation="nearest")
+    cax = ax.matshow(
+        pivoted.values,
+        cmap="coolwarm",
+        aspect="auto",
+        interpolation="nearest",
+        vmin=0,  # Frequencies from 0..1
+        vmax=1,
+    )
 
     cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
@@ -546,14 +721,15 @@ def plot_strategy_heatmap(results_df, groupby='player'):
 
     if groupby == 'player':
         ax.set_ylabel("Player ID")
-        ax.set_title("Average Winning Strategy Measures by Player (Percentage)")
+        title_grouping = "by Player"
     else:
         ax.set_ylabel("Game Configuration")
-        ax.set_title("Average Winning Strategy Measures by Game Configuration (Percentage)")
+        title_grouping = "by Game Configuration"
 
     ax.set_xlabel("Strategy")
+    ax.set_title(f"Average '{strategy_col}' Usage Frequency {title_grouping} (as %)")
 
-    # Annotate cells with percentage
+    # 6) Annotate cells with percentage
     for i in range(pivoted.shape[0]):
         for j in range(pivoted.shape[1]):
             val = pivoted.values[i, j]
@@ -563,46 +739,55 @@ def plot_strategy_heatmap(results_df, groupby='player'):
     plt.tight_layout()
     plt.show()
 
-def print_game_turns(results_df, n=20, filter_strategies=None):
+def print_game_turns(
+        results_df,
+        n=5
+):
     """
-    Print turn details for the first n rows (games) in results_df.
-    If filter_strategies is provided, only print turns whose winning strategy is in that set.
+    Example function that prints both words and
+    multi-label qualitative strategy for each round.
     """
-    display_mapping = {
-        "mirroring_distance": "mirroring",
-        "balancing_distance": "balancing",
-        "staying_close_distance": "staying_close",
-        "conceptual_expansion_distance": "conceptual_expansion",
-        "abstraction_measure": "abstraction",
-        "contrast_measure": "contrast",
-        "synonym_measure": "synonym",
-        "morphological_variation_measure": "morphological_variation"
-    }
 
     for idx, row in results_df.head(n).iterrows():
         print(f"Game {idx}:")
-        word_my = eval(row['word_my'])
-        word_opponent = eval(row['word_opponent'])
-        winning_strats = row['winning_strategy_name']
-        rounds = min(len(word_my), len(word_opponent), len(winning_strats))
+        word_my = row["word_my"]
+        word_opponent = row["word_opponent"]
 
-        if rounds < 2:
-            print("  Not enough rounds to display details.\n")
+        q_strats = row.get("qualitative_strategy_name", [])
+        t_strats = row.get("quantitative_strategy_name", [])
+
+        # If these are strings, parse them:
+        if isinstance(word_my, str):
+            word_my = eval(word_my)
+        if isinstance(word_opponent, str):
+            word_opponent = eval(word_opponent)
+
+        num_rounds = min(len(word_my), len(word_opponent), len(q_strats), len(t_strats))
+        if num_rounds < 2:
+            print("  Not enough rounds.\n")
             continue
 
-        for i in range(1, rounds):
-            prev_pword = word_my[i-1]
-            prev_oword = word_opponent[i-1]
+        for i in range(1, num_rounds):
+            prev_pword = word_my[i - 1]
+            prev_oword = word_opponent[i - 1]
             curr_pword = word_my[i]
-            strat = winning_strats[i]
 
-            if strat is None:
-                continue
-            if filter_strategies and strat not in filter_strategies:
-                continue
+            # Qual might be a list of strategies:
+            q_label_list = q_strats[i] if i < len(q_strats) else None
+            # Convert e.g. ["synonym", "contrast"] -> "synonym,contrast"
+            if isinstance(q_label_list, list):
+                q_label_str = ",".join(q_label_list)
+            else:
+                q_label_str = str(q_label_list)
 
-            readable_strat = display_mapping.get(strat, strat)
-            print(f"  Turn {i}: [{prev_pword} / {prev_oword}] -> {curr_pword}  (winning strategy: {readable_strat})")
+            # Quant normally a single label:
+            t_label = t_strats[i] if i < len(t_strats) else None
+
+            print(
+                f"  Turn {i}: [{prev_pword} / {prev_oword}] -> {curr_pword}  "
+                f"(qualitative: {q_label_str}, quantitative: {t_label})"
+            )
+
         print()
 
 if __name__ == "__main__":
@@ -643,30 +828,24 @@ if __name__ == "__main__":
 
     # 5) Strategy analysis (using the PCA columns):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
-    plot_strategy_heatmap(results_df, groupby='game')
+    plot_strategy_heatmap(results_df, strategy_col="qualitative_strategy_name", groupby='game')
+    plot_strategy_heatmap(results_df, strategy_col="quantitative_strategy_name", groupby='game')
     # plot_strategy_heatmap(results_df)
 
     # 4) Plot distances with the original or PCA embeddings
-    plot_embedding_distance_during_game(
-        results_df,
-        distance_func=cosine,
-        embedding_model="glove",
-        use_pca=True,
-        align_end=True,
-    )
-    plot_embedding_distance_during_game(
-        results_df,
-        distance_func=cosine,
-        embedding_model="glove",
-        use_pca=False,
-        align_end=True,
-    )
-    plot_distance_evolution_per_player(
-        results_df,
-        distance_func=cosine,
-        embedding_model="glove",
-        use_pca=True,
-        last_rounds=5,
-    )
+    # plot_embedding_distance_during_game(
+    #     results_df,
+    #     distance_func=cosine,
+    #     embedding_model="glove",
+    #     use_pca=True,
+    #     align_end=True,
+    # )
+    # plot_distance_evolution_per_player(
+    #     results_df,
+    #     distance_func=cosine,
+    #     embedding_model="glove",
+    #     use_pca=True,
+    #     last_rounds=5,
+    # )
 
     print_game_turns(results_df, n=5)
