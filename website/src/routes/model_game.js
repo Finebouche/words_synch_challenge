@@ -67,6 +67,10 @@ async function checkIfWordExists(llmWord) {
         }
 }
 
+function checkIfWordPreviouslyUsed(newWord, pastWords) {
+    return pastWords.includes(newWord);
+}
+
 router.post('/initialize-model', async (req, res) => {
     const model = req.body.model; // Retrieve the model from the request body
     const playerId = req.body.player_id;
@@ -252,7 +256,7 @@ async function openaicall(model, round, past_words_array, res) {
     }
 
     try {
-        let temp = round === 1 ? 1.8 : 1.2;
+        let temp = round === 1 ? 1.6 : 1.1;
         const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,
@@ -261,13 +265,15 @@ async function openaicall(model, round, past_words_array, res) {
         });
 
         const llmWord = response.choices[0].message.content.trim();
-        return llmWord.replace(/[^a-zA-Z]/g, "");
+        return llmWord.replace(/[^a-zA-Z]/g, "").toLowerCase();
 
     } catch (error) {
         console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
         res.status(500).send("Error calling the OpenAI API");
     }
 }
+
+
 
 router.post('/query-model', async (req, res) => {
     const past_words_array = req.body.previous_words;
@@ -291,13 +297,16 @@ router.post('/query-model', async (req, res) => {
         } else {
             return res.status(400).send("Invalid model provider");
         }
+
         console.log(`Model ${model.name} returned word: ${llmWord}`);
 
         // Ensure the function waits for the check before continuing
         let exists = await checkIfWordExists(llmWord);
 
-        if (exists) {
-            llmWord = llmWord.replace(/[^a-zA-Z]/g, ""); // Fix replace issue
+        // Check if the word has been used before
+        let previouslyUsed = checkIfWordPreviouslyUsed(llmWord, past_words_array);
+
+        if (exists && !previouslyUsed) {
             break; // Exit loop when we get a unique word
         }
     }
