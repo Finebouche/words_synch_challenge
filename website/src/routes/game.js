@@ -10,11 +10,14 @@ router.post('/answers', async (req, res) => {
     const {
       gameId,
       playerId,  // Now we check which player is submitting the data
-      strategyUsed,
-      otherPlayerStrategy,
+      quantitativeStrategyUsed,
+      qualitativeStrategyUsed,
+      quantitativeOtherPlayerStrategy,
+      qualitativeOtherPlayerStrategy,
       otherPlayerUnderstoodYourStrategies,
       didYouUnderstandOtherPlayerStrategy,
-      otherPlayerRating
+      otherPlayerRating,
+      connectionFeeling
     } = req.body;
 
     // 1) Find the game in the database
@@ -39,11 +42,14 @@ router.post('/answers', async (req, res) => {
     // 4) Append new answers
     existingAnswers.push({
       timestamp: new Date().toISOString(),
-      strategyUsed,
-      otherPlayerStrategy,
+      quantitativeStrategyUsed,
+      qualitativeStrategyUsed,
+      quantitativeOtherPlayerStrategy,
+      qualitativeOtherPlayerStrategy,
       otherPlayerUnderstoodYourStrategies,
       didYouUnderstandOtherPlayerStrategy,
-      otherPlayerRating
+      otherPlayerRating,
+      connectionFeeling
     });
 
     // 5) Save back to the correct field

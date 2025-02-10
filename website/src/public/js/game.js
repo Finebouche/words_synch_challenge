@@ -88,22 +88,23 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     selectLLMGame.addEventListener('click', function () {
         gameMode = 'llm';
-        updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
-
-        // Show LLM-related UI elements
-        selectionLLM.style.display = 'block';
-        llmSelect.style.display = '';
-        messageHuman.style.display = 'none';
-
+        // updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
+        //
+        // // Show LLM-related UI elements
+        // selectionLLM.style.display = 'block';
+        // llmSelect.style.display = '';
+        // messageHuman.style.display = 'none';
+        //
         // Hide game mode selection buttons and language dropdown
         selectLLMGame.style.display = 'none';
         selectHumanGame.style.display = 'none';
         languageSelect.style.display = 'none';
-
-        // Enable start button only when an LLM is selected
-        llmSelect.addEventListener('change', function () {
-            startGameButton.style.display = this.value ? '' : 'none';
-        });
+        //
+        // // Enable start button only when an LLM is selected
+        // llmSelect.addEventListener('change', function () {
+        //     startGameButton.style.display = this.value ? '' : 'none';
+        // });
+        loadModelAndStartGame("gpt-4o");
     });
 
     /**
@@ -179,17 +180,15 @@ function updateModelOptions(selected_language) {
     });
 }
 
-// GAME LOGIC FOR LLMs
-document.getElementById('startLLMGame').addEventListener('click', function () {
+
+function loadModelAndStartGame(model_name) {
+
     let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
 
-    // Get selected model
-    selectedModelName = document.getElementById('llmSelect').value;
-    // Get the corresponding flag emoji for the selected language
     let languageName = languageNames[selectedLanguage];
 
     // Update the text of the paragraphs to show the selections
-    let selectedModel = MODELS.find(model => model.name === selectedModelName);
+    let selectedModel = MODELS.find(model => model.name === model_name);
     document.getElementById('selectedContent').textContent = "Bzz... bzz... model " + selectedModel.name + " loaded, currently playing with " + languageName  + " vocabulary...";
     document.getElementById('languageSelect').style.display = 'none';
     document.getElementById('message-LLM').style.display = 'block';
@@ -227,6 +226,14 @@ document.getElementById('startLLMGame').addEventListener('click', function () {
         .catch(error => {
             console.error('Error initializing model:', error);
         });
+}
+// GAME LOGIC FOR LLMs
+document.getElementById('startLLMGame').addEventListener('click', function () {
+
+    // Get selected model
+    selectedModelName = document.getElementById('llmSelect').value;
+    // Get the corresponding flag emoji for the selected language
+    loadModelAndStartGame(selectedModelName);
 });
 
 async function checkWord(word, language) {
@@ -480,21 +487,28 @@ function limitCheckboxSelection(groupName, maxSelection) {
 
 // Call the function to limit selections to 3 per group
 document.addEventListener('DOMContentLoaded', function () {
-    limitCheckboxSelection('strategyUsed', 3);
-    limitCheckboxSelection('otherPlayerStrategy', 3);
+    limitCheckboxSelection('qualitativeStrategyUsed', 3);
+    limitCheckboxSelection('qualitativeOtherPlayerStrategy', 3);
 });
 
 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
-    const strategyUsed = Array.from(document.querySelectorAll('input[name="strategyUsed"]:checked'))
+    const quantitativeStrategyUsed = document.querySelector('input[name="quantitativeStrategyUsed"]:checked');
+
+    const qualitativeStrategyUsed = Array.from(document.querySelectorAll('input[name="qualitativeStrategyUsed"]:checked'))
                               .map(cb => cb.value);
-    const otherPlayerStrategy = Array.from(document.querySelectorAll('input[name="otherPlayerStrategy"]:checked'))
+    const quantitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]:checked'))
                                      .map(cb => cb.value);
+    const qualitativeOtherPlayerStrategy = document.querySelector('input[name="qualitativeOtherPlayerStrategy"]:checked');
+
     const otherPlayerUnderstoodElem = document.querySelector('input[name="otherPlayerUnderstoodYourStrategies"]:checked');
     const otherPlayerUnderstood = otherPlayerUnderstoodElem ? otherPlayerUnderstoodElem.value : '';
     const didYouUnderstandElem = document.querySelector('input[name="didYouUnderstandOtherPlayerStrategy"]:checked');
     const didYouUnderstandOtherPlayerStrategy = didYouUnderstandElem ? didYouUnderstandElem.value : '';
     const otherPlayerRating = document.getElementById('otherPlayerRating').value;
+    const connectionFeelingElem = document.querySelector('input[name="connectionFeeling"]:checked');
+    const connectionFeeling = connectionFeelingElem ? connectionFeelingElem.value : '';
+
 
     // Post the data to the server
     fetch('/game/answers', {
@@ -504,11 +518,14 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             gameId: gameId,
             role: myRole,
             playerId: getLocalStorageValue('playerId'),
-            strategyUsed: strategyUsed,
-            otherPlayerStrategy: otherPlayerStrategy,
+            quantitativeStrategyUsed: quantitativeStrategyUsed,
+            qualitativeStrategyUsed: qualitativeStrategyUsed,
+            quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy,
+            qualitativeOtherPlayerStrategy: qualitativeOtherPlayerStrategy,
             otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
             didYouUnderstandOtherPlayerStrategy: didYouUnderstandOtherPlayerStrategy,
-            otherPlayerRating: otherPlayerRating
+            otherPlayerRating: otherPlayerRating,
+            connectionFeeling: connectionFeeling
         })
     })
     .then(response => response.json())
@@ -516,10 +533,13 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         if (data.success) {
             console.log('Questionnaire answers saved successfully!', data);
             document.getElementById('questionnaireContainer').style.display = 'none';
-            document.getElementById('strategyUsed').value = '';
-            document.getElementById('otherPlayerStrategy').value = '';
+            document.getElementById('quantitativeStrategyUsed').value = '';
+            document.getElementById('qualitativeStrategyUsed').value = '';
+            document.getElementById('quantitativeOtherPlayerStrategy').value = '';
+            document.getElementById('qualitativeOtherPlayerStrategy').value = '';
             document.querySelectorAll('input[name="otherPlayerUnderstoodYourStrategies"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="didYouUnderstandOtherPlayerStrategy"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="connectionFeeling"]').forEach(input => input.checked = false);
             document.getElementById('otherPlayerRating').value = '1';
         } else {
             console.error('Failed to save questionnaire answers.', data);
@@ -529,7 +549,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         console.error('Error saving questionnaire answers:', err);
     });
 
-    // Optionally show a thank you container after submission
+    // Optionally show a thank-you container after submission
     document.getElementById('questionnaireContainer').style.display = 'none';
     document.getElementById('thankYouContainer').style.display = 'block';
 });

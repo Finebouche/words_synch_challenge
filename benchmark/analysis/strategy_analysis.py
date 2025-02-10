@@ -109,9 +109,43 @@ def is_synonym(word_a, word_b):
     return len(synsets_a.intersection(synsets_b)) > 0
 
 
-##############################
-# NEW LEXICAL RELATIONS      #
-##############################
+import requests  # For querying ConceptNet
+
+
+def conceptual_linking_score(word_a, word_b, verbose=False):
+    """
+    Query ConceptNet for an association between word_a and word_b.
+    Returns a numerical weight indicating the strength of the association.
+    If no association is found, returns 0.0.
+
+    If verbose is True, prints the URL, response, and computed score.
+    """
+    word_a = word_a.lower()
+    word_b = word_b.lower()
+    # Build the query URL. (You might need to URL-encode words if they contain spaces.)
+    url = f"http://api.conceptnet.io/query?node=/c/en/{word_a}&other=/c/en/{word_b}&limit=1"
+
+    if verbose:
+        print("Querying ConceptNet:", url)
+
+    try:
+        response = requests.get(url).json()
+        if verbose:
+            print("Response:", response)
+        edges = response.get('edges', [])
+        if edges:
+            # Get the maximum weight among the returned edges.
+            weights = [edge.get('weight', 0) for edge in edges]
+            result = max(weights)
+        else:
+            result = 0.0
+        if verbose:
+            print(f"Association score for '{word_a}' and '{word_b}':", result)
+        return result
+    except Exception as e:
+        if verbose:
+            print("Error querying ConceptNet:", e)
+        return 0.0
 
 def is_meronym(candidate_word, original_word):
     """
@@ -241,13 +275,13 @@ def qualitative_analysis(player_games):
       - synonym_measure: is current_word a synonym of opponent's prev word OR player's own prev word?
       - morphological_variation_measure: are current_word and previous words morphological variations?
       - thematic_alignment_measure: do current_word and previous words share a broad category?
-      - meronym_measure: is current_word a meronym of opponent's prev word OR a holonym of player's own prev word?
+      - meronym_measure: is current_word a meronym of opponent's prev word OR holonym of player's own prev word?
       - troponymy_measure: (for verbs) is current_word a troponym of opponent's prev word OR entailed by player's own prev word?
+      - conceptual_linking_measure: the association strength from ConceptNet between current_word and previous words.
 
     Each measure is stored as a list (with length = number of rounds) containing 0/1 values
-    (or np.nan for round 0).
+    (or numeric weights for the conceptual linking) or np.nan for round 0.
     """
-    # Initialize new columns
     player_games['abstraction_measure'] = None
     player_games['contrast_measure'] = None
     player_games['synonym_measure'] = None
@@ -255,9 +289,9 @@ def qualitative_analysis(player_games):
     player_games['thematic_alignment_measure'] = None
     player_games['meronym_measure'] = None
     player_games['troponymy_measure'] = None
+    player_games['conceptual_linking_measure'] = None
 
     for index, game in player_games.iterrows():
-        # Convert string representations to lists if necessary
         word_my = eval(game['word_my'])
         word_opponent = eval(game['word_opponent'])
         num_rounds = min(len(word_my), len(word_opponent))
@@ -269,6 +303,7 @@ def qualitative_analysis(player_games):
         thematic_alignment_list = []
         meronym_list = []
         troponymy_list = []
+        conceptual_linking_list = []
 
         for i in range(num_rounds):
             if i == 0:
@@ -279,6 +314,7 @@ def qualitative_analysis(player_games):
                 thematic_alignment_list.append(np.nan)
                 meronym_list.append(np.nan)
                 troponymy_list.append(np.nan)
+                conceptual_linking_list.append(np.nan)
             else:
                 current_word = word_my[i]
                 prev_opponent_word = word_opponent[i - 1]
@@ -298,6 +334,9 @@ def qualitative_analysis(player_games):
                     is_holonym(current_word, prev_my_word))
                 troponymy_score = int(is_troponym(current_word, prev_opponent_word)) + int(
                     is_entailment(current_word, prev_my_word))
+                # Compute Conceptual Linking: add the association strength from ConceptNet
+                cl_score = conceptual_linking_score(current_word, prev_opponent_word, verbose=True) + \
+                           conceptual_linking_score(current_word, prev_my_word, verbose=True)
 
                 abstraction_list.append(abstraction_score)
                 contrast_list.append(contrast_score)
@@ -306,6 +345,7 @@ def qualitative_analysis(player_games):
                 thematic_alignment_list.append(thematic_alignment_score)
                 meronym_list.append(meronym_score)
                 troponymy_list.append(troponymy_score)
+                conceptual_linking_list.append(cl_score)
 
         player_games.at[index, 'abstraction_measure'] = abstraction_list
         player_games.at[index, 'contrast_measure'] = contrast_list
@@ -314,6 +354,7 @@ def qualitative_analysis(player_games):
         player_games.at[index, 'thematic_alignment_measure'] = thematic_alignment_list
         player_games.at[index, 'meronym_measure'] = meronym_list
         player_games.at[index, 'troponymy_measure'] = troponymy_list
+        player_games.at[index, 'conceptual_linking_measure'] = conceptual_linking_list
 
     return player_games
 
@@ -434,6 +475,7 @@ def assign_qualitative_strategy(row):
     thematic = row['thematic_alignment_measure']
     meronym = row['meronym_measure']
     troponymy = row['troponymy_measure']
+    conceptual = row['conceptual_linking_measure']
 
     num_rounds = len(abstraction)  # all should have the same length
     strategy_labels = []
@@ -453,6 +495,7 @@ def assign_qualitative_strategy(row):
             'thematic_alignment': thematic[i],
             'meronym': meronym[i],
             'troponymy': troponymy[i],
+            'conceptual_linking': conceptual[i],
         }
 
         # If all measures == 0, store ["none"]
@@ -615,6 +658,7 @@ def plot_strategy_heatmap(
             "thematic_alignment",
             "meronym",
             "troponymy",
+            "conceptual_linking",
         ]
     elif strategy_col == "quantitative_strategy_name":
         possible_strategies = [
@@ -848,4 +892,4 @@ if __name__ == "__main__":
     #     last_rounds=5,
     # )
 
-    print_game_turns(results_df, n=5)
+    print_game_turns(results_df, n=5, )
