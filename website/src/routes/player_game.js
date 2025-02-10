@@ -2,29 +2,22 @@ import { Server } from 'socket.io';
 import { Game, Player } from '../database.js';
 import { v4 as uuidv4 } from 'uuid';
 
-
 const MAX_NUMBER_OF_ROUNDS = 15;
-
 
 export default function initPlayersSocket(server) {
   const io = new Server(server);
 
   // Keep a map of language -> waiting player
-  // Example: waitingPlayers['en'] = { socketId: 'xyz', playerId: 'abc' }
   const waitingPlayers = {};
 
   // In-memory store of running games
-  // {
-  //   gameId: {
-  //     player1Socket,
-  //     player1Id,
-  //     player2Socket,
-  //     player2Id,
-  //     roundWords: { player1, player2 }
-  //   },
-  //   ...
-  // }
   const activeGames = {};
+
+  // Helper function to return how many players are waiting in total
+  function getWaitingPlayersCount() {
+    return Object.keys(waitingPlayers).length;
+    console.log('Waiting players:', waitingPlayers);
+  }
 
   io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -38,7 +31,7 @@ export default function initPlayersSocket(server) {
       );
 
       // Validate that this player actually exists in the DB
-      const player = await Player.findOrCreate({
+      const [player, created] = await Player.findOrCreate({
         where: { playerId },
         defaults: { playerId: playerId }
       });
@@ -49,8 +42,15 @@ export default function initPlayersSocket(server) {
           socketId: socket.id,
           playerId: playerId,
         };
+
+        // Emit to this socket that it is waiting
         socket.emit('waitingForOpponent');
+
         console.log(`No one waiting yet for ${language}; stored ${socket.id} as waiting.`);
+
+        // IMPORTANT: Broadcast updated waiting count to everyone
+        io.emit('lobbyCountUpdate', getWaitingPlayersCount());
+
       } else {
         // We have a waiting player for the same language -> form a new game
         const waitingSocketId = waitingPlayers[language].socketId;
@@ -61,21 +61,19 @@ export default function initPlayersSocket(server) {
           `Forming game ${gameId} for language=${language} between ${waitingSocketId} and ${socket.id}`
         );
 
-        // Create a new row in Game table with the new schema
-        // We set player1Id to the waiting player, player2Id to the new player, botId to null
-        // since it's a human-vs-human scenario. We also store the language chosen.
+        // Create a new game in DB
         const newGame = await Game.create({
           gameId,
           player1Id: waitingPlayerId,
           player2Id: playerId,
-          botId: null,        // null means we’re not playing against a bot
-          language,           // store the language in the Game record
+          botId: null,  // null means not playing vs. bot
+          language,
           roundCount: 0,
           status: "in_progress",
           wordsArray: JSON.stringify([]),
         });
 
-        // Save to in-memory
+        // Save in-memory references
         activeGames[gameId] = {
           player1Socket: waitingSocketId,
           player1Id: waitingPlayerId,
@@ -96,8 +94,11 @@ export default function initPlayersSocket(server) {
           opponentSocket: waitingSocketId,
         });
 
-        // Clear the waiting slot for this language
+        // Clear the waiting slot for this language (the 2 players now have a game)
         delete waitingPlayers[language];
+
+        // Also broadcast the updated waiting count
+        io.emit('lobbyCountUpdate', getWaitingPlayersCount());
       }
     });
 
@@ -113,7 +114,7 @@ export default function initPlayersSocket(server) {
         return;
       }
 
-      // Validate role and ensure player is correct
+      // Validate role
       if (
         (role === 'player1' && socket.id !== gameObj.player1Socket) ||
         (role === 'player2' && socket.id !== gameObj.player2Socket)
@@ -142,12 +143,12 @@ export default function initPlayersSocket(server) {
         const p2Word = gameObj.roundWords.player2;
 
         let status = "in_progress";
-        // The game is lost if the round is above 5
+
         if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
-          status = "won"
+          status = "won";
           console.log(`Game ${gameId}: Both players submitted the same word!`);
         } else if (gameObj.roundWords.length > MAX_NUMBER_OF_ROUNDS) {
-            status = "lost";
+          status = "lost";
         }
 
         // Send roundResult to player1
@@ -163,20 +164,21 @@ export default function initPlayersSocket(server) {
           status: status,
         });
 
-        // Update DB with the new words
+        // Update DB
         try {
-            const game = await Game.findByPk(gameId);
-            let wordsPlayed1 = game.wordsPlayed1 ? JSON.parse(game.wordsPlayed1) : [];
-            let wordsPlayed2 = game.wordsPlayed2 ? JSON.parse(game.wordsPlayed2) : [];
-            wordsPlayed1.push(p1Word);
-            wordsPlayed2.push(p2Word);
-            game.wordsPlayed1 = JSON.stringify(wordsPlayed1);
-            game.wordsPlayed2 = JSON.stringify(wordsPlayed2);
-            game.roundCount = game.roundCount + 1;
-            game.status = status;
-            await game.save();
+          const game = await Game.findByPk(gameId);
+          let wordsPlayed1 = game.wordsPlayed1 ? JSON.parse(game.wordsPlayed1) : [];
+          let wordsPlayed2 = game.wordsPlayed2 ? JSON.parse(game.wordsPlayed2) : [];
+          wordsPlayed1.push(p1Word);
+          wordsPlayed2.push(p2Word);
+
+          game.wordsPlayed1 = JSON.stringify(wordsPlayed1);
+          game.wordsPlayed2 = JSON.stringify(wordsPlayed2);
+          game.roundCount = game.roundCount + 1;
+          game.status = status;
+          await game.save();
         } catch (err) {
-            console.error('Error updating game in DB:', err);
+          console.error('Error updating game in DB:', err);
         }
 
         // Reset roundWords so a new round can begin
@@ -191,11 +193,14 @@ export default function initPlayersSocket(server) {
     socket.on('disconnect', () => {
       console.log('User disconnected:', socket.id);
 
-      // If this user was in the waiting list for some language, remove them
+      // If this user was in the waiting list, remove them
       for (const lang in waitingPlayers) {
         if (waitingPlayers[lang].socketId === socket.id) {
           console.log(`Removing waiting player for language ${lang} due to disconnect`);
           delete waitingPlayers[lang];
+
+          // Update waiting count
+          io.emit('lobbyCountUpdate', getWaitingPlayersCount());
         }
       }
 

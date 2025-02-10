@@ -201,6 +201,18 @@ input {
     margin-top: 20px;
 }
 
+#waitingBadge {
+  display: none;
+  position: absolute;
+  top: -8px;
+  right: -75px;
+  padding: 3px 6px;
+  background-color: red;
+  color: white;
+  font-size: 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
 
 #gameStatus {
     margin-top: 20px;   

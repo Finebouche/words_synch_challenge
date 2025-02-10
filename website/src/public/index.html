@@ -136,10 +136,11 @@
                 <!-- Add other languages -->
             </select>
             <button class="button small-button" id="selectLLMGame" data-translate="selectLLMGame" style="display:none" >
-                Play with an LLM
+                Play with an AI
             </button>
-            <button class="button small-button" id="selectHumanGame" data-translate="selectHumanGame" style="display:none" >
-                Play with someone
+            <button class="button small-button" id="selectHumanGame" data-translate="selectHumanGame" style="position: relative; display: none;">
+              Play with someone
+              <span id="waitingBadge" class="badge">someone waiting</span>
             </button>
         </div>
         <div id="message-Human" class="gameMessage" style="display: none">

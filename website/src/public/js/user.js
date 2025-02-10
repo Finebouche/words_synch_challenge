@@ -54,7 +54,7 @@ function fetchGameStats() {
                 </div>
             
                 <div class="count-cell">
-                    🤖  bot  : ${data.gamesPlayedAgainstBot}
+                    🤖  ai  : ${data.gamesPlayedAgainstBot}
                 </div>
             `;
             // update local storage with the new game stats

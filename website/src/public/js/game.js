@@ -109,16 +109,31 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /**
-     * 6️⃣ Handle "Play with Human" Selection
+     * 6) Handle "Play with Human" Selection
      * - Updates game mode to 'human'
      * - Establishes a WebSocket connection
      * - Sends a request to join the matchmaking queue
      * - Handles various game-related WebSocket events
      */
+
+    socket = io(); // Initialize WebSocket connection
+
+    socket.on('lobbyCountUpdate', (count) => {
+      const waitingBadge = document.getElementById('waitingBadge');
+      if (!waitingBadge) return;
+
+      if (count > 0) {
+        // Show the badge
+        waitingBadge.style.display = 'block';
+      } else {
+        // Hide the badge
+        waitingBadge.style.display = 'none';
+      }
+    });
+
     selectHumanGame.addEventListener('click', function () {
         let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
         gameMode = 'human';
-        socket = io(); // Initialize WebSocket connection
 
         // Hide game selection and LLM-related UI elements
         selectionLLM.style.display = 'none';
