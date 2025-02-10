@@ -144,7 +144,7 @@ router.post('/initialize-model', async (req, res) => {
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
     "The goal is to produce the same word than the other player based on previous words of the game."
-const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. Be really creative please."
+const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. You can be a bit creative but not too much? Be sure to finish your answer with it"
 
 const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
     return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;
@@ -235,11 +235,11 @@ async function openaicall(model, round, past_words_array, res) {
 
     function openAIRoundTemplate(round_number, past_words_array, word) {
         if (round_number === 1) {
-            return "Round 1. New game, please give your first (really random) word and only that word."
+            return ROUND_ONE;
         } else {
             return (
                 `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
-                "Please give only your word for this round."
+                "Based on those words, what word could we converge to ? Please give only your word for this round."
             )
         }
     }
@@ -248,7 +248,7 @@ async function openaicall(model, round, past_words_array, res) {
         for (let i = 0; i < past_words_array.length; i++) {
             if (i % 2 === 0) {
                 messages.push({role: "assistant", content: `'${past_words_array[i]}'`});
-                console.log(past_words_array[i])
+                // console.log(past_words_array[i]) // that was to check that it was the right index (and it is)
             } else {
                 messages.push({role: "user", content: openAIRoundTemplate(round, past_words_array, past_words_array[i])});
             }
@@ -257,16 +257,27 @@ async function openaicall(model, round, past_words_array, res) {
 
     try {
         let temp = round === 1 ? 1.6 : 1.1;
+        let max_tokens = round === 1 ? 50 : 20;
+        console.log(messages)
         const response = await openaiClient.chat.completions.create({
             model: model.name,
             messages: messages,
-            max_tokens: 15,
+            max_tokens: max_tokens,
             temperature: temp,
         });
 
-        const llmWord = response.choices[0].message.content.trim();
-        return llmWord.replace(/[^a-zA-Z]/g, "").toLowerCase();
 
+        const fullText = response.choices[0].message.content.trim();
+        console.log("Full reply: ", fullText);
+        // Split by whitespace
+        const tokens = fullText.split(/\s+/);
+        // The last token is what we want:
+        let lastWord = tokens[tokens.length - 1] || "";
+
+        // Remove punctuation and make it lowercase
+        lastWord = lastWord.replace(/[^a-zA-Z]/g, "").toLowerCase();
+
+        return lastWord;
     } catch (error) {
         console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
         res.status(500).send("Error calling the OpenAI API");
