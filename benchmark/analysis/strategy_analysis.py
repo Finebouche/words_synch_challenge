@@ -30,48 +30,47 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
     results = []
 
     for player in players:
-        try:
-            player_games = games_df[
-                (games_df['player1Id'] == player) | (games_df['player2Id'] == player)
-            ].copy()
+        player_games = games_df[
+            (games_df['player1Id'] == player) | (games_df['player2Id'] == player)
+        ].copy()
 
-            player_games['playerId'] = player
+        player_games['playerId'] = player
 
-            # Build the "my" vs "opponent" embeddings & words
-            player_games['embedding_my'] = player_games.apply(
-                lambda row: np.array(row[emb_col1], dtype=float)
-                            if row['player1Id'] == player else np.array(row[emb_col2], dtype=float),
-                axis=1
-            )
-            player_games['embedding_opponent'] = player_games.apply(
-                lambda row: np.array(row[emb_col2], dtype=float)
-                            if row['player1Id'] == player else np.array(row[emb_col1], dtype=float),
-                axis=1
-            )
-            player_games['word_my'] = player_games.apply(
-                lambda row: row['wordsPlayed1'] if row['player1Id'] == player else row['wordsPlayed2'],
-                axis=1
-            )
-            player_games['word_opponent'] = player_games.apply(
-                lambda row: row['wordsPlayed2'] if row['player1Id'] == player else row['wordsPlayed1'],
-                axis=1
-            )
+        # Build the "my" vs "opponent" embeddings & words
+        player_games['embedding_my'] = player_games.apply(
+            lambda row: np.array(row[emb_col1], dtype=float)
+                        if row['player1Id'] == player else np.array(row[emb_col2], dtype=float),
+            axis=1
+        )
+        player_games['embedding_opponent'] = player_games.apply(
+            lambda row: np.array(row[emb_col2], dtype=float)
+                        if row['player1Id'] == player else np.array(row[emb_col1], dtype=float),
+            axis=1
+        )
+        player_games['word_my'] = player_games.apply(
+            lambda row: row['wordsPlayed1'] if row['player1Id'] == player else row['wordsPlayed2'],
+            axis=1
+        )
+        player_games['word_opponent'] = player_games.apply(
+            lambda row: row['wordsPlayed2'] if row['player1Id'] == player else row['wordsPlayed1'],
+            axis=1
+        )
 
-            # 1) Quantitative
-            player_games = quantitative_analysis(player_games)
+        # 1) Quantitative
+        player_games = quantitative_analysis(player_games)
 
-            # 2) Qualitative
-            player_games = qualitative_analysis(player_games)
+        # 2) Qualitative
+        player_games = qualitative_analysis(player_games)
 
-            # 3) Decide winning strategies
-            # Apply to each row
-            player_games['qualitative_strategy_name'] = player_games.apply(assign_qualitative_strategy, axis=1)
-            player_games['quantitative_strategy_name'] = player_games.apply(assign_quantitative_strategy, axis=1)
+        # 3) Decide winning strategies
+        # Apply to each row
+        # Check the output of the apply method
+        player_games['qualitative_strategy_name'] = None
+        player_games['quantitative_strategy_name'] = None
+        player_games.loc[:, 'qualitative_strategy_name'] = player_games.apply(assign_qualitative_strategy, axis=1)
+        player_games.loc[:, 'quantitative_strategy_name'] = player_games.apply(assign_quantitative_strategy, axis=1)
 
-            results.append(player_games)
-
-        except Exception as e:
-            print(f"Error processing player {player}: {e}")
+        results.append(player_games)
 
     return pd.concat(results, ignore_index=True)
 
@@ -300,8 +299,9 @@ if __name__ == "__main__":
     csv_name = "games.csv"
 
     # 1) Load the data
+    player_ids = ["l3o0u7Bo", "bNgvBUv7", "koLvZAXK", "pZrgT64W"]
     if not os.path.exists(csv_name):
-        players_df, games_df = load_sql_data(db_name)
+        players_df, games_df = load_sql_data(db_name, player_ids=player_ids)
         games_df.to_csv(csv_name, index=False)
     else:
         games_df = pd.read_csv(csv_name)
@@ -320,9 +320,9 @@ if __name__ == "__main__":
     games_df.to_csv(csv_name, index=False)
 
     # 3) Calculate player metrics
-    player_metrics = calculate_game_metrics_per_configuration(games_df)
+    # player_metrics = calculate_game_metrics_per_configuration(games_df, plot_box=True)
     print("Success Rate and Average Rounds for Winning Games:")
-    print(player_metrics)
+    # print(player_metrics)
 
     # 4) Calculate player metrics
     player_metrics = calculate_game_metrics_per_player(games_df)

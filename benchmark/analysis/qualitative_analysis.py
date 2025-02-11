@@ -394,7 +394,7 @@ def assign_qualitative_strategy(row):
 
     for i in range(num_rounds):
         if pd.isna(abstraction[i]):
-            strategy_labels.append(None)
+            strategy_labels.append(["none"])
             continue
 
         measure_values = {
@@ -409,14 +409,15 @@ def assign_qualitative_strategy(row):
         }
 
         if all(val == 0 for val in measure_values.values()):
-            winning_strats = ["none"]
+            strats_used = ["none"]
         else:
             max_value = max(measure_values.values())
-            winning_strats = [mname for mname, mval in measure_values.items() if mval == max_value and mval > 0]
-            if not winning_strats:
-                winning_strats = ["none"]
+            strats_used = [mname for mname, mval in measure_values.items() if mval == max_value and mval > 0]
+            if not strats_used:
+                strats_used = ["none"]
 
-        strategy_labels.append(winning_strats)
+        strategy_labels.append(strats_used)
+
 
     return strategy_labels
 
