@@ -1,15 +1,13 @@
 import pandas as pd
 import numpy as np
 
-from tqdm import tqdm
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 # External module imports
 from benchmark.analysis.utils.data_loading import load_sql_data
-from quantitative_analysis import min_max_normalize, assign_quantitative_strategy, quantitative_analysis
-from qualitative_analysis import assign_qualitative_strategy, qualitative_analysis
+from benchmark.analysis.quantitative_analysis import assign_quantitative_strategy, quantitative_analysis
+from benchmark.analysis.qualitative_analysis.qualitative_analysis import assign_qualitative_strategy, qualitative_analysis
 
 def strategy_analysis(games_df, embedding_model, use_pca=False):
     """
@@ -95,7 +93,7 @@ def plot_strategy_heatmap(
     strategy_col : str
         The DataFrame column name that holds a list of *lists* of strategy labels,
         e.g. "qualitative_strategy_name" or "quantitative_strategy_name".
-    groupby : {'player', 'game'}
+    groupby : {'player', 'configuration'}
         How to group the data in the heatmap.
     """
 
@@ -111,7 +109,6 @@ def plot_strategy_heatmap(
             "thematic_alignment",
             "meronym",
             "troponymy",
-            "conceptual_linking",
         ]
     elif strategy_col == "quantitative_strategy_name":
         possible_strategies = [
@@ -133,7 +130,7 @@ def plot_strategy_heatmap(
         # Determine the group value for this row
         if groupby == 'player':
             group_val = row.get("playerId", "Unknown")
-        elif groupby == 'game':
+        elif groupby == 'configuration':
             # Example: Distinguish 'Human vs Bot' vs. 'Human vs Human'
             if "botId" in row:
                 if pd.isna(row["botId"]) or row["botId"] == "":
@@ -143,7 +140,7 @@ def plot_strategy_heatmap(
             else:
                 group_val = "Unknown"
         else:
-            raise ValueError("groupby must be either 'player' or 'game'.")
+            raise ValueError("groupby must be either 'player' or 'configiration'.")
 
         # Get the "strategy_list", which should be a list of lists,
         # e.g. [ ["synonym"], ["synonym","contrast"], ["none"], ... ]
@@ -236,10 +233,7 @@ def plot_strategy_heatmap(
     plt.tight_layout()
     plt.show()
 
-def print_game_turns(
-        results_df,
-        n=5
-):
+def print_game_turns(results_df, n=5):
     """
     Example function that prints both words and
     multi-label qualitative strategy for each round.
@@ -287,13 +281,34 @@ def print_game_turns(
 
         print()
 
+
+
+def print_scores(results_df):
+    for idx, row in results_df.iterrows():
+        if pd.isna(row["botId"]) or row["botId"] == "":
+            group_val = "Human vs Human"
+        else:
+            group_val = "Human vs Bot"
+
+        # add the group_val to the row
+        results_df.at[idx, "configuration"] = group_val
+        # for each row, calculate conceptual_linking_score_avg and collocation_score_avg
+        results_df.at[idx, "conceptual_linking_score_avg"] = np.nanmean(row["conceptual_linking_score"])
+        results_df.at[idx, "collocation_score_avg"] = np.nanmean(row["collocation_score"])
+
+    # Group by configuration and compute the average scores
+    avg_scores = results_df.groupby("configuration").agg({
+        "conceptual_linking_score_avg": "mean",
+        "collocation_score_avg": "mean"
+    }).reset_index()
+
+    print(avg_scores)
+
+
 if __name__ == "__main__":
     import os
-    from scipy.spatial.distance import cosine
-    from utils.embeding_utils import (get_embeddings_for_table, calculate_pca_for_embeddings,
-                                     plot_embedding_distance_during_game,
-                                     plot_distance_evolution_per_player)
-    from game_statistics import calculate_game_metrics_per_configuration, calculate_game_metrics_per_player
+    from utils.embeding_utils import (get_embeddings_for_table, calculate_pca_for_embeddings)
+    from game_statistics import calculate_game_metrics_per_player
 
     db_name = "downloaded_word_sync_20250210_195900.db"
     csv_name = "games.csv"
@@ -309,8 +324,7 @@ if __name__ == "__main__":
     # 2) Get embeddings (and do PCA with e.g. 50 components)
     embedding_model = "word2vec"
     games_df = get_embeddings_for_table( games_df, model_name=embedding_model,)
-
-    game_df = calculate_pca_for_embeddings(
+    games_df = calculate_pca_for_embeddings(
         games_df,
         model_name=embedding_model,
         num_pca_components=15,
@@ -330,10 +344,38 @@ if __name__ == "__main__":
     print(player_metrics)
 
 
-    # 5) Strategy analysis (using the PCA columns):
+    # 5) Strategy analysis
+    # strategy_results_file = "results.csv"
+    # if not os.path.exists(strategy_results_file):
     results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
-    plot_strategy_heatmap(results_df, strategy_col="qualitative_strategy_name", groupby='game')
-    plot_strategy_heatmap(results_df, strategy_col="quantitative_strategy_name", groupby='game')
+    #     # Save results with strategies to CSV but only a subset of columns
+    #     cols_to_save = [
+    #         "gameId",
+    #         "playerId",
+    #         "player1Id",
+    #         "player2Id",
+    #         "botId",
+    #         "status",
+    #         "roundCount",
+    #         "wordsPlayed1",
+    #         "wordsPlayed2",
+    #         "surveyAnswers1",
+    #         "surveyAnswers2",
+    #         "qualitative_strategy_name",
+    #         "quantitative_strategy_name",
+    #         "conceptual_linking_score",
+    #         "collocation_score",
+    #     ]
+    #     results_df_partial = results_df[cols_to_save]
+    #     results_df_partial.to_csv("results.csv", index=False)
+    # else:
+    #     results_df = pd.read_csv(strategy_results_file)
+
+    # 6) Group by configuration and compute the average scores
+    print_scores(results_df)
+
+    plot_strategy_heatmap(results_df, strategy_col="qualitative_strategy_name", groupby='configuration')
+    plot_strategy_heatmap(results_df, strategy_col="quantitative_strategy_name", groupby='configuration')
     # plot_strategy_heatmap(results_df)
 
     # 4) Plot distances with the original or PCA embeddings

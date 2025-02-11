@@ -28,6 +28,12 @@ def load_sql_data(database_name: str, base_path: str = "../user_database_sync/da
     games_df['wordsPlayed1'] = games_df['wordsPlayed1'].apply(json.loads)
     games_df['wordsPlayed2'] = games_df['wordsPlayed2'].apply(json.loads)
 
+    # Convert surveyAnswers columns from JSON strings to Python objects
+    games_df['surveyAnswers1'] = games_df['surveyAnswers1'].apply(
+        lambda x: json.loads(x) if pd.notnull(x) and x != "" else [])
+    games_df['surveyAnswers2'] = games_df['surveyAnswers2'].apply(
+        lambda x: json.loads(x) if pd.notnull(x) and x != "" else [])
+
     return players_df, games_df
 
 
