@@ -1,3 +1,9 @@
+
+///////////////////////////
+///// GAME SELECTION //////
+///////////////////////////
+
+
 var languageNames = {
     'en': 'English',
     'es': 'Spanish',
@@ -13,7 +19,115 @@ let myRole = null;
 let MODELS = []
 let selectedModelName = null;
 
+// based on gameConfigOrder, gamesCount and NUMBERS_OF_GAME_PER_CONFIG determines the next gameConfig
+function getNextGameConfig(gameConfigOrder, gamesCount, number_of_game_per_config) {
+    let nextGameConfig = gameConfigOrder[0];
+    for (let i = 1; i < gameConfigOrder.length; i++) {
+        if (gamesCount[gameConfigOrder[i]] < number_of_game_per_config) {
+            nextGameConfig = gameConfigOrder[i];
+            // stop the loop
+            break;
+        }
+    }
+    return nextGameConfig;
+}
+
+function initialiseHumanGame(gameConfig, gameConfigOrder) {
+    /*
+    * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
+     */
+    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
+    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
+    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
+    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
+    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+
+    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    gameMode = 'human';
+
+    // Hide game selection and LLM-related UI elements
+    selectionLLM.style.display = 'none';
+    selectLLMGame.style.display = 'none';
+    selectHumanGame.style.display = 'none';
+    languageSelect.style.display = 'none';
+
+    // Join the matchmaking queue for a human game
+    socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, gameConfigOrder });
+
+    // Handle matchmaking status updates
+    socket.on('waitingForOpponent', () => {
+        // Inform the player that they are waiting for an opponent
+        messageHuman.style.display = 'block';
+    });
+
+    // Handle game start event from the server
+    socket.on('gameStarted', ({ gameId: gId, role }) => {
+        gameId = gId; // Store game ID
+        myRole = role; // Store player role
+
+        messageHuman.style.display = 'none'; // Hide waiting message
+        console.log(`Game started! I am ${myRole} in game ${gameId}.`);
+
+        // Show game input UI
+        document.getElementById('gameInput').style.display = 'block';
+        document.getElementById('submitWord').disabled = false;
+    });
+}
+
+const CAN_SELECT_LLM = false;
+
+function initialiseBotGame(gameConfig, gameConfigOrder) {
+    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
+    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
+    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
+    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
+    let llmSelect = document.getElementById('llmSelect'); // LLM selection dropdown
+    let startGameButton = document.getElementById('startLLMGame'); // Button to start LLM game
+    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+
+
+     /**
+     * - Updates the game mode to 'llm'
+     */
+     gameMode = 'llm';
+
+     if (CAN_SELECT_LLM) {
+        updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
+
+        // Show LLM-related UI elements
+        selectionLLM.style.display = 'block';
+        llmSelect.style.display = '';
+        messageHuman.style.display = 'none';
+        llmSelect.addEventListener('change', function () {
+            startGameButton.style.display = this.value ? '' : 'none';
+        });
+        document.getElementById('startLLMGame').addEventListener('click', function () {
+            // Get selected model
+            selectedModelName = document.getElementById('llmSelect').value;
+            // Get the corresponding flag emoji for the selected language
+            loadModelAndStartGame(selectedModelName, "human_vs_bot_(bot_shown)", gameConfigOrder);
+        });
+     } else {
+         // Hide game mode selection buttons and language dropdown
+         selectLLMGame.style.display = 'none';
+         selectHumanGame.style.display = 'none';
+         languageSelect.style.display = 'none';
+
+         selectedModelName = 'gpt-4o';
+         loadModelAndStartGame(selectedModelName, gameConfig, gameConfigOrder);
+     }
+}
+
+
 document.addEventListener('DOMContentLoaded', function () {
+    /**
+     * These elements are used later for UI interactions.
+     */
+
+    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
+    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
+    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+
     /**
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
@@ -27,35 +141,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
-
     /**
-     * 2) Fetch Available Models
-     * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
-     */
-    fetch('/model/available-models')
-        .then(response => response.json())
-        .then(availableModels => {
-            MODELS = availableModels; // Store fetched models globally
-        })
-        .catch(error => {
-            console.error('Error fetching models:', error);
-        });
-
-    /**
-     * 3) Store References to Important UI Elements
-     * These elements are used later for UI interactions.
-     */
-    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
-    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
-    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
-    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
-    let llmSelect = document.getElementById('llmSelect'); // LLM selection dropdown
-    let startGameButton = document.getElementById('startLLMGame'); // Button to start LLM game
-
-    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
-
-    /**
-     * 4) Handle Language Selection
+     * 2) Handle Language Selection
      * - If the language selection dropdown is disabled, default to English and show game mode buttons.
      * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
      */
@@ -80,90 +167,128 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * 5) Handle "Play with LLM" Selection
-     * - Updates the game mode to 'llm'
-     * - Displays relevant LLM game settings
-     * - Hides unnecessary UI elements
-     * - Listens for LLM selection before enabling the "Start Game" button
+     * 3) Fetch Available Models
+     * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
      */
-    selectLLMGame.addEventListener('click', function () {
-        gameMode = 'llm';
-        // updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
-        //
-        // // Show LLM-related UI elements
-        // selectionLLM.style.display = 'block';
-        // llmSelect.style.display = '';
-        // messageHuman.style.display = 'none';
-        //
-        // Hide game mode selection buttons and language dropdown
-        selectLLMGame.style.display = 'none';
-        selectHumanGame.style.display = 'none';
-        languageSelect.style.display = 'none';
-        //
-        // // Enable start button only when an LLM is selected
-        // llmSelect.addEventListener('change', function () {
-        //     startGameButton.style.display = this.value ? '' : 'none';
-        // });
-        selectedModelName = 'gpt-4o';
-        loadModelAndStartGame(selectedModelName);
-    });
+    fetch('/model/available-models')
+        .then(response => response.json())
+        .then(availableModels => {
+            MODELS = availableModels; // Store fetched models globally
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
+        });
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i >= 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
     /**
-     * 6) Handle "Play with Human" Selection
-     * - Updates game mode to 'human'
-     * - Establishes a WebSocket connection
-     * - Sends a request to join the matchmaking queue
-     * - Handles various game-related WebSocket events
+     * 4)  Initialize WebSocket connection
      */
 
-    socket = io(); // Initialize WebSocket connection
+    socket = io();
 
 
-    socket.on('lobbyCountUpdate', (count) => {
-      const waitingBadge = document.getElementById('waitingBadge');
-      if (!waitingBadge) return;
+    /**
+     * 5) Initialize game Configuration variables
+     *
+     */
+    let playerId = getLocalStorageValue('playerId');
+    const NUMBERS_OF_GAME_PER_CONFIG = 4;
+    let gameConfigOrder;
+    let gamesCount;
+    let nextGameConfig;
+    fetch(`/auth/exists/${playerId}`)
+    .then(response => response.json()) // Convert response to JSON
+    .then(data => {
+        if (!data.exists) {
+             // that means that this player never played any game before
+            // we initialise gameConfigOrder randomly from ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
+            gameConfigOrder = ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
+            // mix the order randomly
+            gameConfigOrder = shuffleArray(gameConfigOrder)
+            gamesCount = {
+                'human_vs_human_(bot_shown)': 0,
+                'human_vs_bot_(bot_shown)': 0,
+                'human_vs_human_(human_shown)': 0,
+                'human_vs_bot_(human_shown)': 0
+            }
 
-      if (count > 0) {
-        // Show the badge
-        waitingBadge.style.display = 'block';
-      } else {
-        // Hide the badge
-        waitingBadge.style.display = 'none';
-      }
-    });
+            return Promise.resolve();
+        } else {
+            // If the player exists, fetch the games configuration count from the database.
+            return fetch(`/auth/games-config-count/${playerId}`)
+                .then(response => response.json())
+                .then(configData => {
+                    // Assign the fetched data to our variables.
+                    gameConfigOrder = configData.gameConfigOrder;
+                    gamesCount = configData.gamesCount;
+                });
+        }
+    }).then(() => {
+        console.log('Game configuration order:', gameConfigOrder);
+        console.log('Games count:', gamesCount);
 
-    selectHumanGame.addEventListener('click', function () {
-        let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
-        gameMode = 'human';
+        nextGameConfig = getNextGameConfig(gameConfigOrder, gamesCount, NUMBERS_OF_GAME_PER_CONFIG)
+    }).then(() => {
 
-        // Hide game selection and LLM-related UI elements
-        selectionLLM.style.display = 'none';
-        selectLLMGame.style.display = 'none';
-        selectHumanGame.style.display = 'none';
-        languageSelect.style.display = 'none';
+        /**
+         * 5) Depending on the next game configuration, show the corresponding game mode selection button
+         * and handle the corresponding game mode selection
+         */
+        console.log('Next game configuration:', nextGameConfig);
+        if (nextGameConfig === 'human_vs_human_(bot_shown)' || nextGameConfig === 'human_vs_bot_(bot_shown)') {
+            selectLLMGame.style.display = 'block';
+            selectHumanGame.style.display = 'none';
+            if (nextGameConfig === 'human_vs_human_(bot_shown)') {
+                selectLLMGame.addEventListener('click', function () {
+                    initialiseHumanGame(nextGameConfig, gameConfigOrder)
+                });
+            }
+            else if (nextGameConfig === 'human_vs_bot_(bot_shown)') {
+                selectLLMGame.addEventListener('click', function () {
+                    initialiseBotGame(nextGameConfig, gameConfigOrder)
+                });
+            }
+        }
+        else if (nextGameConfig === 'human_vs_human_(human_shown)' || nextGameConfig === 'human_vs_bot_(human_shown)') {
+            selectHumanGame.style.display = 'block';
+            selectLLMGame.style.display = 'none';
+            if (nextGameConfig === 'human_vs_human_(human_shown)') {
+                selectHumanGame.addEventListener('click', function () {
+                    initialiseHumanGame(nextGameConfig, gameConfigOrder)
+                });
+            }
+            else if (nextGameConfig === 'human_vs_bot_(human_shown)') {
+                selectHumanGame.addEventListener('click', function () {
+                    initialiseBotGame(nextGameConfig, gameConfigOrder)
+                });
+            }
+        }
+    })
 
-        // Join the matchmaking queue for a human game
-        socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId });
+    /**
+     * 6) Optionnally, display if a player is waiting in the lobby
+     */
 
-        // Handle matchmaking status updates
-        socket.on('waitingForOpponent', () => {
-            // Inform the player that they are waiting for an opponent
-            messageHuman.style.display = 'block';
-        });
+    // socket.on('lobbyCountUpdate', (count) => {
+    //   const waitingBadge = document.getElementById('waitingBadge');
+    //   if (!waitingBadge) return;
+    //
+    //   if (count > 0) {
+    //     // Show the badge
+    //     waitingBadge.style.display = 'block';
+    //   } else {
+    //     // Hide the badge
+    //     waitingBadge.style.display = 'none';
+    //   }
+    // });
 
-        // Handle game start event from the server
-        socket.on('gameStarted', ({ gameId: gId, role }) => {
-            gameId = gId; // Store game ID
-            myRole = role; // Store player role
-
-            messageHuman.style.display = 'none'; // Hide waiting message
-            console.log(`Game started! I am ${myRole} in game ${gameId}.`);
-
-            // Show game input UI
-            document.getElementById('gameInput').style.display = 'block';
-            document.getElementById('submitWord').disabled = false;
-        });
-    });
 });
 
 function updateModelOptions(selected_language) {
@@ -198,7 +323,7 @@ function updateModelOptions(selected_language) {
 }
 
 
-function loadModelAndStartGame(model_name) {
+function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
     let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
 
@@ -216,7 +341,7 @@ function loadModelAndStartGame(model_name) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage}) // Send the selected model to the server
+        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: gameConfigOrder}) // Send the selected model to the server
     })
         .then(response => {
             document.getElementById('message-LLM').style.display = 'none';
@@ -244,14 +369,12 @@ function loadModelAndStartGame(model_name) {
             console.error('Error initializing model:', error);
         });
 }
-// GAME LOGIC FOR LLMs
-document.getElementById('startLLMGame').addEventListener('click', function () {
 
-    // Get selected model
-    selectedModelName = document.getElementById('llmSelect').value;
-    // Get the corresponding flag emoji for the selected language
-    loadModelAndStartGame(selectedModelName);
-});
+
+
+///////////////////////////
+/////// GAME LOGIC ////////
+///////////////////////////
 
 async function checkWord(word, language) {
     let errorMessageElement = document.getElementById('errorMessage');
@@ -482,99 +605,3 @@ document.getElementById('restartButton').addEventListener('click', async functio
     fetchGameStats();
 });
 // END GAME LOGIC
-
-// START QUESTIONNAIRE LOGIC
-document.getElementById('questionsButton').addEventListener('click', function() {
-    document.getElementById('questionnaireContainer').style.display = 'block';
-    cleanPreviousGameArea()
-});
-function limitCheckboxSelection(groupName, maxSelection) {
-    const checkboxes = document.querySelectorAll(`input[name="${groupName}"]`);
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
-
-            if (checkedBoxes.length > maxSelection) {
-                // Uncheck the first selected checkbox
-                checkedBoxes[0].checked = false;
-            }
-        });
-    });
-}
-
-// Call the function to limit selections to 3 per group
-document.addEventListener('DOMContentLoaded', function () {
-    limitCheckboxSelection('qualitativeStrategyUsed', 3);
-    limitCheckboxSelection('qualitativeOtherPlayerStrategy', 3);
-});
-
-
-document.getElementById('submitQuestionnaire').addEventListener('click', function() {
-    const quantitativeStrategyUsed = document.querySelector('input[name="quantitativeStrategyUsed"]:checked');
-
-    const qualitativeStrategyUsed = Array.from(document.querySelectorAll('input[name="qualitativeStrategyUsed"]:checked'))
-                              .map(cb => cb.value);
-    const quantitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]:checked'))
-                                     .map(cb => cb.value);
-    const qualitativeOtherPlayerStrategy = document.querySelector('input[name="qualitativeOtherPlayerStrategy"]:checked');
-
-    const otherPlayerUnderstood = document.getElementById('otherPlayerRating').value;
-    const didYouUnderstandOtherPlayerStrategy = document.getElementById('otherPlayerRating').value;
-    const otherPlayerRating = document.getElementById('otherPlayerRating').value;
-    const connectionFeeling = document.getElementById('otherPlayerRating').value;
-
-
-    // Post the data to the server
-    fetch('/game/answers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            gameId: gameId,
-            role: myRole,
-            playerId: getLocalStorageValue('playerId'),
-            quantitativeStrategyUsed: quantitativeStrategyUsed,
-            qualitativeStrategyUsed: qualitativeStrategyUsed,
-            quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy,
-            qualitativeOtherPlayerStrategy: qualitativeOtherPlayerStrategy,
-            otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
-            didYouUnderstandOtherPlayerStrategy: didYouUnderstandOtherPlayerStrategy,
-            otherPlayerRating: otherPlayerRating,
-            connectionFeeling: connectionFeeling
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Questionnaire answers saved successfully!', data);
-            document.getElementById('questionnaireContainer').style.display = 'none';
-            document.querySelectorAll('input[name="quantitativeStrategyUsed"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
-            document.getElementById('otherPlayerUnderstoodYourStrategies').value = '1';
-            document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '1';
-            document.getElementById('otherPlayerRating').value = '1';
-            document.getElementById('connectionFeeling').value = '1';
-        } else {
-            console.error('Failed to save questionnaire answers.', data);
-        }
-    })
-    .catch(err => {
-        console.error('Error saving questionnaire answers:', err);
-    });
-
-    // Optionally show a thank-you container after submission
-    document.getElementById('questionnaireContainer').style.display = 'none';
-    document.getElementById('thankYouContainer').style.display = 'block';
-
-    fetchGameStats();
-
-});
-
-document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
-    document.getElementById('thankYouContainer').style.display = 'none';
-
-    resetTheGame();
-
-});
-// END QUESTIONNAIRE LOGIC

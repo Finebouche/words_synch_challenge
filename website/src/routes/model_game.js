@@ -19,7 +19,11 @@ const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 const MAX_NUMBER_OF_ROUNDS = 15;
 
-// MODEL INTERACTION
+///////////////////////
+//  INITIALISATION
+///////////////////////
+
+
 const availableModels = [
     // OPENAI
     { name: 'gpt-4o', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: false },
@@ -39,42 +43,45 @@ router.get('/available-models', (req, res) => {
     res.json(availableModels);
 });
 
-async function checkIfWordExists(llmWord) {
-        const endpoint = `https://en.wiktionary.org/w/api.php`;
-
-        // Helper function to create parameters and make API request
-        async function fetchWordInfo(variant) {
-            const params = new URLSearchParams({
-                action: 'query',
-                format: 'json',
-                titles: variant,
-                origin: '*'
-            });
-            const url = `${endpoint}?${params.toString()}`;
-            const response = await fetch(url);
-            return response.json();
-        }
-
-        // Fetch with the word entirely in lowercase
-        const lowerCaseData = await fetchWordInfo(llmWord.toLowerCase());
-        const firstCapData = await fetchWordInfo(llmWord.charAt(0).toUpperCase() + llmWord.slice(1).toLowerCase());
-
-        // Check for valid pages in response data
-        if (!lowerCaseData.query.pages['-1'] || !firstCapData.query.pages['-1']) {
-            return true;
-        } else {
-            return false;
-        }
-}
-
-function checkIfWordPreviouslyUsed(newWord, pastWords) {
-    return pastWords.includes(newWord);
-}
-
 router.post('/initialize-model', async (req, res) => {
     const model = req.body.model; // Retrieve the model from the request body
     const playerId = req.body.player_id;
     const language = req.body.language;
+    const gameConfig = req.body.game_config;
+    const gameConfigOrder = req.body.game_config_order;
+
+    // Initialize player and game
+
+    const [player, created] = await Player.findOrCreate({
+        where: { playerId: playerId },
+        defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
+    });
+
+    let trueGameConfig;
+    let shownGameConfig;
+    let deceptive;
+    // initialize trueGameConfig, shownGameConfig, deceptive variable based on gameConfig
+    if (gameConfig === "human_vs_bot_(human_shown)") {
+        trueGameConfig = "human_vs_bot";
+        shownGameConfig = "human_shown";
+        deceptive = true;
+    } else if (gameConfig === "human_vs_bot_(bot_shown)") {
+        trueGameConfig = "human_vs_bot";
+        shownGameConfig = "bot_shown";
+        deceptive = false;
+    }
+
+    const newGame = await Game.create({
+        botId: model.name,
+        player1Id: playerId,
+        language: language,
+        gameConfig: gameConfig,
+        trueGameConfig: trueGameConfig,
+        shownGameConfig: shownGameConfig,
+        deceptive: deceptive,
+    });
+
+    // Initialize LLM
 
     const modelNames = availableModels.map(m => m.name);
     if (!modelNames.includes(model.name)) {
@@ -95,18 +102,6 @@ router.post('/initialize-model', async (req, res) => {
     if (model.type === 'fill-mask') {
         token = token + " " + model.mask_token
     }
-
-    const [player, created] = await Player.findOrCreate({
-        where: { playerId: playerId },
-        defaults: { playerId: playerId }
-    });
-
-    const newGame = await Game.create({
-        botId: model.name,
-        player1Id: playerId,
-        language: language,
-    });
-
     if (model.provider === "huggingface") {
         try {
             const response = await axios.post(
@@ -141,6 +136,42 @@ router.post('/initialize-model', async (req, res) => {
     }
 
 });
+
+///////////////////////
+// GAME INTERACTIONS
+///////////////////////
+
+async function checkIfWordExists(llmWord) {
+        const endpoint = `https://en.wiktionary.org/w/api.php`;
+
+        // Helper function to create parameters and make API request
+        async function fetchWordInfo(variant) {
+            const params = new URLSearchParams({
+                action: 'query',
+                format: 'json',
+                titles: variant,
+                origin: '*'
+            });
+            const url = `${endpoint}?${params.toString()}`;
+            const response = await fetch(url);
+            return response.json();
+        }
+
+        // Fetch with the word entirely in lowercase
+        const lowerCaseData = await fetchWordInfo(llmWord.toLowerCase());
+        const firstCapData = await fetchWordInfo(llmWord.charAt(0).toUpperCase() + llmWord.slice(1).toLowerCase());
+
+        // Check for valid pages in response data
+        if (!lowerCaseData.query.pages['-1'] || !firstCapData.query.pages['-1']) {
+            return true;
+        } else {
+            return false;
+        }
+}
+
+function checkIfWordPreviouslyUsed(newWord, pastWords) {
+    return pastWords.includes(newWord);
+}
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
     "The goal is to produce the same word than the other player based on previous words of the game."

@@ -27,7 +27,7 @@ export default function initPlayersSocket(server) {
     /**
      * 1) Player indicates their identity and language, then joins queue
      */
-    socket.on('joinQueue', async ({ language, playerId }) => {
+    socket.on('joinQueue', async ({ language, playerId, gameConfig, gameConfigOrder }) => {
       console.log(
         `Socket ${socket.id} (playerId=${playerId}, language=${language}) joined the queue.`
       );
@@ -35,7 +35,7 @@ export default function initPlayersSocket(server) {
       // Validate that this player actually exists in the DB
       const [player, created] = await Player.findOrCreate({
         where: { playerId },
-        defaults: { playerId: playerId }
+        defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder },
       });
 
       // If no one is waiting for this language, store this player
@@ -58,14 +58,21 @@ export default function initPlayersSocket(server) {
         const waitingSocketId = waitingPlayers[language].socketId;
         const waitingPlayerId = waitingPlayers[language].playerId;
 
-        const gameId = uuidv4();
-        console.log(
-          `Forming game ${gameId} for language=${language} between ${waitingSocketId} and ${socket.id}`
-        );
 
+        let trueGameConfig;
+        let shownGameConfig;
+        let deceptive;
+        if (gameConfig === "human_vs_human_(bot_shown)") {
+            trueGameConfig = "human_vs_human";
+            shownGameConfig = "bot_shown";
+            deceptive = true;
+        } else if (gameConfig === "human_vs_human_(human_shown)") {
+            trueGameConfig = "human_vs_human";
+            shownGameConfig = "human_shown";
+            deceptive = false;
+        }
         // Create a new game in DB
         const newGame = await Game.create({
-          gameId,
           player1Id: waitingPlayerId,
           player2Id: playerId,
           botId: null,  // null means not playing vs. bot
@@ -73,7 +80,16 @@ export default function initPlayersSocket(server) {
           roundCount: 0,
           status: "in_progress",
           wordsArray: JSON.stringify([]),
+          gameConfig: gameConfig,
+          trueGameConfig: trueGameConfig,
+          shownGameConfig: shownGameConfig,
+          deceptive: deceptive,
         });
+
+        let gameId = newGame.gameId;
+        console.log(
+          `Formed game ${gameId} for language=${language} between ${waitingSocketId} and ${socket.id}`
+        );
 
         // Save in-memory references
         activeGames[gameId] = {

@@ -24,6 +24,10 @@ const Player = sequelize.define('Player', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  gameConfigOrder: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
   gender: {
     type: DataTypes.STRING,
     allowNull: true
@@ -37,6 +41,7 @@ const Player = sequelize.define('Player', {
     allowNull: true
   }
 });
+
 
 const Game = sequelize.define('Game', {
   gameId: {
@@ -73,6 +78,32 @@ const Game = sequelize.define('Game', {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
+  },
+  gameConfig: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      isIn: [['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']]
+    },
+  },
+  trueGameConfig: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      isIn: [['human_vs_human', 'human_vs_bot']]
+    },
+  },
+  shownGameConfig: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      isIn: [['human_shown', 'bot_shown']]
+    },
+  },
+  deceptive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
   status: {
     type: DataTypes.STRING,

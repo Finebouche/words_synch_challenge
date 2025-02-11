@@ -143,18 +143,18 @@
               <span id="waitingBadge" class="badge">someone waiting</span>
             </button>
         </div>
-        <div id="message-Human" class="gameMessage" style="display: none">
-            Waiting for a human player to join...
-        </div>
         <div id="selections-LLM" class="selectionContainer">
             <select id="llmSelect" style="display:none">
                 <option value="" data-translate="llm-option">Select a LLM</option>
                 <!-- Options will be added here by JavaScript -->
             </select>
             <button class="button big-button" id="startLLMGame" style="display:none" data-translate="startGame">Start Game</button>
-            <div id="message-LLM" class="gameMessage" style="display: none">
-                Instantiating the chatbot...
-            </div>
+        </div>
+        <div id="message-Human" class="gameMessage" style="display: none">
+            Waiting for a human player to join...
+        </div>
+        <div id="message-LLM" class="gameMessage" style="display: none">
+            Instantiating the chatbot...
         </div>
         <div class="game-description" id="selectedInfo" style="display: none;">
             <div class="message">
@@ -298,5 +298,6 @@
     <script src="js/localisation.js"></script>
     <script src="js/animations.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/questionnaire.js"></script>
 </body>
 </html>
