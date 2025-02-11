@@ -2,6 +2,7 @@
 from sqlalchemy import create_engine
 import pandas as pd
 import json
+import numpy as np
 
 
 def load_sql_data(database_name: str, base_path: str = "../user_database_sync/databases/", player_ids=None):
@@ -37,11 +38,18 @@ def load_sql_data(database_name: str, base_path: str = "../user_database_sync/da
     return players_df, games_df
 
 
-def load_csv(path: str):
+def load_csv(path: str, columns_to_convert=None):
     """
     Load a CSV file from the given path.
     """
     games_df = pd.read_csv(path)
+
+    # iterates over the columns that need to be converted
+    if columns_to_convert:
+        for column in columns_to_convert:
+            games_df[column] = games_df[column].apply(
+                lambda x: eval(x, {"__builtins__": None, "nan": np.nan})
+            )
 
     return games_df
 

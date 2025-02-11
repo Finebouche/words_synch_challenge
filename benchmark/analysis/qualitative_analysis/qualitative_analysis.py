@@ -114,7 +114,7 @@ def qualitative_analysis(player_games):
 # STRATEGY ASSIGNMENT
 ##############################
 
-def assign_qualitative_strategy(row):
+def assign_semantic_strategy(row):
     """
     For each round, assign one or more labels based on the combined measures.
     The measures considered are:
@@ -159,12 +159,12 @@ def assign_qualitative_strategy(row):
         }
 
         if all(val == 0 for val in measure_values.values()):
-            strats_used = ["none"]
+            strats_used = ["other"]
         else:
             max_value = max(measure_values.values())
             strats_used = [mname for mname, mval in measure_values.items() if mval == max_value and mval > 0]
             if not strats_used:
-                strats_used = ["none"]
+                strats_used = ["other"]
 
         strategy_labels.append(strats_used)
 

@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 # External module imports
-from benchmark.analysis.utils.data_loading import load_sql_data
 from benchmark.analysis.quantitative_analysis import assign_quantitative_strategy, quantitative_analysis
-from benchmark.analysis.qualitative_analysis.qualitative_analysis import assign_qualitative_strategy, qualitative_analysis
+from benchmark.analysis.qualitative_analysis.qualitative_analysis import assign_semantic_strategy, qualitative_analysis
 
 def strategy_analysis(games_df, embedding_model, use_pca=False):
     """
@@ -63,21 +62,16 @@ def strategy_analysis(games_df, embedding_model, use_pca=False):
         # 3) Decide winning strategies
         # Apply to each row
         # Check the output of the apply method
-        player_games['qualitative_strategy_name'] = None
+        player_games['semantic_strategy_name'] = None
         player_games['quantitative_strategy_name'] = None
-        player_games.loc[:, 'qualitative_strategy_name'] = player_games.apply(assign_qualitative_strategy, axis=1)
+        player_games.loc[:, 'semantic_strategy_name'] = player_games.apply(assign_semantic_strategy, axis=1)
         player_games.loc[:, 'quantitative_strategy_name'] = player_games.apply(assign_quantitative_strategy, axis=1)
 
         results.append(player_games)
 
     return pd.concat(results, ignore_index=True)
 
-
-def plot_strategy_heatmap(
-    results_df,
-    strategy_col="qualitative_strategy_name",
-    groupby='player'
-):
+def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", groupby='player'):
     """
     Plot a heatmap showing average usage frequency of each strategy label
     in `strategy_col`, grouped by either 'player' or 'game'.
@@ -92,14 +86,14 @@ def plot_strategy_heatmap(
             - 'word_my'/'word_opponent' (or at least consistent # of rounds).
     strategy_col : str
         The DataFrame column name that holds a list of *lists* of strategy labels,
-        e.g. "qualitative_strategy_name" or "quantitative_strategy_name".
+        e.g. "semantic_strategy_name" or "quantitative_strategy_name".
     groupby : {'player', 'configuration'}
         How to group the data in the heatmap.
     """
 
     # 1) Define the set of possible labels for your chosen strategy_col.
     #    Adjust as needed to match your actual labels.
-    if strategy_col == "qualitative_strategy_name":
+    if strategy_col == "semantic_strategy_name":
         possible_strategies = [
             "none",
             "synonym",
@@ -140,7 +134,7 @@ def plot_strategy_heatmap(
             else:
                 group_val = "Unknown"
         else:
-            raise ValueError("groupby must be either 'player' or 'configiration'.")
+            raise ValueError("groupby must be either 'player' or 'configuration'.")
 
         # Get the "strategy_list", which should be a list of lists,
         # e.g. [ ["synonym"], ["synonym","contrast"], ["none"], ... ]
@@ -244,7 +238,7 @@ def print_game_turns(results_df, n=5):
         word_my = row["word_my"]
         word_opponent = row["word_opponent"]
 
-        q_strats = row.get("qualitative_strategy_name", [])
+        q_strats = row.get("semantic_strategy_name", [])
         t_strats = row.get("quantitative_strategy_name", [])
 
         # If these are strings, parse them:
@@ -281,8 +275,6 @@ def print_game_turns(results_df, n=5):
 
         print()
 
-
-
 def print_scores(results_df):
     for idx, row in results_df.iterrows():
         if pd.isna(row["botId"]) or row["botId"] == "":
@@ -309,6 +301,7 @@ if __name__ == "__main__":
     import os
     from utils.embeding_utils import (get_embeddings_for_table, calculate_pca_for_embeddings)
     from game_statistics import calculate_game_metrics_per_player
+    from benchmark.analysis.utils.data_loading import load_sql_data, load_csv
 
     db_name = "downloaded_word_sync_20250210_195900.db"
     csv_name = "games.csv"
@@ -345,36 +338,38 @@ if __name__ == "__main__":
 
 
     # 5) Strategy analysis
-    # strategy_results_file = "results.csv"
-    # if not os.path.exists(strategy_results_file):
-    results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
-    #     # Save results with strategies to CSV but only a subset of columns
-    #     cols_to_save = [
-    #         "gameId",
-    #         "playerId",
-    #         "player1Id",
-    #         "player2Id",
-    #         "botId",
-    #         "status",
-    #         "roundCount",
-    #         "wordsPlayed1",
-    #         "wordsPlayed2",
-    #         "surveyAnswers1",
-    #         "surveyAnswers2",
-    #         "qualitative_strategy_name",
-    #         "quantitative_strategy_name",
-    #         "conceptual_linking_score",
-    #         "collocation_score",
-    #     ]
-    #     results_df_partial = results_df[cols_to_save]
-    #     results_df_partial.to_csv("results.csv", index=False)
-    # else:
-    #     results_df = pd.read_csv(strategy_results_file)
+    strategy_results_file = "results.csv"
+    if not os.path.exists(strategy_results_file):
+        results_df = strategy_analysis(games_df, embedding_model, use_pca=True)
+        # Save results with strategies to CSV but only a subset of columns
+        cols_to_save = [
+            "gameId",
+            "playerId",
+            "player1Id",
+            "player2Id",
+            "botId",
+            "status",
+            "roundCount",
+            "wordsPlayed1",
+            "wordsPlayed2",
+            "word_my",
+            "word_opponent",
+            "surveyAnswers1",
+            "surveyAnswers2",
+            "semantic_strategy_name",
+            "quantitative_strategy_name",
+            "conceptual_linking_score",
+            "collocation_score",
+        ]
+        results_df_partial = results_df[cols_to_save]
+        results_df_partial.to_csv("results.csv", index=False)
+    else:
+        results_df = load_csv(strategy_results_file, columns_to_convert=["wordsPlayed1", "wordsPlayed2", "semantic_strategy_name", "quantitative_strategy_name", "conceptual_linking_score", "collocation_score"])
 
     # 6) Group by configuration and compute the average scores
     print_scores(results_df)
 
-    plot_strategy_heatmap(results_df, strategy_col="qualitative_strategy_name", groupby='configuration')
+    plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", groupby='configuration')
     plot_strategy_heatmap(results_df, strategy_col="quantitative_strategy_name", groupby='configuration')
     # plot_strategy_heatmap(results_df)
 
