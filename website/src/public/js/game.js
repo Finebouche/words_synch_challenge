@@ -1,15 +1,14 @@
-
-///////////////////////////
-///// GAME SELECTION //////
-///////////////////////////
-
-
-var languageNames = {
+const languageNames = {
     'en': 'English',
     'es': 'Spanish',
     'fr': 'French',
     // Add more mappings as needed
 };
+
+///////////////////////////
+///// GAME SELECTION //////
+///////////////////////////
+
 let selectedLanguage = null;
 let past_words_array = []; // Array to store the words
 let socket = null;
@@ -32,17 +31,26 @@ function getNextGameConfig(gameConfigOrder, gamesCount, number_of_game_per_confi
     return nextGameConfig;
 }
 
+/**
+ * These elements are used later for UI interactions.
+ */
+let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
+let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
+let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
+let llmSelect = document.getElementById('llmSelect'); // LLM selection dropdown
+let startGameButton = document.getElementById('startLLMGame'); // Button to start LLM game
+let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
+let messageLLM = document.getElementById('message-LLM'); // Message shown while waiting for a LLM opponent
+let llmSelectedContent = document.getElementById('selectedContent'); // Message shown after selecting a LLM model
+
 function initialiseHumanGame(gameConfig, gameConfigOrder) {
     /*
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
      */
-    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
-    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
-    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
-    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
-    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
 
     let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    let languageName = languageNames[selectedLanguage];
     gameMode = 'human';
 
     // Hide game selection and LLM-related UI elements
@@ -57,7 +65,11 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     // Handle matchmaking status updates
     socket.on('waitingForOpponent', () => {
         // Inform the player that they are waiting for an opponent
-        messageHuman.style.display = 'block';
+        if (gameConfig === 'human_vs_human_(bot_shown)') {
+            messageLLM.style.display = 'block';
+        } else {
+            messageHuman.style.display = 'block';
+        }
     });
 
     // Handle game start event from the server
@@ -65,7 +77,16 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
         gameId = gId; // Store game ID
         myRole = role; // Store player role
 
-        messageHuman.style.display = 'none'; // Hide waiting message
+        // Hide waiting messages
+        messageHuman.style.display = 'none';
+        messageLLM.style.display = 'none';
+        console.log("gameConfig", gameConfig);
+        if (gameConfig === 'human_vs_human_(bot_shown)') {
+            document.getElementById('selectedInfo').style.display = 'block';
+            llmSelectedContent.style.display = 'block';
+            llmSelectedContent.textContent = "Bzz... bzz... model " + selectedModelName + " loaded, currently playing with " + languageName  + " vocabulary...";
+        }
+
         console.log(`Game started! I am ${myRole} in game ${gameId}.`);
 
         // Show game input UI
@@ -77,57 +98,93 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
 const CAN_SELECT_LLM = false;
 
 function initialiseBotGame(gameConfig, gameConfigOrder) {
-    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
-    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
-    let selectionLLM = document.getElementById('selections-LLM'); // LLM game settings container
-    let messageHuman = document.getElementById('message-Human'); // Message shown while waiting for a human opponent
-    let llmSelect = document.getElementById('llmSelect'); // LLM selection dropdown
-    let startGameButton = document.getElementById('startLLMGame'); // Button to start LLM game
-    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
+    /**
+    * - Updates the game mode to 'llm'
+    */
+    gameMode = 'llm';
 
-
-     /**
-     * - Updates the game mode to 'llm'
-     */
-     gameMode = 'llm';
-
-     if (CAN_SELECT_LLM) {
+    if (CAN_SELECT_LLM) {
         updateModelOptions(selectedLanguage); // Load available LLMs for the selected language
 
         // Show LLM-related UI elements
         selectionLLM.style.display = 'block';
         llmSelect.style.display = '';
-        messageHuman.style.display = 'none';
         llmSelect.addEventListener('change', function () {
             startGameButton.style.display = this.value ? '' : 'none';
         });
         document.getElementById('startLLMGame').addEventListener('click', function () {
             // Get selected model
             selectedModelName = document.getElementById('llmSelect').value;
-            // Get the corresponding flag emoji for the selected language
             loadModelAndStartGame(selectedModelName, "human_vs_bot_(bot_shown)", gameConfigOrder);
         });
-     } else {
-         // Hide game mode selection buttons and language dropdown
-         selectLLMGame.style.display = 'none';
-         selectHumanGame.style.display = 'none';
-         languageSelect.style.display = 'none';
+    } else {
+        // Hide game mode selection buttons and language dropdown
+        selectLLMGame.style.display = 'none';
+        selectHumanGame.style.display = 'none';
+        languageSelect.style.display = 'none';
+        selectedModelName = 'gpt-4o';
+        loadModelAndStartGame(selectedModelName, gameConfig, gameConfigOrder);
+    }
+}
 
-         selectedModelName = 'gpt-4o';
-         loadModelAndStartGame(selectedModelName, gameConfig, gameConfigOrder);
-     }
+function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
+
+    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    let languageName = languageNames[selectedLanguage];
+    let selectedModel = MODELS.find(model => model.name === model_name);
+
+    document.getElementById('languageSelect').style.display = 'none';
+    // gameConfig is 'human_vs_bot_(bot_shown)' or 'human_vs_bot_(human_shown)'
+    if (gameConfig === 'human_vs_human_(bot_shown)') {
+        messageLLM.style.display = 'block';
+    } else {
+        messageHuman.style.display = 'block';
+    }
+    console.log("Model is loading. Please wait.");
+
+    fetch('/model/initialize-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: gameConfigOrder}) // Send the selected model to the server
+    })
+        .then(response => {
+            document.getElementById('message-LLM').style.display = 'none';
+            if (response.status === 504 || response.status === 503 || response.status === 500) {
+                console.log("Model is not available. Take another one");
+                document.getElementById('errorBanner').style.display = 'block'; // Show the banner
+                llmSelect.value = '';
+                document.getElementById('submitWord').disabled = true;
+                document.getElementById('startLLMGame').style.display = 'none';
+                return null; // Stop further processing
+            } else {
+                console.log("Model is ready.");
+                document.getElementById('selections-LLM').style.display = 'none';
+                document.getElementById('gameInput').style.display = 'block';
+                document.getElementById('submitWord').disabled = false;
+                return response.json()
+            }
+
+        })
+        .then(data => {
+            gameId = data.gameId;
+            messageLLM.style.display = 'none';
+            messageHuman.style.display = 'none';
+            console.log("gameConfig", gameConfig);
+            if (gameConfig === 'human_vs_bot_(bot_shown)') {
+                document.getElementById('selectedInfo').style.display = 'block';
+                llmSelectedContent.style.display = 'block';
+                llmSelectedContent.textContent = "Bzz... bzz... model " + selectedModelName + " loaded, currently playing with " + languageName  + " vocabulary...";
+            }
+        })
+        .catch(error => {
+            console.error('Error initializing model:', error);
+        });
 }
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    /**
-     * These elements are used later for UI interactions.
-     */
-
-    let selectLLMGame = document.getElementById('selectLLMGame'); // Button for "Play with LLM"
-    let selectHumanGame = document.getElementById('selectHumanGame'); // Button for "Play with Human"
-    let languageSelect = document.getElementById('languageSelect'); // Language selection dropdown
-
     /**
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
@@ -190,15 +247,13 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * 4)  Initialize WebSocket connection
      */
-
     socket = io();
-
 
     /**
      * 5) Initialize game Configuration variables
      *
      */
-    let playerId = getLocalStorageValue('playerId');
+    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
     const NUMBERS_OF_GAME_PER_CONFIG = 4;
     let gameConfigOrder;
     let gamesCount;
@@ -322,53 +377,6 @@ function updateModelOptions(selected_language) {
     });
 }
 
-
-function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
-
-    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
-
-    let languageName = languageNames[selectedLanguage];
-
-    // Update the text of the paragraphs to show the selections
-    let selectedModel = MODELS.find(model => model.name === model_name);
-    document.getElementById('selectedContent').textContent = "Bzz... bzz... model " + selectedModel.name + " loaded, currently playing with " + languageName  + " vocabulary...";
-    document.getElementById('languageSelect').style.display = 'none';
-    document.getElementById('message-LLM').style.display = 'block';
-    console.log("Model is loading. Please wait.");
-
-    fetch('/model/initialize-model', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: gameConfigOrder}) // Send the selected model to the server
-    })
-        .then(response => {
-            document.getElementById('message-LLM').style.display = 'none';
-            if (response.status === 504 || response.status === 503 || response.status === 500) {
-                console.log("Model is not available. Take another one");
-                document.getElementById('errorBanner').style.display = 'block'; // Show the banner
-                document.getElementById('llmSelect').value = '';
-                document.getElementById('submitWord').disabled = true;
-                document.getElementById('startLLMGame').style.display = 'none';
-                return null; // Stop further processing
-            } else {
-                console.log("Model is ready.");
-                document.getElementById('selections-LLM').style.display = 'none';
-                document.getElementById('selectedInfo').style.display = 'block';
-                document.getElementById('gameInput').style.display = 'block';
-                document.getElementById('submitWord').disabled = false;
-                return response.json()
-            }
-
-        })
-        .then(data => {
-            gameId = data.gameId;
-        })
-        .catch(error => {
-            console.error('Error initializing model:', error);
-        });
-}
 
 
 
