@@ -175,7 +175,7 @@ function checkIfWordPreviouslyUsed(newWord, pastWords) {
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
     "The goal is to produce the same word than the other player based on previous words of the game."
-const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. You can be a bit creative but not too much, i just has to be a bit uncommon. Be sure to finish your answer with it"
+const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. You can be a bit creative but not too much, it just has to be a bit uncommon. Be sure to finish your answer with it"
 
 const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
     return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;

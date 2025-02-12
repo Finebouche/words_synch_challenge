@@ -189,7 +189,15 @@
                 <label><span><input type="radio" name="quantitativeStrategyUsed" value="averaging">Saying something in between</span></label>
             </div>
             <div style="margin-top: 15px;">
-                <label>What strategies when picking the next word? (Select up to 3)</label>
+                <label>How did the other player take into account your words ?</label>
+                <div class="checkbox-container">
+                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="mirroring">Going Close to your word</span></label>
+                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="stayingClose">Staying Close to their word</span></label>
+                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="averaging">Saying something in between</span></label>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <label>What strategies did you use when picking the next word? (Select up to 3)</label>
                 <div class="checkbox-container" >
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="abstraction">Abstraction<br>e.g., "car" & "bicycle" → "vehicle"</span></label>
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="opposition">Opposition<br>e.g., "hot" → "cold"</span></label>
@@ -197,19 +205,13 @@
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="conceptualExpansion">Expansion<br>e.g., "dog" & "park" → "walk"</span></label>
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="simplification">Simplification<br>e.g., "automobile" → "car"</span></label>
                     <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="random">Random Play<br>e.g., no clear pattern</span></label>
-                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="culturalReference">Cultural Ref.<br>e.g., "play" & "old" → "Shakespeare"</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="culturalReference">Cultural Ref.<br>e.g., "book" & "old" → "Bible"</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="synonym">Synonym<br>e.g., "big" → "large"</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="antonym">Antonym<br>e.g., "light" → "dark"</span></label>
                 </div>
             </div>
-
-            <div style="margin-top: 25px;">
-                <label>How did the other player take into account your words ?</label>
-                <div class="checkbox-container">
-                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="mirroring">Going Close to your word</span></label>
-                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="stayingClose">Staying Close to their word</span></label>
-                    <label><span><input type="radio" name="quantitativeOtherPlayerStrategy" value="averaging">Saying something in between</span></label>
-            </div>
             <div style="margin-top: 15px;">
-                <label>What strategies when picking the next word? (Select up to 3)</label>
+                <label>What strategies did the other player use  when picking the next word? (Select up to 3)</label>
                 <div class="checkbox-container">
                     <label><span><input type="checkbox" name="qualitativeOtherPlayerStrategy" value="abstraction">Abstraction</span></label>
                     <label><span><input type="checkbox" name="qualitativeOtherPlayerStrategy" value="opposition">Opposition</span></label>
@@ -218,11 +220,23 @@
                     <label><span><input type="checkbox" name="qualitativeOtherPlayerStrategy" value="simplification">Simplification</span></label>
                     <label><span><input type="checkbox" name="qualitativeOtherPlayerStrategy" value="random">Random Play</span></label>
                     <label><span><input type="checkbox" name="qualitativeOtherPlayerStrategy" value="culturalReference">Cultural Ref.</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="synonym">Synonym</span></label>
+                    <label><span><input type="checkbox" name="qualitativeStrategyUsed" value="antonym">Antonym</span></label>
                 </div>
             </div>
-
+                <div style="margin-top: 10px;">
+                <label for="didYouUnderstandOtherPlayerStrategy">How well did you understand the other player’s strategy? (1 - Not at all, 5 - Completely)</label>
+                <select id="didYouUnderstandOtherPlayerStrategy" name="didYouUnderstandOtherPlayerStrategy">
+                    <option value="" disabled selected> </option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
             <div style="margin-top: 10px;">
-                <label for="otherPlayerUnderstoodYourStrategies">Do you think the other player understood your strategies?</label>
+                <label for="otherPlayerUnderstoodYourStrategies">How well did the other player understood your strategies? (1 - Not at all, 5 - Completely)</label>
                 <select id="otherPlayerUnderstoodYourStrategies" name="otherPlayerUnderstoodYourStrategies">
                     <option value="" disabled selected> </option>
                     <option value="1">1</option>
@@ -234,19 +248,7 @@
             </div>
 
             <div style="margin-top: 10px;">
-                <label for="didYouUnderstandOtherPlayerStrategy">Did you understand the other player's strategy?</label>
-                <select id="didYouUnderstandOtherPlayerStrategy" name="didYouUnderstandOtherPlayerStrategy">
-                    <option value="" disabled selected> </option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-            </div>
-
-            <div style="margin-top: 10px;">
-                <label for="otherPlayerRating">How good was the other player from 1 (very bad) to 5 (very good) ?</label>
+                <label for="otherPlayerRating">How would you rate the other player’s skill level? (1 - Very bad, 5 - Very good)</label>
                 <select id="otherPlayerRating" name="otherPlayerRating">
                     <option value="" disabled selected> </option>
                     <option value="1">1</option>
@@ -257,7 +259,7 @@
                 </select>
             </div>
             <div style="margin-top: 10px;">
-                <label for="connectionFeeling">Did you feel connected with the other player ?</label>
+                <label for="connectionFeeling">How connected did you feel with the other player? (1 - Not at all, 5 - Very connected)</label>
                 <select id="connectionFeeling" name="connectionFeeling">
                     <option value="" disabled selected> </option>
                     <option value="1">1</option>
