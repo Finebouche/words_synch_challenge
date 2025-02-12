@@ -96,7 +96,6 @@ function initialiseHumanGame(gameConfig) {
         // Hide waiting messages
         messageHuman.style.display = 'none';
         messageLLM.style.display = 'none';
-        console.log("gameConfig", gameConfig);
         if (gameConfig === 'human_vs_human_(bot_shown)') {
             document.getElementById('selectedInfo').style.display = 'block';
             llmSelectedContent.style.display = 'block';
@@ -237,7 +236,7 @@ function initialiseGameSetup() {
         }
     }).then(() => {
         console.log('Game configuration order:', JSON.parse(localStorage.getItem('gameConfigOrder')));
-        console.log('Games count:', JSON.parse(localStorage.getItem('gameConfigOrder')));
+        console.log('Games count:', JSON.parse(localStorage.getItem('gamesCount')));
 
         nextGameConfig = getNextGameConfig(
             JSON.parse(localStorage.getItem('gameConfigOrder')),
@@ -576,8 +575,6 @@ document.getElementById('submitWord').addEventListener('click', async function (
             past_words_array.push(opponentWord);
             updatePreviousWordsArea();
             scrollToBottom();
-
-            console.log('Game status:', status);
 
             if (status === 'lost') {
                 loseGame();

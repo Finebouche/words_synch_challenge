@@ -63,8 +63,8 @@ export default function initPlayersSocket(server) {
             roundCount: 0,
             status: "in_progress",
             wordsArray: JSON.stringify([]),
-            gameConfigPlayer1: gameConfig,
-            gameConfigPlayer2: waitingGameConfig,
+            gameConfigPlayer1: waitingGameConfig,
+            gameConfigPlayer2: gameConfig,
             trueGameConfig: "human_vs_human",
           });
 

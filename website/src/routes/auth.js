@@ -108,11 +108,26 @@ router.post('/games-config-count/', async (req, res) => {
             }
         });
         games.forEach(game => {
-            const gameConfig = game.gameConfig;
-            if (gamesCount[gameConfig]) {
-                gamesCount[gameConfig]++;
+            if (game.player1Id === playerId) {
+                if (game.gameConfigPlayer1 === 'human_vs_human_(bot_shown)') {
+                    gamesCount['human_vs_human_(bot_shown)']++;
+                } else if (game.gameConfigPlayer1 === 'human_vs_bot_(bot_shown)') {
+                    gamesCount['human_vs_bot_(bot_shown)']++;
+                } else if (game.gameConfigPlayer1 === 'human_vs_human_(human_shown)') {
+                    gamesCount['human_vs_human_(human_shown)']++;
+                } else if (game.gameConfigPlayer1 === 'human_vs_bot_(human_shown)') {
+                    gamesCount['human_vs_bot_(human_shown)']++;
+                }
             } else {
-                gamesCount[gameConfig] = 1;
+                if (game.gameConfigPlayer2 === 'human_vs_human_(bot_shown)') {
+                    gamesCount['human_vs_human_(bot_shown)']++;
+                } else if (game.gameConfigPlayer2 === 'human_vs_bot_(bot_shown)') {
+                    gamesCount['human_vs_bot_(bot_shown)']++;
+                } else if (game.gameConfigPlayer2 === 'human_vs_human_(human_shown)') {
+                    gamesCount['human_vs_human_(human_shown)']++;
+                } else if (game.gameConfigPlayer2 === 'human_vs_bot_(human_shown)') {
+                    gamesCount['human_vs_bot_(human_shown)']++;
+                }
             }
         });
 
