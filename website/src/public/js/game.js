@@ -53,7 +53,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
      */
 
-    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     gameMode = 'human';
 
@@ -63,20 +63,18 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     selectHumanGame.style.display = 'none';
     languageSelect.style.display = 'none';
 
+    if (gameConfig === 'human_vs_human_(bot_shown)') {
+        messageLLM.style.display = 'block';
+        shownMode = 'bot';
+    } else {
+        messageHuman.style.display = 'block';
+        shownMode = 'human';
+    }
     // Join the matchmaking queue for a human game
     socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, gameConfigOrder });
 
     // Handle matchmaking status updates
-    socket.on('waitingForOpponent', () => {
-        // Inform the player that they are waiting for an opponent
-        if (gameConfig === 'human_vs_human_(bot_shown)') {
-            messageLLM.style.display = 'block';
-            shownMode = 'bot';
-        } else {
-            messageHuman.style.display = 'block';
-            shownMode = 'human';
-        }
-    });
+    socket.on('waitingForOpponent', () => {});
 
     // Handle game start event from the server
     socket.on('gameStarted', ({ gameId: gId, role }) => {
@@ -135,7 +133,7 @@ function initialiseBotGame(gameConfig, gameConfigOrder) {
 
 function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
-    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     let selectedModel = MODELS.find(model => model.name === model_name);
 
@@ -193,7 +191,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('newPlayerID', getLocalStorageValue('newPlayerID'));
+    console.log('newPlayerId', getLocalStorageValue('newPlayerId'));
     /**
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
@@ -262,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * 5) Initialize game Configuration variables
      *
      */
-    let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;

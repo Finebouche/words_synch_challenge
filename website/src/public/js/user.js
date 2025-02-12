@@ -37,7 +37,7 @@ function populateElementFromStorage(key, elementId, isText = false) {
 }
 
 function fetchGameStats() {
-    let playerId = localStorage.getItem('playerId')
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     fetch(`/game/number_games`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -75,7 +75,7 @@ function fetchGameStats() {
 
 window.addEventListener('DOMContentLoaded', function() {
     let playerId = getLocalStorageValue('playerId');
-    localStorage.setItem('newPlayerID', generateNewPlayerID());
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 
     if (playerId) {
         fetchGameStats();
@@ -176,11 +176,11 @@ document.getElementById('createPlayer').addEventListener('click', function() {
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'none';
     document.getElementById('signin').style.display = 'flex';
-    document.getElementById('newUserId').textContent = getLocalStorageValue('newPlayerID');
+    document.getElementById('newUserId').textContent = getLocalStorageValue('newPlayerId');
 });
 
 document.getElementById('copyId').addEventListener('click', function() {
-    let playerId = getLocalStorageValue('newPlayerID');
+    let playerId = getLocalStorageValue('newPlayerId');
     navigator.clipboard.writeText(playerId).then(function() {
         fetch('/auth/create', {
             method: 'POST',
@@ -205,7 +205,7 @@ document.getElementById('goLogin').addEventListener('click', function() {
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
     document.getElementById('userId').textContent = playerId;
-    localStorage.setItem('newPlayerID', generateNewPlayerID());
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 });
 
 
@@ -269,7 +269,7 @@ document.getElementById('logoutPlayer').addEventListener('click', function() {
     // Remove user data from localStorage
     localStorage.clear();
 
-    localStorage.setItem('newPlayerID', generateNewPlayerID());
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 
     // Reset UI
     document.getElementById('parameters').style.display = 'none';

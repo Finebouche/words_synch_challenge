@@ -83,40 +83,43 @@ router.post('/exists/', async (req, res) => {
 router.post('/games-config-count/', async (req, res) => {
     const { playerId } = req.params;
 
-    // Get the gameConfigOrder of the player
-    const player = await Player.findByPk(playerId);
-    if (!player) {
-        return res.status(404).send('User not found');
-    }
-    const gameConfigOrder = player.gameConfigOrder;
-
-    // Count the number of games played for each gameConfig 'human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)'
-    const gamesCount = {
-        'human_vs_human_(bot_shown)': 0,
-        'human_vs_bot_(bot_shown)': 0,
-        'human_vs_human_(human_shown)': 0,
-        'human_vs_bot_(human_shown)': 0
-    }
-    const games = await Game.findAll({
-        where: {
-            [Op.or]: [
-                { player1Id: playerId },
-                { player2Id: playerId }
-            ]
+    try {
+        // Get the gameConfigOrder of the player
+        const player = await Player.findByPk(playerId);
+        if (!player) {
+            return res.status(404).send('User not found');
         }
-    });
-    games.forEach(game => {
-        const gameConfig = game.gameConfig;
-        if (gamesCount[gameConfig]) {
-            gamesCount[gameConfig]++;
-        } else {
-            gamesCount[gameConfig] = 1;
+        const gameConfigOrder = player.gameConfigOrder;
+
+        // Count the number of games played for each gameConfig 'human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)'
+        const gamesCount = {
+            'human_vs_human_(bot_shown)': 0,
+            'human_vs_bot_(bot_shown)': 0,
+            'human_vs_human_(human_shown)': 0,
+            'human_vs_bot_(human_shown)': 0
         }
-    });
+        const games = await Game.findAll({
+            where: {
+                [Op.or]: [
+                    { player1Id: playerId },
+                    { player2Id: playerId }
+                ]
+            }
+        });
+        games.forEach(game => {
+            const gameConfig = game.gameConfig;
+            if (gamesCount[gameConfig]) {
+                gamesCount[gameConfig]++;
+            } else {
+                gamesCount[gameConfig] = 1;
+            }
+        });
 
-    // return the count of games played for each gameConfig and the gameConfigOrder of the player
-    return res.json({ gamesCount, gameConfigOrder });
-
+        // return the count of games played for each gameConfig and the gameConfigOrder of the player
+        return res.json({ gamesCount, gameConfigOrder });
+    } catch (error) {
+            return res.status(500).send(`Server error : ${error}`);
+    }
 });
 
 export default router;

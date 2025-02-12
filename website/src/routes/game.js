@@ -94,7 +94,7 @@ router.post('/number_games', async (req, res) => {
     return res.json({ success: true, gamesPlayedAgainstBot, gamesPlayedAgainstHuman });
   } catch (err) {
     console.error('Error counting games played:', err);
-    return res.status(500).json({ success: false, message: 'Internal server error.' });
+    return res.status(500).json({ success: false, message: `Internal server error: ${err}` });
   }
 });
 

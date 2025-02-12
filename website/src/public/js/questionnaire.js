@@ -79,7 +79,9 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         return;
     }
 
-    let playerId = getLocalStorageValue('playerId') || getLocalStorageValue('newPlayerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+
+    console.log('Player ID for questionnaire:', playerId);
 
     // === SUBMISSION SECTION ===
     // All fields are filled; proceed with sending the data to the server.
@@ -89,7 +91,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         body: JSON.stringify({
             gameId: gameId,
             role: myRole,
-            playerId: getLocalStorageValue('playerId'),
+            playerId: playerId,
             quantitativeStrategyUsed: quantitativeStrategyUsed,
             qualitativeStrategyUsed: qualitativeStrategyUsed.map(cb => cb.value),
             quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy.map(cb => cb.value),
