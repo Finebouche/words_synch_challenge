@@ -47,35 +47,35 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
     // Validate required fields; if any is missing, log a message and abort submission.
     // Validate required fields; if any is missing, update the error message and abort submission.
     if (!quantitativeStrategyUsed) {
-        displayErrorMessage('Validation Error: Please select your quantitative strategy used.');
+        displayErrorMessage('Please answer how you reacted to other player word.');
         return;
     }
     if (qualitativeStrategyUsed.length === 0) {
-        displayErrorMessage('Validation Error: Please select at least one qualitative strategy used.');
+        displayErrorMessage('Please select at least one qualitative strategy used.');
         return;
     }
     if (quantitativeOtherPlayerStrategy.length === 0) {
-        displayErrorMessage('Validation Error: Please select your quantitative other player strategy.');
+        displayErrorMessage('Please answer how the other player reacted to your word.');
         return;
     }
     if (qualitativeOtherPlayerStrategy.length === 0) {
-        displayErrorMessage('Validation Error: Please select at least one qualitative other player strategy.');
+        displayErrorMessage('Please select at least one qualitative other player strategy.');
         return;
     }
     if (!otherPlayerUnderstood) {
-        displayErrorMessage('Validation Error: Please provide your rating for how well the other player understood your strategies.');
+        displayErrorMessage('Please provide your rating for how well the other player understood your strategies.');
         return;
     }
     if (!didYouUnderstandOtherPlayerStrategy) {
-        displayErrorMessage('Validation Error: Please provide your rating for how well you understood the other player’s strategy.');
+        displayErrorMessage('Please provide your rating for how well you understood the other player’s strategy.');
         return;
     }
     if (!otherPlayerRating) {
-        displayErrorMessage('Validation Error: Please provide your rating for the other player.');
+        displayErrorMessage('Please provide your rating for the other player.');
         return;
     }
     if (!connectionFeeling) {
-        displayErrorMessage('Validation Error: Please provide your connection feeling rating.');
+        displayErrorMessage('Please provide your connection feeling rating.');
         return;
     }
 
