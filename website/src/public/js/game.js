@@ -31,16 +31,18 @@ const NUMBERS_OF_GAME_PER_CONFIG = 2;
 const CAN_SELECT_LLM = false;
 
 // based on gameConfigOrder, gamesCount and NUMBERS_OF_GAME_PER_CONFIG determines the next gameConfig
-function getNextGameConfig(gameConfigOrder, gamesCount, number_of_game_per_config) {
+function getNextGameConfig(gameConfigOrder, gamesCount) {
     let nextGameConfig = gameConfigOrder[0];
-    for (let i = 1; i < gameConfigOrder.length; i++) {
-        if (gamesCount[gameConfigOrder[i]] < number_of_game_per_config) {
-            nextGameConfig = gameConfigOrder[i];
-            // stop the loop
+    for (let i = 0; i < gameConfigOrder.length; i++) {
+        nextGameConfig = gameConfigOrder[i];
+        if (gamesCount[gameConfigOrder[i]] < NUMBERS_OF_GAME_PER_CONFIG) {
             break;
         }
+        else if (i === gameConfigOrder.length - 1) {
+            nextGameConfig = "all_games_played";
+        }
     }
-    return nextGameConfig;
+    return nextGameConfig
 }
 
 /**
@@ -240,8 +242,7 @@ function initialiseGameSetup() {
 
         nextGameConfig = getNextGameConfig(
             JSON.parse(localStorage.getItem('gameConfigOrder')),
-            JSON.parse(localStorage.getItem('gameConfigOrder')),
-            NUMBERS_OF_GAME_PER_CONFIG
+            JSON.parse(localStorage.getItem('gamesCount')),
         )
         console.log('Next game configuration:', nextGameConfig);
 
@@ -276,6 +277,9 @@ function initialiseGameSetup() {
                     initialiseBotGame(nextGameConfig)
                 };
             }
+        } else if (nextGameConfig === 'all_games_played') {
+            console.log('All games have been played');
+            document.getElementById('returnToProlific').style.display = 'block';
         }
     })
 }
