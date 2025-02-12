@@ -75,6 +75,7 @@ function fetchGameStats() {
 
 window.addEventListener('DOMContentLoaded', function() {
     let connectedPlayerId = localStorage.getItem('connectedPlayerId')
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 
     if (connectedPlayerId) {
         fetchGameStats();

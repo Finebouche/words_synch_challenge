@@ -134,7 +134,11 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
 
 document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
     document.getElementById('thankYouContainer').style.display = 'none';
+    console.log("Restarting the game...");
+    console.log('gameConfigOrder:', localStorage.getItem('gameConfigOrder'));
     resetTheGame();
+    console.log("Restarting the game...");
+    console.log('gameConfigOrder:', localStorage.getItem('gameConfigOrder'));
     initialiseGameSetup();
 });
 // END QUESTIONNAIRE LOGIC

@@ -59,7 +59,7 @@ let llmSelectedContent = document.getElementById('selectedContent'); // Message 
 function initialiseHumanGame(gameConfig) {
     /*
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
-     */
+    */
 
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let languageName = languageNames[selectedLanguage];
@@ -81,7 +81,7 @@ function initialiseHumanGame(gameConfig) {
         shownMode = 'human';
     }
     // Join the matchmaking queue for a human game
-    socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, playerGameConfigOrder });
+    socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, gameConfigOrder: playerGameConfigOrder });
 
     // Handle matchmaking status updates
     socket.off('waitingForOpponent'); // Remove previous listeners
@@ -143,6 +143,7 @@ function initialiseBotGame(gameConfig) {
     }
 }
 
+
 function loadModelAndStartGame(model_name, gameConfig) {
 
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
@@ -202,15 +203,12 @@ function loadModelAndStartGame(model_name, gameConfig) {
 
 function initialiseGameSetup() {
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
-    let gamesCount;
     let nextGameConfig;
-
 
     /**
      * 4)  Initialize WebSocket connection
      */
     socket = io();
-
 
     fetch(`/auth/exists`, {
         method: 'POST',
@@ -221,20 +219,7 @@ function initialiseGameSetup() {
     .then(data => {
         if (!data.exists) {
              // that means that this player never played any game before
-            // we initialise gameConfigOrder randomly from ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
-            let gameConfigOrder;
-
-            gameConfigOrder = ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
-            // mix the order randomly
-            gameConfigOrder = shuffleArray(gameConfigOrder)
-            gamesCount = {
-                'human_vs_human_(bot_shown)': 0,
-                'human_vs_bot_(bot_shown)': 0,
-                'human_vs_human_(human_shown)': 0,
-                'human_vs_bot_(human_shown)': 0
-            }
-            localStorage.setItem('gameConfigOrder', JSON.stringify(gameConfigOrder));
-
+            // we keep gameConfigOrder random and gamesCount to 0 as before
             return Promise.resolve();
         } else {
             // If the player exists, fetch the games configuration count from the database.
@@ -246,22 +231,25 @@ function initialiseGameSetup() {
                 .then(response => response.json())
                 .then(configData => {
                     // Assign the fetched data to our variables.
-                    gamesCount = configData.gamesCount;
+                    localStorage.setItem('gamesCount', JSON.stringify(configData.gamesCount));
                     localStorage.setItem('gameConfigOrder', JSON.stringify(configData.gameConfigOrder));
                 });
         }
     }).then(() => {
         console.log('Game configuration order:', JSON.parse(localStorage.getItem('gameConfigOrder')));
-        console.log('Games count:', gamesCount);
+        console.log('Games count:', JSON.parse(localStorage.getItem('gameConfigOrder')));
 
-        nextGameConfig = getNextGameConfig(JSON.parse(localStorage.getItem('gameConfigOrder')), gamesCount, NUMBERS_OF_GAME_PER_CONFIG)
-    }).then(() => {
+        nextGameConfig = getNextGameConfig(
+            JSON.parse(localStorage.getItem('gameConfigOrder')),
+            JSON.parse(localStorage.getItem('gameConfigOrder')),
+            NUMBERS_OF_GAME_PER_CONFIG
+        )
+        console.log('Next game configuration:', nextGameConfig);
 
         /**
          * 5) Depending on the next game configuration, show the corresponding game mode selection button
          * and handle the corresponding game mode selection
          */
-        console.log('Next game configuration:', nextGameConfig);
         if (nextGameConfig === 'human_vs_human_(bot_shown)' || nextGameConfig === 'human_vs_bot_(bot_shown)') {
             selectLLMGame.style.display = 'block';
             selectHumanGame.style.display = 'none';
@@ -314,14 +302,14 @@ document.addEventListener('DOMContentLoaded', function () {
      * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
      */
     if (languageSelect.disabled) {
-        // Default to English if selection is disabled
+        // selection is disabled -> Default to English if
         selectLLMGame.style.display = 'block';
         selectHumanGame.style.display = 'block';
         languageSelect.style.display = 'none';
         selectedLanguage = 'en';
     } else {
         // Listen for language selection changes
-        languageSelect.addEventListener('change', function () {
+        languageSelect.onchange = function () {
             if (this.value) {
                 selectLLMGame.style.display = 'block';
                 selectHumanGame.style.display = 'block';
@@ -330,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 selectLLMGame.style.display = 'none';
                 selectHumanGame.style.display = 'none';
             }
-        });
+        };
     }
 
     /**
@@ -350,6 +338,18 @@ document.addEventListener('DOMContentLoaded', function () {
      * 5) Initialize game Configuration variables
      *
      */
+    let gameConfigOrder = ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
+    let gamesCount = {
+        'human_vs_human_(bot_shown)': 0,
+        'human_vs_bot_(bot_shown)': 0,
+        'human_vs_human_(human_shown)': 0,
+        'human_vs_bot_(human_shown)': 0
+    }
+    // mix the order randomly
+    gameConfigOrder = shuffleArray(gameConfigOrder)
+    localStorage.setItem('gameConfigOrder', JSON.stringify(gameConfigOrder));
+    localStorage.setItem('gamesCount', JSON.stringify(gamesCount));
+
     initialiseGameSetup();
 
 
@@ -639,7 +639,7 @@ resetTheGame = function() {
     });
 
     // Number of games
-    let playerId = localStorage.getItem('playerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     if (playerId) {
         fetchGameStats();
     }
@@ -649,6 +649,5 @@ document.getElementById('restartButton').addEventListener('click', async functio
     cleanPreviousGameArea()
     resetTheGame();
     initialiseGameSetup()
-    fetchGameStats();
 });
 // END GAME LOGIC

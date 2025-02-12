@@ -51,7 +51,6 @@ router.post('/initialize-model', async (req, res) => {
     const gameConfigOrder = req.body.game_config_order;
 
     // Initialize player and game
-
     const [player, created] = await Player.findOrCreate({
         where: { playerId: playerId },
         defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
