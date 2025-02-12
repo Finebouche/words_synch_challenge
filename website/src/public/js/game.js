@@ -18,6 +18,9 @@ let myRole = null;
 let MODELS = []
 let selectedModelName = null;
 
+const NUMBERS_OF_GAME_PER_CONFIG = 2;
+const CAN_SELECT_LLM = false;
+
 // based on gameConfigOrder, gamesCount and NUMBERS_OF_GAME_PER_CONFIG determines the next gameConfig
 function getNextGameConfig(gameConfigOrder, gamesCount, number_of_game_per_config) {
     let nextGameConfig = gameConfigOrder[0];
@@ -95,7 +98,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     });
 }
 
-const CAN_SELECT_LLM = false;
+
 
 function initialiseBotGame(gameConfig, gameConfigOrder) {
     /**
@@ -189,9 +192,9 @@ document.addEventListener('DOMContentLoaded', function () {
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
      */
-    const errorBanner = document.getElementById('errorBanner');
+    let errorBanner = document.getElementById('errorBanner');
     if (errorBanner) {
-        const closeButton = errorBanner.querySelector('button');
+        let closeButton = errorBanner.querySelector('button');
         if (closeButton) {
             closeButton.addEventListener('click', function () {
                 errorBanner.style.display = 'none';
@@ -254,7 +257,6 @@ document.addEventListener('DOMContentLoaded', function () {
      *
      */
     let playerId = localStorage.getItem('playerId') || getLocalStorageValue('newPlayerID');
-    const NUMBERS_OF_GAME_PER_CONFIG = 4;
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
