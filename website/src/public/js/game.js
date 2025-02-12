@@ -14,6 +14,7 @@ let past_words_array = []; // Array to store the words
 let socket = null;
 let gameId = null;
 let gameMode = null;
+let shownMode = null;
 let myRole = null;
 let MODELS = []
 let selectedModelName = null;
@@ -70,8 +71,10 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
         // Inform the player that they are waiting for an opponent
         if (gameConfig === 'human_vs_human_(bot_shown)') {
             messageLLM.style.display = 'block';
+            shownMode = 'bot';
         } else {
             messageHuman.style.display = 'block';
+            shownMode = 'human';
         }
     });
 
@@ -138,10 +141,12 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
     document.getElementById('languageSelect').style.display = 'none';
     // gameConfig is 'human_vs_bot_(bot_shown)' or 'human_vs_bot_(human_shown)'
-    if (gameConfig === 'human_vs_human_(bot_shown)') {
+    if (gameConfig === 'human_vs_bot_(bot_shown)') {
         messageLLM.style.display = 'block';
+        shownMode = 'bot';
     } else {
         messageHuman.style.display = 'block';
+        shownMode = 'human';
     }
     console.log("Model is loading. Please wait.");
 
@@ -188,6 +193,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
 
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('newPlayerID', getLocalStorageValue('newPlayerID'));
     /**
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
@@ -481,7 +487,15 @@ document.getElementById('submitWord').addEventListener('click', async function (
     }
 
     let selectedModel = MODELS.find(model => model.name === selectedModelName);
-
+    let emoji
+    if (shownMode === 'bot') {
+        emoji = '&#x1F916;';
+    } else if (shownMode === 'human') {
+        emoji = '&#x1F60A;';
+    }
+    else {
+        console.error('Unknown mode:', shownMode);
+    }
     if (gameMode === 'llm') {
         const response = fetch('/model/query-model', {
             method: 'POST',
@@ -500,7 +514,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
                 // Add word to array
                 past_words_array.push(llm_word);
                 past_words_array.push(word);
-                document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">&#x1F916;</span></div></div>`;
+                document.getElementById('conversationArea').innerHTML += `<div class="bubbleContainer"><div class="message"><span class="emoji">&#x1F60A;</span><span class="bubble left">${word}</span></div><div class="message"><span class="bubble right">${llm_word}</span><span class="emoji">${emoji}</span></div></div>`;
                 document.getElementById('gameWord').value = ''; // Clear the input field
                 updatePreviousWordsArea(); // Update the list of previous words
                 scrollToBottom();
@@ -541,7 +555,7 @@ document.getElementById('submitWord').addEventListener('click', async function (
                 </div>
                 <div class="message">
                   <span class="bubble right">${opponentWord}</span>
-                  <span class="emoji">&#x1F60A;</span>
+                  <span class="emoji">${emoji}</span>
                 </div>
               </div>
             `;

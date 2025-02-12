@@ -170,7 +170,12 @@ async function checkIfWordExists(llmWord) {
 }
 
 function checkIfWordPreviouslyUsed(newWord, pastWords) {
-    return pastWords.includes(newWord);
+    // iterate through past words and check if the new word has been used before
+    for (let i = 0; i < pastWords.length; i++) {
+        if (newWord.toLowerCase() === pastWords[i].toLowerCase()) {
+            return true;
+        }
+    }
 }
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
@@ -377,7 +382,12 @@ router.post('/query-model', async (req, res) => {
       console.error('Error updating game in DB:', err);
     }
 
-    res.json({llmWord: llmWord, status: status});
+    // Pick a time delay between 1 and 3 seconds
+    const delay = Math.floor(Math.random() * 4) + 1;
+    // Wait for the delay before sending the response
+    setTimeout(() => {
+        res.json({llmWord: llmWord, status: status});
+    }, delay * 1000);
 });
 
 export default router;

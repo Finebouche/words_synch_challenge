@@ -79,6 +79,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         return;
     }
 
+    let playerId = getLocalStorageValue('playerId') || getLocalStorageValue('newPlayerId');
 
     // === SUBMISSION SECTION ===
     // All fields are filled; proceed with sending the data to the server.
