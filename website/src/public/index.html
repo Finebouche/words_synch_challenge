@@ -113,8 +113,6 @@
 
 
     <div id="confetti-wrapper"></div>
-
-
     <div class="rain-wrapper front-row"></div>
     <div class="rain-wrapper back-row" ></div>
 
@@ -158,7 +156,7 @@
         </div>
         <div class="game-description" id="selectedInfo" style="display: none;">
             <div class="message">
-                <span class="bubble right" id="selectedContent">hey</span><span class="emoji">&#x1F916;</span>
+                <span class="bubble right" id="selectedContent"></span><span class="emoji">&#x1F916;</span>
             </div>
         </div>
         <div id="conversationArea">
@@ -226,6 +224,7 @@
             <div style="margin-top: 10px;">
                 <label for="otherPlayerUnderstoodYourStrategies">Do you think the other player understood your strategies?</label>
                 <select id="otherPlayerUnderstoodYourStrategies" name="otherPlayerUnderstoodYourStrategies">
+                    <option value="" disabled selected> </option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -237,6 +236,7 @@
             <div style="margin-top: 10px;">
                 <label for="didYouUnderstandOtherPlayerStrategy">Did you understand the other player's strategy?</label>
                 <select id="didYouUnderstandOtherPlayerStrategy" name="didYouUnderstandOtherPlayerStrategy">
+                    <option value="" disabled selected> </option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -248,6 +248,7 @@
             <div style="margin-top: 10px;">
                 <label for="otherPlayerRating">How good was the other player from 1 (very bad) to 5 (very good) ?</label>
                 <select id="otherPlayerRating" name="otherPlayerRating">
+                    <option value="" disabled selected> </option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -258,6 +259,7 @@
             <div style="margin-top: 10px;">
                 <label for="connectionFeeling">Did you feel connected with the other player ?</label>
                 <select id="connectionFeeling" name="connectionFeeling">
+                    <option value="" disabled selected> </option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -267,6 +269,7 @@
             </div>
 
             <button class="button small-button" id="submitQuestionnaire" style="margin-top: 10px;">Submit Answers</button>
+            <div id="errorMessageQuestionnaire" style="color: red; display: none;"></div>
         </div>
     </div>
     <div id="thankYouContainer" style="display: none;">

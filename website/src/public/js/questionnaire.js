@@ -1,8 +1,7 @@
-
 // START QUESTIONNAIRE LOGIC
 document.getElementById('questionsButton').addEventListener('click', function() {
     document.getElementById('questionnaireContainer').style.display = 'block';
-    cleanPreviousGameArea()
+    cleanPreviousGameArea();
 });
 
 function limitCheckboxSelection(groupName, maxSelection) {
@@ -10,9 +9,8 @@ function limitCheckboxSelection(groupName, maxSelection) {
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
-
             if (checkedBoxes.length > maxSelection) {
-                // Uncheck the first selected checkbox
+                // Uncheck the first selected checkbox if maximum exceeded
                 checkedBoxes[0].checked = false;
             }
         });
@@ -25,23 +23,65 @@ document.addEventListener('DOMContentLoaded', function () {
     limitCheckboxSelection('qualitativeOtherPlayerStrategy', 3);
 });
 
+function displayErrorMessage(message) {
+    const errorDiv = document.getElementById('errorMessageQuestionnaire');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
 
 document.getElementById('submitQuestionnaire').addEventListener('click', function() {
+    // === VALIDATION SECTION ===
+
+    // Retrieve radio buttons / checkboxes selections
     const quantitativeStrategyUsed = document.querySelector('input[name="quantitativeStrategyUsed"]:checked');
+    const qualitativeStrategyUsed = Array.from(document.querySelectorAll('input[name="qualitativeStrategyUsed"]:checked'));
+    const quantitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]:checked'));
+    const qualitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]:checked'));
+    
+    // Retrieve ratings (ensure your HTML elements have these unique IDs)
+    const otherPlayerUnderstood = document.getElementById('otherPlayerUnderstoodYourStrategies')?.value || '';
+    const didYouUnderstandOtherPlayerStrategy = document.getElementById('didYouUnderstandOtherPlayerStrategy')?.value || '';
+    const otherPlayerRating = document.getElementById('otherPlayerRating')?.value || '';
+    const connectionFeeling = document.getElementById('connectionFeeling')?.value || '';
 
-    const qualitativeStrategyUsed = Array.from(document.querySelectorAll('input[name="qualitativeStrategyUsed"]:checked'))
-                              .map(cb => cb.value);
-    const quantitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]:checked'))
-                                     .map(cb => cb.value);
-    const qualitativeOtherPlayerStrategy = document.querySelector('input[name="qualitativeOtherPlayerStrategy"]:checked');
+    // Validate required fields; if any is missing, log a message and abort submission.
+    // Validate required fields; if any is missing, update the error message and abort submission.
+    if (!quantitativeStrategyUsed) {
+        displayErrorMessage('Validation Error: Please select your quantitative strategy used.');
+        return;
+    }
+    if (qualitativeStrategyUsed.length === 0) {
+        displayErrorMessage('Validation Error: Please select at least one qualitative strategy used.');
+        return;
+    }
+    if (quantitativeOtherPlayerStrategy.length === 0) {
+        displayErrorMessage('Validation Error: Please select your quantitative other player strategy.');
+        return;
+    }
+    if (qualitativeOtherPlayerStrategy.length === 0) {
+        displayErrorMessage('Validation Error: Please select at least one qualitative other player strategy.');
+        return;
+    }
+    if (!otherPlayerUnderstood) {
+        displayErrorMessage('Validation Error: Please provide your rating for how well the other player understood your strategies.');
+        return;
+    }
+    if (!didYouUnderstandOtherPlayerStrategy) {
+        displayErrorMessage('Validation Error: Please provide your rating for how well you understood the other player’s strategy.');
+        return;
+    }
+    if (!otherPlayerRating) {
+        displayErrorMessage('Validation Error: Please provide your rating for the other player.');
+        return;
+    }
+    if (!connectionFeeling) {
+        displayErrorMessage('Validation Error: Please provide your connection feeling rating.');
+        return;
+    }
 
-    const otherPlayerUnderstood = document.getElementById('otherPlayerRating').value;
-    const didYouUnderstandOtherPlayerStrategy = document.getElementById('otherPlayerRating').value;
-    const otherPlayerRating = document.getElementById('otherPlayerRating').value;
-    const connectionFeeling = document.getElementById('otherPlayerRating').value;
 
-
-    // Post the data to the server
+    // === SUBMISSION SECTION ===
+    // All fields are filled; proceed with sending the data to the server.
     fetch('/game/answers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,9 +90,9 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             role: myRole,
             playerId: getLocalStorageValue('playerId'),
             quantitativeStrategyUsed: quantitativeStrategyUsed,
-            qualitativeStrategyUsed: qualitativeStrategyUsed,
-            quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy,
-            qualitativeOtherPlayerStrategy: qualitativeOtherPlayerStrategy,
+            qualitativeStrategyUsed: qualitativeStrategyUsed.map(cb => cb.value),
+            quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy.map(cb => cb.value),
+            qualitativeOtherPlayerStrategy: qualitativeOtherPlayerStrategy.map(cb => cb.value),
             otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
             didYouUnderstandOtherPlayerStrategy: didYouUnderstandOtherPlayerStrategy,
             otherPlayerRating: otherPlayerRating,
@@ -63,6 +103,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
     .then(data => {
         if (data.success) {
             console.log('Questionnaire answers saved successfully!', data);
+            // Reset the form after successful submission
             document.getElementById('questionnaireContainer').style.display = 'none';
             document.querySelectorAll('input[name="quantitativeStrategyUsed"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
@@ -72,6 +113,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '1';
             document.getElementById('otherPlayerRating').value = '1';
             document.getElementById('connectionFeeling').value = '1';
+            document.getElementById('errorMessageQuestionnaire').style.display = 'none';
         } else {
             console.error('Failed to save questionnaire answers.', data);
         }
@@ -85,13 +127,10 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
     document.getElementById('thankYouContainer').style.display = 'block';
 
     fetchGameStats();
-
 });
 
 document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
     document.getElementById('thankYouContainer').style.display = 'none';
-
     resetTheGame();
-
 });
 // END QUESTIONNAIRE LOGIC
