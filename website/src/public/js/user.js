@@ -128,9 +128,9 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
             document.getElementById('llmSelect').value = '';
             document.getElementById('submitWord').disabled = true;
             document.getElementById('startGame').style.display = 'none';
-            return null; // Stop further processing
+            throw new Error('User not found');
         } else {
-            console.log("User found.");
+            console.log(`User found : ${userId}`);
             document.getElementById('parameters').style.display = 'flex';
             document.getElementById('login').style.display = 'none';
             document.getElementById('signin').style.display = 'none';
@@ -145,6 +145,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         const gender    = data.gender;
         const region    = data.region;
         const llmKnowledge = data.llmKnowledge;
+        const gameConfigOrder = data.gameConfigOrder;
 
         // Store data in localStorage
         localStorage.setItem('pseudonym', pseudonym);
@@ -153,6 +154,8 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         localStorage.setItem('gender', gender);
         localStorage.setItem('region', region);
         localStorage.setItem('llmKnowledge', llmKnowledge);
+        localStorage.setItem('gameConfigOrder', JSON.stringify(gameConfigOrder));
+
 
         // Populate the DOM elements
         document.getElementById('pseudonymInput').value = pseudonym;
@@ -167,8 +170,9 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
             '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
         }
     }).then(() => {
+        initialiseGameSetup();
         fetchGameStats();
-    });
+    }).catch(error => console.error('Error:', error));
 
 });
 
@@ -181,11 +185,12 @@ document.getElementById('createPlayer').addEventListener('click', function() {
 
 document.getElementById('copyId').addEventListener('click', function() {
     const playerId = getLocalStorageValue('newPlayerId');
+    const gameConfigOrder = JSON.parse(localStorage.getItem('gameConfigOrder'));
     navigator.clipboard.writeText(playerId).then(function() {
         fetch('/auth/create', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ playerId: playerId })
+            body: JSON.stringify({ playerId: playerId, gameConfigOrder: gameConfigOrder})
         })
 
         .then(response => response.json())

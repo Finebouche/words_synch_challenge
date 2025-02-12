@@ -15,7 +15,8 @@ router.post('/login', async (req, res) => {
             ageGroup: player.ageGroup,
             gender: player.gender,
             region: player.region,
-            llmKnowledge: player.llmKnowledge
+            llmKnowledge: player.llmKnowledge,
+            gameConfigOrder: player.gameConfigOrder
             });
         } else {
             res.status(404).send('User not found');
@@ -26,11 +27,11 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-    const { playerId } = req.body;
+    const { playerId, gameConfigOrder } = req.body;
     try {
         const [player, created] = await Player.findOrCreate({
             where: { playerId: playerId },
-            defaults: { playerId: playerId }
+            defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
         });
         res.json({ pseudonym: player.pseudonym });
     } catch (error) {

@@ -56,13 +56,15 @@ let messageHuman = document.getElementById('message-Human'); // Message shown wh
 let messageLLM = document.getElementById('message-LLM'); // Message shown while waiting for a LLM opponent
 let llmSelectedContent = document.getElementById('selectedContent'); // Message shown after selecting a LLM model
 
-function initialiseHumanGame(gameConfig, gameConfigOrder) {
+function initialiseHumanGame(gameConfig) {
     /*
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
      */
 
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let languageName = languageNames[selectedLanguage];
+    let playerGameConfigOrder = JSON.parse(localStorage.getItem('gameConfigOrder'));
+
     gameMode = 'human';
 
     // Hide game selection and LLM-related UI elements
@@ -79,7 +81,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
         shownMode = 'human';
     }
     // Join the matchmaking queue for a human game
-    socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, gameConfigOrder });
+    socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, playerGameConfigOrder });
 
     // Handle matchmaking status updates
     socket.off('waitingForOpponent'); // Remove previous listeners
@@ -111,7 +113,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
 
 
 
-function initialiseBotGame(gameConfig, gameConfigOrder) {
+function initialiseBotGame(gameConfig) {
     /**
     * - Updates the game mode to 'llm'
     */
@@ -129,7 +131,7 @@ function initialiseBotGame(gameConfig, gameConfigOrder) {
         document.getElementById('startLLMGame').addEventListener('click', function () {
             // Get selected model
             selectedModelName = document.getElementById('llmSelect').value;
-            loadModelAndStartGame(selectedModelName, "human_vs_bot_(bot_shown)", gameConfigOrder);
+            loadModelAndStartGame(selectedModelName, "human_vs_bot_(bot_shown)");
         });
     } else {
         // Hide game mode selection buttons and language dropdown
@@ -137,15 +139,16 @@ function initialiseBotGame(gameConfig, gameConfigOrder) {
         selectHumanGame.style.display = 'none';
         languageSelect.style.display = 'none';
         selectedModelName = 'gpt-4o';
-        loadModelAndStartGame(selectedModelName, gameConfig, gameConfigOrder);
+        loadModelAndStartGame(selectedModelName, gameConfig);
     }
 }
 
-function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
+function loadModelAndStartGame(model_name, gameConfig) {
 
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     let selectedModel = MODELS.find(model => model.name === model_name);
+    let playerGameConfigOrder = JSON.parse(localStorage.getItem('gameConfigOrder'));
 
     document.getElementById('languageSelect').style.display = 'none';
     // gameConfig is 'human_vs_bot_(bot_shown)' or 'human_vs_bot_(human_shown)'
@@ -161,7 +164,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
     fetch('/model/initialize-model', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: gameConfigOrder}) // Send the selected model to the server
+        body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: playerGameConfigOrder}) // Send the selected model to the server
     })
         .then(response => {
             document.getElementById('message-LLM').style.display = 'none';
@@ -199,7 +202,6 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
 function initialiseGameSetup() {
     let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
-    let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
 
@@ -220,6 +222,8 @@ function initialiseGameSetup() {
         if (!data.exists) {
              // that means that this player never played any game before
             // we initialise gameConfigOrder randomly from ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
+            let gameConfigOrder;
+
             gameConfigOrder = ['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']
             // mix the order randomly
             gameConfigOrder = shuffleArray(gameConfigOrder)
@@ -229,6 +233,7 @@ function initialiseGameSetup() {
                 'human_vs_human_(human_shown)': 0,
                 'human_vs_bot_(human_shown)': 0
             }
+            localStorage.setItem('gameConfigOrder', JSON.stringify(gameConfigOrder));
 
             return Promise.resolve();
         } else {
@@ -241,15 +246,15 @@ function initialiseGameSetup() {
                 .then(response => response.json())
                 .then(configData => {
                     // Assign the fetched data to our variables.
-                    gameConfigOrder = configData.gameConfigOrder;
                     gamesCount = configData.gamesCount;
+                    localStorage.setItem('gameConfigOrder', JSON.stringify(configData.gameConfigOrder));
                 });
         }
     }).then(() => {
-        console.log('Game configuration order:', gameConfigOrder);
+        console.log('Game configuration order:', JSON.parse(localStorage.getItem('gameConfigOrder')));
         console.log('Games count:', gamesCount);
 
-        nextGameConfig = getNextGameConfig(gameConfigOrder, gamesCount, NUMBERS_OF_GAME_PER_CONFIG)
+        nextGameConfig = getNextGameConfig(JSON.parse(localStorage.getItem('gameConfigOrder')), gamesCount, NUMBERS_OF_GAME_PER_CONFIG)
     }).then(() => {
 
         /**
@@ -262,12 +267,12 @@ function initialiseGameSetup() {
             selectHumanGame.style.display = 'none';
             if (nextGameConfig === 'human_vs_human_(bot_shown)') {
                 selectLLMGame.onclick = function () {
-                    initialiseHumanGame(nextGameConfig, gameConfigOrder)
+                    initialiseHumanGame(nextGameConfig)
                 };
             }
             else if (nextGameConfig === 'human_vs_bot_(bot_shown)') {
                 selectLLMGame.onclick = function () {
-                    initialiseBotGame(nextGameConfig, gameConfigOrder)
+                    initialiseBotGame(nextGameConfig)
                 };
             }
         }
@@ -276,12 +281,12 @@ function initialiseGameSetup() {
             selectLLMGame.style.display = 'none';
             if (nextGameConfig === 'human_vs_human_(human_shown)') {
                 selectHumanGame.onclick = function () {
-                    initialiseHumanGame(nextGameConfig, gameConfigOrder)
+                    initialiseHumanGame(nextGameConfig)
                 };
             }
             else if (nextGameConfig === 'human_vs_bot_(human_shown)') {
                 selectHumanGame.onclick = function () {
-                    initialiseBotGame(nextGameConfig, gameConfigOrder)
+                    initialiseBotGame(nextGameConfig)
                 };
             }
         }
