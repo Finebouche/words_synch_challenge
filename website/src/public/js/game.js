@@ -6,9 +6,9 @@ const languageNames = {
 };
 
 function shuffleArray(array) {
-    for (let i = array.length - 1; i >= 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+    for (let i = array.length - 1; i > 0; i--) { // `i > 0` ensures every element gets a swap
+        const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
     }
     return array;
 }
@@ -82,9 +82,11 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     socket.emit('joinQueue', { language: selectedLanguage, playerId: playerId, gameConfig, gameConfigOrder });
 
     // Handle matchmaking status updates
+    socket.off('waitingForOpponent'); // Remove previous listeners
     socket.on('waitingForOpponent', () => {});
 
     // Handle game start event from the server
+    socket.off('gameStarted'); // Remove previous listeners
     socket.on('gameStarted', ({ gameId: gId, role }) => {
         gameId = gId; // Store game ID
         myRole = role; // Store player role
@@ -202,6 +204,14 @@ function initialiseGameSetup() {
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
+
+
+    /**
+     * 4)  Initialize WebSocket connection
+     */
+    socket = io();
+
+
     fetch(`/auth/exists`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -248,6 +258,10 @@ function initialiseGameSetup() {
          * 5) Depending on the next game configuration, show the corresponding game mode selection button
          * and handle the corresponding game mode selection
          */
+        //remove previous event listener
+        selectLLMGame.removeEventListener('click', function () {});
+        selectHumanGame.removeEventListener('click', function () {});
+
         console.log('Next game configuration:', nextGameConfig);
         if (nextGameConfig === 'human_vs_human_(bot_shown)' || nextGameConfig === 'human_vs_bot_(bot_shown)') {
             selectLLMGame.style.display = 'block';
@@ -332,12 +346,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(error => {
             console.error('Error fetching models:', error);
         });
-
-
-    /**
-     * 4)  Initialize WebSocket connection
-     */
-    socket = io();
 
     /**
      * 5) Initialize game Configuration variables

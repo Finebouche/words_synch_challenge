@@ -72,24 +72,26 @@ router.post('/number_games', async (req, res) => {
 
     // 1) Count the number of completed games played by the player against a bot (where botId is not null)
     const gamesPlayedAgainstBot = await Game.count({
-      where: {
-        player1Id: playerId,
-        botId: { [Op.ne]: null },
-        status: { [Op.in]: ['won', 'lost'] }
-      }
-    });
-
-    // 2) Count the number of completed games played by the player against another human (where botId is null)
-    const gamesPlayedAgainstHuman = await Game.count({
-      where: {
-          botId: null, // Ensure it's a human vs. human game
-          status: { [Op.in]: ['won', 'lost'] }, // Only count completed games
+        where: {
           [Op.or]: [
-              { player1Id: playerId }, // Player was Player 1
-              { player2Id: playerId }  // Player was Player 2
-          ]
-      }
-    });
+            { player1Id: playerId, gameConfigPlayer1: { [Op.like]: '%_(bot_shown)' } },
+            { player2Id: playerId, gameConfigPlayer2: { [Op.like]: '%_(bot_shown)' } }
+          ],
+          status: { [Op.in]: ['won', 'lost'] }
+        }
+      });
+
+      // 2) Count the number of completed games played by the player against another human
+      const gamesPlayedAgainstHuman = await Game.count({
+        where: {
+          [Op.or]: [
+            { player1Id: playerId, gameConfigPlayer1: { [Op.like]: '%_(human_shown)' } },
+            { player2Id: playerId, gameConfigPlayer2: { [Op.like]: '%_(human_shown)' } }
+          ],
+          status: { [Op.in]: ['won', 'lost'] }
+        }
+      });
+
 
     return res.json({ success: true, gamesPlayedAgainstBot, gamesPlayedAgainstHuman });
   } catch (err) {

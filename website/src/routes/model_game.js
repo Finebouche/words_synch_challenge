@@ -253,16 +253,21 @@ async function openaicall(model, round, past_words_array, res) {
     messages.push({role: "developer", content: RULE_TOKEN});
     messages.push({role: "user", content: ROUND_ONE});
 
-    function openAIRoundTemplate(round_number, past_words_array, word) {
+    function openAIRoundTemplate(round_number, past_words_array, player_word, bot_word) {
+
         if (round_number === 1) {
             return ROUND_ONE;
         } else {
             return (
-                `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
-                "Based on previous words, what word would be most likely for next round ? Please give only your word for this round."
+                `${player_word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
+                `Based on previous words, what word would be most likely for next round given that my word was ${player_word} and your word was ${bot_word}` +
+                "Please give only your word for this round."
             )
         }
     }
+
+    // select the i first elements of the array
+
 
     if (past_words_array && past_words_array.length > 0 && round > 1) {
         for (let i = 0; i < past_words_array.length; i++) {
@@ -270,7 +275,7 @@ async function openaicall(model, round, past_words_array, res) {
                 messages.push({role: "assistant", content: `'${past_words_array[i]}'`});
                 // console.log(past_words_array[i]) // that was to check that it was the right index (and it is)
             } else {
-                messages.push({role: "user", content: openAIRoundTemplate(round, past_words_array, past_words_array[i])});
+                messages.push({role: "user", content: openAIRoundTemplate(round, past_words_array.slice(0, i), past_words_array[i], past_words_array[i - 1])});
             }
         }
     }

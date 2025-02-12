@@ -148,7 +148,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
 
         // Store data in localStorage
         localStorage.setItem('pseudonym', pseudonym);
-        localStorage.setItem('playerId', playerId);
+        localStorage.setItem('connectedPlayerId', playerId);
         localStorage.setItem('ageGroup', ageGroup);
         localStorage.setItem('gender', gender);
         localStorage.setItem('region', region);
