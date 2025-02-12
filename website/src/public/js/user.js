@@ -10,11 +10,11 @@ function generateNewPlayerID() {
 
 /** Retrieves a value from localStorage and handles potential 'null' string values.
  * If the item is 'null' or not set, returns an empty string instead.
- * @param {string} key - The key to retrieve from sessionStorage.
+ * @param {string} key - The key to retrieve from localStorage.
  * @return {string} - The value from localStorage or an empty string if not found or 'null'.
  */
 function getLocalStorageValue(key) {
-  const value = sessionStorage.getItem(key);
+  const value = localStorage.getItem(key);
   return (value === 'null' || value === null) ? '' : value;
 }
 
@@ -37,7 +37,7 @@ function populateElementFromStorage(key, elementId, isText = false) {
 }
 
 function fetchGameStats() {
-    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     fetch(`/game/number_games`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -58,10 +58,10 @@ function fetchGameStats() {
                 </div>
             `;
             // update local storage with the new game stats
-            sessionStorage.setItem('gamesPlayedAgainstHuman', data.gamesPlayedAgainstHuman);
-            sessionStorage.setItem('gamesPlayedAgainstBot', data.gamesPlayedAgainstBot);
+            localStorage.setItem('gamesPlayedAgainstHuman', data.gamesPlayedAgainstHuman);
+            localStorage.setItem('gamesPlayedAgainstBot', data.gamesPlayedAgainstBot);
             // if the total number of game played is bigger than 10, show the return to prolific button
-            if (parseInt(sessionStorage.getItem("gamesPlayedAgainstHuman")) >= 5 && sessionStorage.getItem("gamesPlayedAgainstBot") >= 5) {
+            if (parseInt(localStorage.getItem("gamesPlayedAgainstHuman")) >= 5 && localStorage.getItem("gamesPlayedAgainstBot") >= 5) {
                 document.getElementById('returnToProlific').style.display = 'block';
             }
         }
@@ -74,8 +74,7 @@ function fetchGameStats() {
  * ******************************************************/
 
 window.addEventListener('DOMContentLoaded', function() {
-    let playerId = getLocalStorageValue('playerId');
-    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 
     if (playerId) {
         fetchGameStats();
@@ -94,7 +93,7 @@ window.addEventListener('DOMContentLoaded', function() {
         populateElementFromStorage('llmKnowledge', 'llmKnowledgeInput');
 
         // Set user's display name in the user interface
-        const displayName = getLocalStorageValue('pseudonym') || playerId;
+        const displayName = getLocalStorageValue('pseudonym') || getLocalStorageValue('connectedPlayerId');
         if (displayName) {
             document.getElementById('currentUser').innerHTML = '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
         }
@@ -147,12 +146,12 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         const llmKnowledge = data.llmKnowledge;
 
         // Store data in localStorage
-        sessionStorage.setItem('pseudonym', pseudonym);
-        sessionStorage.setItem('connectedPlayerId', playerId);
-        sessionStorage.setItem('ageGroup', ageGroup);
-        sessionStorage.setItem('gender', gender);
-        sessionStorage.setItem('region', region);
-        sessionStorage.setItem('llmKnowledge', llmKnowledge);
+        localStorage.setItem('pseudonym', pseudonym);
+        localStorage.setItem('connectedPlayerId', playerId);
+        localStorage.setItem('ageGroup', ageGroup);
+        localStorage.setItem('gender', gender);
+        localStorage.setItem('region', region);
+        localStorage.setItem('llmKnowledge', llmKnowledge);
 
         // Populate the DOM elements
         document.getElementById('pseudonymInput').value = pseudonym;
@@ -161,7 +160,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         document.getElementById('genderInput').value = gender || '';
         document.getElementById('regionInput').value = region || '';
         document.getElementById('llmKnowledgeInput').value = llmKnowledge || '';
-        const displayName = getLocalStorageValue('pseudonym') || playerId;
+        const displayName = getLocalStorageValue('pseudonym') || getLocalStorageValue('connectedPlayerId');
         if (displayName) {
           document.getElementById('currentUser').innerHTML =
             '<span role="img" aria-label="User">&#x1F464;</span> ' + displayName;
@@ -180,7 +179,7 @@ document.getElementById('createPlayer').addEventListener('click', function() {
 });
 
 document.getElementById('copyId').addEventListener('click', function() {
-    let playerId = getLocalStorageValue('newPlayerId');
+    const playerId = getLocalStorageValue('newPlayerId');
     navigator.clipboard.writeText(playerId).then(function() {
         fetch('/auth/create', {
             method: 'POST',
@@ -200,12 +199,10 @@ document.getElementById('copyId').addEventListener('click', function() {
 
 
 document.getElementById('goLogin').addEventListener('click', function() {
-    let playerId = getLocalStorageValue('playerId');
     document.getElementById('parameters').style.display = 'none';
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
-    document.getElementById('userId').textContent = playerId;
-    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
 });
 
 
@@ -215,7 +212,7 @@ document.getElementById('updateProfile').addEventListener('click', function() {
     const gender      = document.getElementById('genderInput').value;
     const region      = document.getElementById('regionInput').value;
     const llmKnowledge = document.getElementById('llmKnowledgeInput').value;
-    const playerId = getLocalStorageValue('playerId');
+    const playerId = getLocalStorageValue('connectedPlayerId');
 
     fetch('/auth/update-profile', {
         method: 'POST',
@@ -237,11 +234,11 @@ document.getElementById('updateProfile').addEventListener('click', function() {
     })
     .then(message => {
         console.log('Profile update message:', message);
-        sessionStorage.setItem('pseudonym', pseudonym);
-        sessionStorage.setItem('ageGroup', ageGroup);
-        sessionStorage.setItem('gender', gender);
-        sessionStorage.setItem('region', region);
-        sessionStorage.setItem('llmKnowledge', llmKnowledge);
+        localStorage.setItem('pseudonym', pseudonym);
+        localStorage.setItem('ageGroup', ageGroup);
+        localStorage.setItem('gender', gender);
+        localStorage.setItem('region', region);
+        localStorage.setItem('llmKnowledge', llmKnowledge);
 
         const displayName = getLocalStorageValue('pseudonym') || playerId;
         if (displayName) {
@@ -267,10 +264,10 @@ document.getElementById('updateProfile').addEventListener('click', function() {
 
 document.getElementById('logoutPlayer').addEventListener('click', function() {
     // Remove user data from localStorage
-    sessionStorage.clear();
+    localStorage.clear();
 
-    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
-    sessionStorage.removeItem('connectedPlayerId');
+    localStorage.setItem('newPlayerId', generateNewPlayerID());
+    localStorage.removeItem('connectedPlayerId');
 
     // Reset UI
     document.getElementById('parameters').style.display = 'none';

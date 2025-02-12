@@ -61,7 +61,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
      */
 
-    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     gameMode = 'human';
 
@@ -143,7 +143,7 @@ function initialiseBotGame(gameConfig, gameConfigOrder) {
 
 function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
-    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     let selectedModel = MODELS.find(model => model.name === model_name);
 
@@ -198,7 +198,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 }
 
 function initialiseGameSetup() {
-    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = localStorage.getItem('connectedPlayerId') || localStorage.getItem('newPlayerId');
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
@@ -289,7 +289,7 @@ function initialiseGameSetup() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('newPlayerId', getLocalStorageValue('newPlayerId'));
+    console.log('newPlayerId', localStorage.getItem('newPlayerId'));
     /**
      * 1) Setup Error Banner Handling
      * If an error banner exists on the page, this ensures that clicking the close button hides it.
@@ -634,7 +634,7 @@ resetTheGame = function() {
     });
 
     // Number of games
-    let playerId = getLocalStorageValue('playerId');
+    let playerId = localStorage.getItem('playerId');
     if (playerId) {
         fetchGameStats();
     }
