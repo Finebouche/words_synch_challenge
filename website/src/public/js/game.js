@@ -260,7 +260,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
-    fetch(`/auth/exists/${playerId}`)
+    fetch(`/auth/exists`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ playerId: playerId })
+    })
     .then(response => response.json()) // Convert response to JSON
     .then(data => {
         if (!data.exists) {
@@ -279,7 +283,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return Promise.resolve();
         } else {
             // If the player exists, fetch the games configuration count from the database.
-            return fetch(`/auth/games-config-count/${playerId}`)
+            return fetch(`/auth/games-config-count`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ playerId: playerId })
+                })
                 .then(response => response.json())
                 .then(configData => {
                     // Assign the fetched data to our variables.

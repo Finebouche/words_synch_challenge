@@ -63,15 +63,15 @@ router.post('/update-profile', async (req, res) => {
 });
 
 // Endpoint to heck if player exists
-router.get('/exists/:playerId', async (req, res) => {
-    const { playerId } = req.params;
+router.post('/exists/', async (req, res) => {
+    const { playerId } = req.body;
 
     try {
         const player = await Player.findByPk(playerId);
         if (player) {
-        return res.json({ exists: true });
+            return res.json({ exists: true });
         } else {
-        return res.json({ exists: false });
+            return res.json({ exists: false });
         }
     } catch (error) {
         console.error(error);
@@ -80,7 +80,7 @@ router.get('/exists/:playerId', async (req, res) => {
 });
 
 // Endpoint to know how many games a player has played for each combination of gameConfig
-router.get('/games-config-count/:playerId', async (req, res) => {
+router.post('/games-config-count/', async (req, res) => {
     const { playerId } = req.params;
 
     // Get the gameConfigOrder of the player

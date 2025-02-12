@@ -75,6 +75,7 @@ function fetchGameStats() {
 
 window.addEventListener('DOMContentLoaded', function() {
     let playerId = getLocalStorageValue('playerId');
+    localStorage.setItem('newPlayerID', generateNewPlayerID());
 
     if (playerId) {
         fetchGameStats();
@@ -101,7 +102,6 @@ window.addEventListener('DOMContentLoaded', function() {
         // No playerId in storage, show login interface
         document.getElementById('login').style.display = 'flex';
         document.getElementById('parameters').style.display = 'none';
-        localStorage.setItem('newPlayerID', generateNewPlayerID());
     }
     console.log('Player ID:', playerId);
 });
