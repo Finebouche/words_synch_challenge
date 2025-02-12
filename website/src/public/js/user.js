@@ -74,9 +74,9 @@ function fetchGameStats() {
  * ******************************************************/
 
 window.addEventListener('DOMContentLoaded', function() {
-    localStorage.setItem('newPlayerId', generateNewPlayerID());
+    let connectedPlayerId = localStorage.getItem('connectedPlayerId')
 
-    if (playerId) {
+    if (connectedPlayerId) {
         fetchGameStats();
 
         // User is recognized in localStorage, prepare and show user profile interface.
@@ -86,7 +86,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
         // Populate form fields and user identifiers from localStorage
         populateElementFromStorage('pseudonym', 'pseudonymInput');
-        populateElementFromStorage('playerId', 'userId', true);
+        populateElementFromStorage('connectedPlayerId', 'userId', true);
         populateElementFromStorage('ageGroup', 'ageGroupInput');
         populateElementFromStorage('gender', 'genderInput');
         populateElementFromStorage('region', 'regionInput');
@@ -102,7 +102,8 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById('login').style.display = 'flex';
         document.getElementById('parameters').style.display = 'none';
     }
-    console.log('Player ID:', playerId);
+
+    console.log('Connected player ID:', connectedPlayerId);
 });
 
 document.getElementById('user-profile-selector').addEventListener('click', function () {
