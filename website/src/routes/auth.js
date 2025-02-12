@@ -81,7 +81,7 @@ router.post('/exists/', async (req, res) => {
 
 // Endpoint to know how many games a player has played for each combination of gameConfig
 router.post('/games-config-count/', async (req, res) => {
-    const { playerId } = req.params;
+    const { playerId } = req.body;
 
     try {
         // Get the gameConfigOrder of the player

@@ -57,28 +57,12 @@ router.post('/initialize-model', async (req, res) => {
         defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
     });
 
-    let trueGameConfig;
-    let shownGameConfig;
-    let deceptive;
-    // initialize trueGameConfig, shownGameConfig, deceptive variable based on gameConfig
-    if (gameConfig === "human_vs_bot_(human_shown)") {
-        trueGameConfig = "human_vs_bot";
-        shownGameConfig = "human_shown";
-        deceptive = true;
-    } else if (gameConfig === "human_vs_bot_(bot_shown)") {
-        trueGameConfig = "human_vs_bot";
-        shownGameConfig = "bot_shown";
-        deceptive = false;
-    }
-
     const newGame = await Game.create({
         botId: model.name,
         player1Id: playerId,
         language: language,
-        gameConfig: gameConfig,
-        trueGameConfig: trueGameConfig,
-        shownGameConfig: shownGameConfig,
-        deceptive: deceptive,
+        gameConfigPlayer1: gameConfig,
+        trueGameConfig: "human_vs_bot",
     });
 
     // Initialize LLM
@@ -275,7 +259,7 @@ async function openaicall(model, round, past_words_array, res) {
         } else {
             return (
                 `${word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
-                "Based on those words, what word could we converge to ? Please give only your word for this round."
+                "Based on previous words, what word would be most likely for next round ? Please give only your word for this round."
             )
         }
     }

@@ -135,5 +135,6 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
 document.getElementById('restartButtonTwo').addEventListener('click', async function (event) {
     document.getElementById('thankYouContainer').style.display = 'none';
     resetTheGame();
+    initialiseGameSetup();
 });
 // END QUESTIONNAIRE LOGIC

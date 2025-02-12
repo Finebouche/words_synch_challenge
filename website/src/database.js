@@ -79,9 +79,16 @@ const Game = sequelize.define('Game', {
     allowNull: false,
     defaultValue: 0
   },
-  gameConfig: {
+  gameConfigPlayer1: {
     type: DataTypes.TEXT,
     allowNull: false,
+    validate: {
+      isIn: [['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']]
+    },
+  },
+  gameConfigPlayer2: {
+    type: DataTypes.TEXT,
+    allowNull: true,
     validate: {
       isIn: [['human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)']]
     },
@@ -92,18 +99,6 @@ const Game = sequelize.define('Game', {
     validate: {
       isIn: [['human_vs_human', 'human_vs_bot']]
     },
-  },
-  shownGameConfig: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      isIn: [['human_shown', 'bot_shown']]
-    },
-  },
-  deceptive: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false
   },
   status: {
     type: DataTypes.STRING,

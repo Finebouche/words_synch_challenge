@@ -5,6 +5,14 @@ const languageNames = {
     // Add more mappings as needed
 };
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i >= 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 ///////////////////////////
 ///// GAME SELECTION //////
 ///////////////////////////
@@ -189,77 +197,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
         });
 }
 
-
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('newPlayerId', getLocalStorageValue('newPlayerId'));
-    /**
-     * 1) Setup Error Banner Handling
-     * If an error banner exists on the page, this ensures that clicking the close button hides it.
-     */
-    let errorBanner = document.getElementById('errorBanner');
-    if (errorBanner) {
-        let closeButton = errorBanner.querySelector('button');
-        if (closeButton) {
-            closeButton.addEventListener('click', function () {
-                errorBanner.style.display = 'none';
-            });
-        }
-    }
-    /**
-     * 2) Handle Language Selection
-     * - If the language selection dropdown is disabled, default to English and show game mode buttons.
-     * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
-     */
-    if (languageSelect.disabled) {
-        // Default to English if selection is disabled
-        selectLLMGame.style.display = 'block';
-        selectHumanGame.style.display = 'block';
-        languageSelect.style.display = 'none';
-        selectedLanguage = 'en';
-    } else {
-        // Listen for language selection changes
-        languageSelect.addEventListener('change', function () {
-            if (this.value) {
-                selectLLMGame.style.display = 'block';
-                selectHumanGame.style.display = 'block';
-                selectedLanguage = this.value;
-            } else {
-                selectLLMGame.style.display = 'none';
-                selectHumanGame.style.display = 'none';
-            }
-        });
-    }
-
-    /**
-     * 3) Fetch Available Models
-     * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
-     */
-    fetch('/model/available-models')
-        .then(response => response.json())
-        .then(availableModels => {
-            MODELS = availableModels; // Store fetched models globally
-        })
-        .catch(error => {
-            console.error('Error fetching models:', error);
-        });
-
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i >= 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-
-    /**
-     * 4)  Initialize WebSocket connection
-     */
-    socket = io();
-
-    /**
-     * 5) Initialize game Configuration variables
-     *
-     */
+function initialiseGameSetup() {
     let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let gameConfigOrder;
     let gamesCount;
@@ -340,6 +278,73 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     })
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('newPlayerId', getLocalStorageValue('newPlayerId'));
+    /**
+     * 1) Setup Error Banner Handling
+     * If an error banner exists on the page, this ensures that clicking the close button hides it.
+     */
+    let errorBanner = document.getElementById('errorBanner');
+    if (errorBanner) {
+        let closeButton = errorBanner.querySelector('button');
+        if (closeButton) {
+            closeButton.addEventListener('click', function () {
+                errorBanner.style.display = 'none';
+            });
+        }
+    }
+    /**
+     * 2) Handle Language Selection
+     * - If the language selection dropdown is disabled, default to English and show game mode buttons.
+     * - Otherwise, listen for user selection and show/hide game mode buttons accordingly.
+     */
+    if (languageSelect.disabled) {
+        // Default to English if selection is disabled
+        selectLLMGame.style.display = 'block';
+        selectHumanGame.style.display = 'block';
+        languageSelect.style.display = 'none';
+        selectedLanguage = 'en';
+    } else {
+        // Listen for language selection changes
+        languageSelect.addEventListener('change', function () {
+            if (this.value) {
+                selectLLMGame.style.display = 'block';
+                selectHumanGame.style.display = 'block';
+                selectedLanguage = this.value;
+            } else {
+                selectLLMGame.style.display = 'none';
+                selectHumanGame.style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * 3) Fetch Available Models
+     * Retrieves a list of available LLM models from the server and stores them in the global `MODELS` array.
+     */
+    fetch('/model/available-models')
+        .then(response => response.json())
+        .then(availableModels => {
+            MODELS = availableModels; // Store fetched models globally
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
+        });
+
+
+    /**
+     * 4)  Initialize WebSocket connection
+     */
+    socket = io();
+
+    /**
+     * 5) Initialize game Configuration variables
+     *
+     */
+    initialiseGameSetup();
+
 
     /**
      * 6) Optionnally, display if a player is waiting in the lobby
@@ -601,8 +606,8 @@ resetTheGame = function() {
     document.getElementById('previousWordsArea').innerHTML = '';
     let languageSelect = document.getElementById('languageSelect');
     if (languageSelect.disabled) {
-        document.getElementById('selectLLMGame').style.display = 'block';
-        document.getElementById('selectHumanGame').style.display = 'block';
+        // document.getElementById('selectLLMGame').style.display = 'block';
+        // document.getElementById('selectHumanGame').style.display = 'block';
         languageSelect.style.display = 'none';
         selectedLanguage = 'en';
     }
@@ -632,6 +637,7 @@ resetTheGame = function() {
 document.getElementById('restartButton').addEventListener('click', async function (event) {
     cleanPreviousGameArea()
     resetTheGame();
+    initialiseGameSetup()
     fetchGameStats();
 });
 // END GAME LOGIC
