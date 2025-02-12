@@ -10,11 +10,11 @@ function generateNewPlayerID() {
 
 /** Retrieves a value from localStorage and handles potential 'null' string values.
  * If the item is 'null' or not set, returns an empty string instead.
- * @param {string} key - The key to retrieve from localStorage.
+ * @param {string} key - The key to retrieve from sessionStorage.
  * @return {string} - The value from localStorage or an empty string if not found or 'null'.
  */
 function getLocalStorageValue(key) {
-  const value = localStorage.getItem(key);
+  const value = sessionStorage.getItem(key);
   return (value === 'null' || value === null) ? '' : value;
 }
 
@@ -37,7 +37,7 @@ function populateElementFromStorage(key, elementId, isText = false) {
 }
 
 function fetchGameStats() {
-    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     fetch(`/game/number_games`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -58,10 +58,10 @@ function fetchGameStats() {
                 </div>
             `;
             // update local storage with the new game stats
-            localStorage.setItem('gamesPlayedAgainstHuman', data.gamesPlayedAgainstHuman);
-            localStorage.setItem('gamesPlayedAgainstBot', data.gamesPlayedAgainstBot);
+            sessionStorage.setItem('gamesPlayedAgainstHuman', data.gamesPlayedAgainstHuman);
+            sessionStorage.setItem('gamesPlayedAgainstBot', data.gamesPlayedAgainstBot);
             // if the total number of game played is bigger than 10, show the return to prolific button
-            if (parseInt(localStorage.getItem("gamesPlayedAgainstHuman")) >= 5 && localStorage.getItem("gamesPlayedAgainstBot") >= 5) {
+            if (parseInt(sessionStorage.getItem("gamesPlayedAgainstHuman")) >= 5 && sessionStorage.getItem("gamesPlayedAgainstBot") >= 5) {
                 document.getElementById('returnToProlific').style.display = 'block';
             }
         }
@@ -75,7 +75,7 @@ function fetchGameStats() {
 
 window.addEventListener('DOMContentLoaded', function() {
     let playerId = getLocalStorageValue('playerId');
-    localStorage.setItem('newPlayerId', generateNewPlayerID());
+    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
 
     if (playerId) {
         fetchGameStats();
@@ -147,12 +147,12 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         const llmKnowledge = data.llmKnowledge;
 
         // Store data in localStorage
-        localStorage.setItem('pseudonym', pseudonym);
-        localStorage.setItem('connectedPlayerId', playerId);
-        localStorage.setItem('ageGroup', ageGroup);
-        localStorage.setItem('gender', gender);
-        localStorage.setItem('region', region);
-        localStorage.setItem('llmKnowledge', llmKnowledge);
+        sessionStorage.setItem('pseudonym', pseudonym);
+        sessionStorage.setItem('connectedPlayerId', playerId);
+        sessionStorage.setItem('ageGroup', ageGroup);
+        sessionStorage.setItem('gender', gender);
+        sessionStorage.setItem('region', region);
+        sessionStorage.setItem('llmKnowledge', llmKnowledge);
 
         // Populate the DOM elements
         document.getElementById('pseudonymInput').value = pseudonym;
@@ -205,7 +205,7 @@ document.getElementById('goLogin').addEventListener('click', function() {
     document.getElementById('login').style.display = 'flex';
     document.getElementById('signin').style.display = 'none';
     document.getElementById('userId').textContent = playerId;
-    localStorage.setItem('newPlayerId', generateNewPlayerID());
+    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
 });
 
 
@@ -237,11 +237,11 @@ document.getElementById('updateProfile').addEventListener('click', function() {
     })
     .then(message => {
         console.log('Profile update message:', message);
-        localStorage.setItem('pseudonym', pseudonym);
-        localStorage.setItem('ageGroup', ageGroup);
-        localStorage.setItem('gender', gender);
-        localStorage.setItem('region', region);
-        localStorage.setItem('llmKnowledge', llmKnowledge);
+        sessionStorage.setItem('pseudonym', pseudonym);
+        sessionStorage.setItem('ageGroup', ageGroup);
+        sessionStorage.setItem('gender', gender);
+        sessionStorage.setItem('region', region);
+        sessionStorage.setItem('llmKnowledge', llmKnowledge);
 
         const displayName = getLocalStorageValue('pseudonym') || playerId;
         if (displayName) {
@@ -267,9 +267,10 @@ document.getElementById('updateProfile').addEventListener('click', function() {
 
 document.getElementById('logoutPlayer').addEventListener('click', function() {
     // Remove user data from localStorage
-    localStorage.clear();
+    sessionStorage.clear();
 
-    localStorage.setItem('newPlayerId', generateNewPlayerID());
+    sessionStorage.setItem('newPlayerId', generateNewPlayerID());
+    sessionStorage.removeItem('connectedPlayerId');
 
     // Reset UI
     document.getElementById('parameters').style.display = 'none';

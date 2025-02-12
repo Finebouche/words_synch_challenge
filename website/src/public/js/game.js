@@ -61,7 +61,7 @@ function initialiseHumanGame(gameConfig, gameConfigOrder) {
     * - nextGameConfig can be either 'human_vs_human_(bot_shown)' or 'human_vs_human_(human_shown)'
      */
 
-    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     gameMode = 'human';
 
@@ -143,7 +143,7 @@ function initialiseBotGame(gameConfig, gameConfigOrder) {
 
 function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
-    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let languageName = languageNames[selectedLanguage];
     let selectedModel = MODELS.find(model => model.name === model_name);
 
@@ -160,20 +160,18 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 
     fetch('/model/initialize-model', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ model: selectedModel, player_id: playerId, language: selectedLanguage, game_config: gameConfig, game_config_order: gameConfigOrder}) // Send the selected model to the server
     })
         .then(response => {
             document.getElementById('message-LLM').style.display = 'none';
-            if (response.status === 504 || response.status === 503 || response.status === 500) {
+            if (!response.ok) {
                 console.log("Model is not available. Take another one");
                 document.getElementById('errorBanner').style.display = 'block'; // Show the banner
                 llmSelect.value = '';
                 document.getElementById('submitWord').disabled = true;
                 document.getElementById('startLLMGame').style.display = 'none';
-                return null; // Stop further processing
+                throw new Error(`Server returned status ${response.status}`);
             } else {
                 console.log("Model is ready.");
                 document.getElementById('selections-LLM').style.display = 'none';
@@ -200,7 +198,7 @@ function loadModelAndStartGame(model_name, gameConfig, gameConfigOrder) {
 }
 
 function initialiseGameSetup() {
-    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
     let gameConfigOrder;
     let gamesCount;
     let nextGameConfig;
@@ -258,37 +256,33 @@ function initialiseGameSetup() {
          * 5) Depending on the next game configuration, show the corresponding game mode selection button
          * and handle the corresponding game mode selection
          */
-        //remove previous event listener
-        selectLLMGame.removeEventListener('click', function () {});
-        selectHumanGame.removeEventListener('click', function () {});
-
         console.log('Next game configuration:', nextGameConfig);
         if (nextGameConfig === 'human_vs_human_(bot_shown)' || nextGameConfig === 'human_vs_bot_(bot_shown)') {
             selectLLMGame.style.display = 'block';
             selectHumanGame.style.display = 'none';
             if (nextGameConfig === 'human_vs_human_(bot_shown)') {
-                selectLLMGame.addEventListener('click', function () {
+                selectLLMGame.onclick = function () {
                     initialiseHumanGame(nextGameConfig, gameConfigOrder)
-                });
+                };
             }
             else if (nextGameConfig === 'human_vs_bot_(bot_shown)') {
-                selectLLMGame.addEventListener('click', function () {
+                selectLLMGame.onclick = function () {
                     initialiseBotGame(nextGameConfig, gameConfigOrder)
-                });
+                };
             }
         }
         else if (nextGameConfig === 'human_vs_human_(human_shown)' || nextGameConfig === 'human_vs_bot_(human_shown)') {
             selectHumanGame.style.display = 'block';
             selectLLMGame.style.display = 'none';
             if (nextGameConfig === 'human_vs_human_(human_shown)') {
-                selectHumanGame.addEventListener('click', function () {
+                selectHumanGame.onclick = function () {
                     initialiseHumanGame(nextGameConfig, gameConfigOrder)
-                });
+                };
             }
             else if (nextGameConfig === 'human_vs_bot_(human_shown)') {
-                selectHumanGame.addEventListener('click', function () {
+                selectHumanGame.onclick = function () {
                     initialiseBotGame(nextGameConfig, gameConfigOrder)
-                });
+                };
             }
         }
     })
@@ -603,6 +597,10 @@ cleanPreviousGameArea = function() {
 }
 
 resetTheGame = function() {
+    if (socket) {
+        socket.disconnect(); // Disconnect any existing socket connection
+        socket = null;
+    }
     selectedLanguage = null;
     past_words_array = []; // Array to store the words
     socket = null;

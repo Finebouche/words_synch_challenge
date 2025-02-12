@@ -79,7 +79,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
         return;
     }
 
-    let playerId = localStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
+    let playerId = sessionStorage.getItem('connectedPlayerId') || getLocalStorageValue('newPlayerId');
 
     console.log('Player ID for questionnaire:', playerId);
 
