@@ -27,7 +27,7 @@ let myRole = null;
 let MODELS = []
 let selectedModelName = null;
 
-const NUMBERS_OF_GAME_PER_CONFIG = 2;
+const NUMBERS_OF_GAME_PER_CONFIG = 4;
 const CAN_SELECT_LLM = false;
 
 // based on gameConfigOrder, gamesCount and NUMBERS_OF_GAME_PER_CONFIG determines the next gameConfig

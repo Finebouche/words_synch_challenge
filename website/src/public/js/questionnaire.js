@@ -112,10 +112,10 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
-            document.getElementById('otherPlayerUnderstoodYourStrategies').value = '1';
-            document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '1';
-            document.getElementById('otherPlayerRating').value = '1';
-            document.getElementById('connectionFeeling').value = '1';
+            document.getElementById('otherPlayerUnderstoodYourStrategies').value = '';
+            document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '';
+            document.getElementById('otherPlayerRating').value = '';
+            document.getElementById('connectionFeeling').value = '';
             document.getElementById('errorMessageQuestionnaire').style.display = 'none';
         } else {
             console.error('Failed to save questionnaire answers.', data);
