@@ -101,6 +101,7 @@ function initialiseHumanGame(gameConfig) {
         if (gameConfig === 'human_vs_human_(bot_shown)') {
             document.getElementById('selectedInfo').style.display = 'block';
             llmSelectedContent.style.display = 'block';
+            selectedModelName = 'gpt-4o';
             llmSelectedContent.textContent = "Bzz... bzz... model " + selectedModelName + " loaded, currently playing with " + languageName  + " vocabulary...";
         }
 
