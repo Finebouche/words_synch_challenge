@@ -12,6 +12,7 @@ dependencies:
   - plotly
   - numpy
   - gensim
+  - pingouin
   - jupyter-dash
   - pip:
       - requests

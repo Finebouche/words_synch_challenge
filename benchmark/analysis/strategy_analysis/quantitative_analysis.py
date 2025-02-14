@@ -26,7 +26,7 @@ def min_max_normalize(values):
     norm = (arr - vmin) / (vmax - vmin)
     return norm.tolist()
 
-def quantitative_analysis(player_games):
+def quantitative_analysis(player_games, normalize=False):
     """
     Computes round-by-round numeric distances or similarities:
       - mirroring_distance: cosine distance to opponent's previous word's embedding
@@ -79,14 +79,15 @@ def quantitative_analysis(player_games):
         player_games.at[index, 'balancing_distance'] = balancing_list
         player_games.at[index, 'staying_close_distance'] = staying_close_list
 
-        # Normalize each measure for this game (per row normalization across rounds)
-        norm_mirroring = min_max_normalize(mirroring_list)
-        norm_balancing = min_max_normalize(balancing_list)
-        norm_staying_close = min_max_normalize(staying_close_list)
+        if normalize:
+            # Normalize each measure for this game (per row normalization across rounds)
+            norm_mirroring = min_max_normalize(mirroring_list)
+            norm_balancing = min_max_normalize(balancing_list)
+            norm_staying_close = min_max_normalize(staying_close_list)
 
-        player_games.at[index, 'mirroring_distance'] = norm_mirroring
-        player_games.at[index, 'balancing_distance'] = norm_balancing
-        player_games.at[index, 'staying_close_distance'] = norm_staying_close
+            player_games.at[index, 'mirroring_distance'] = norm_mirroring
+            player_games.at[index, 'balancing_distance'] = norm_balancing
+            player_games.at[index, 'staying_close_distance'] = norm_staying_close
 
     return player_games
 

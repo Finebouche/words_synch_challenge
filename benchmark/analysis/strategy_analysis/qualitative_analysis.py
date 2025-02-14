@@ -1,14 +1,66 @@
 import pandas as pd
 import numpy as np
 
-from benchmark.analysis.qualitative_analysis.semantic_analysis import is_hypernym, is_hyponym, is_antonym, is_synonym, is_morphological_variation, \
+from .syntactic_analysis import is_hypernym, is_hyponym, is_antonym, is_synonym, is_morphological_variation, \
                                                             is_thematic_alignment, is_meronym, is_holonym, is_troponym, is_entailment
-from benchmark.analysis.qualitative_analysis.conceptual_linking_analysis import conceptual_linking_score
-from benchmark.analysis.qualitative_analysis.collocation_analysis import collocation_score
+from .conceptual_linking_analysis import conceptual_linking_score
+from .collocation_analysis import collocation_score
 
 ##############################
 #  QUALITATIVE (BOOLEAN)    #
 ##############################
+
+def colloquial_conceptual_linking_analysis(player_games, use_conceptual_linking_score=True):
+    player_games['conceptual_linking_score_my'] = None
+    player_games['conceptual_linking_score_opponent'] = None
+    player_games['collocation_score_my'] = None
+    player_games['collocation_score_opponent'] = None
+
+    for index, game in player_games.iterrows():
+        # Assume the game words are stored as strings that can be evaluated into lists.
+        if isinstance(game['word_my'], list):
+            word_my = game['word_my']
+            word_opponent = game['word_opponent']
+        else:
+            word_my = eval(game['word_my'])
+            word_opponent = eval(game['word_opponent'])
+        num_rounds = min(len(word_my), len(word_opponent))
+
+        conceptual_linking_my_list = []
+        conceptual_linking_opponent_list = []
+        collocation_my_list = []
+        collocation_opponent_list = []
+
+        for i in range(num_rounds):
+            if i == 0:
+                # Round 0: No previous round to compare to.
+                pass
+            else:
+                current_word = word_my[i]
+                prev_opponent_word = word_opponent[i - 1]
+                prev_my_word = word_my[i - 1]
+
+                if use_conceptual_linking_score:
+                    cl_score_opp = conceptual_linking_score(current_word, prev_opponent_word, verbose=True)
+                    cl_score_my = conceptual_linking_score(current_word, prev_my_word, verbose=True)
+                else:
+                    cl_score_opp = 0
+                    cl_score_my = 0
+                colloc_score_opp = collocation_score(current_word, prev_opponent_word)
+                colloc_score_my = collocation_score(current_word, prev_my_word)
+
+                conceptual_linking_my_list.append(cl_score_my)
+                conceptual_linking_opponent_list.append(cl_score_opp)
+                collocation_my_list.append(colloc_score_my)
+                collocation_opponent_list.append(colloc_score_opp)
+
+        player_games.at[index, 'conceptual_linking_score_my'] = conceptual_linking_my_list
+        player_games.at[index, 'conceptual_linking_score_opponent'] = conceptual_linking_opponent_list
+        player_games.at[index, 'collocation_score_my'] = collocation_my_list
+        player_games.at[index, 'collocation_score_opponent'] = collocation_opponent_list
+
+    return player_games
+
 
 def qualitative_analysis(player_games):
     """
@@ -32,13 +84,16 @@ def qualitative_analysis(player_games):
     player_games['thematic_alignment_measure'] = None
     player_games['meronym_holonym_measure'] = None
     player_games['troponym_entailment_measure'] = None
-    player_games['conceptual_linking_score'] = None
-    player_games['collocation_score'] = None
+
 
     for index, game in player_games.iterrows():
         # Assume the game words are stored as strings that can be evaluated into lists.
-        word_my = eval(game['word_my'])
-        word_opponent = eval(game['word_opponent'])
+        if isinstance(game['word_my'], list):
+            word_my = game['word_my']
+            word_opponent = game['word_opponent']
+        else:
+            word_my = eval(game['word_my'])
+            word_opponent = eval(game['word_opponent'])
         num_rounds = min(len(word_my), len(word_opponent))
 
         abstraction_list = []
@@ -48,8 +103,6 @@ def qualitative_analysis(player_games):
         thematic_alignment_list = []
         meronym_holonym_list = []
         troponym_entailment_list = []
-        conceptual_linking_list = []
-        collocation_list = []
 
         for i in range(num_rounds):
             if i == 0:
@@ -61,8 +114,6 @@ def qualitative_analysis(player_games):
                 thematic_alignment_list.append(np.nan)
                 meronym_holonym_list.append(np.nan)
                 troponym_entailment_list.append(np.nan)
-                conceptual_linking_list.append(np.nan)
-                collocation_list.append(np.nan)
             else:
                 current_word = word_my[i]
                 prev_opponent_word = word_opponent[i - 1]
@@ -82,9 +133,7 @@ def qualitative_analysis(player_games):
                     is_holonym(current_word, prev_my_word))
                 troponym_entailment_score = int(is_troponym(current_word, prev_opponent_word)) + int(
                     is_entailment(current_word, prev_my_word))
-                cl_score = conceptual_linking_score(current_word, prev_opponent_word, verbose=True) + \
-                             conceptual_linking_score(current_word, prev_my_word, verbose=True)
-                collo_score = collocation_score(current_word, prev_opponent_word) + collocation_score(current_word, prev_my_word)
+
 
                 abstraction_list.append(abstraction_score)
                 contrast_list.append(contrast_score)
@@ -93,8 +142,7 @@ def qualitative_analysis(player_games):
                 thematic_alignment_list.append(thematic_alignment_score)
                 meronym_holonym_list.append(meronym_holonym_score)
                 troponym_entailment_list.append(troponym_entailment_score)
-                conceptual_linking_list.append(cl_score)
-                collocation_list.append(collo_score)
+
 
 
         player_games.at[index, 'abstraction_measure'] = abstraction_list
@@ -104,8 +152,7 @@ def qualitative_analysis(player_games):
         player_games.at[index, 'thematic_alignment_measure'] = thematic_alignment_list
         player_games.at[index, 'meronym_holonym_measure'] = meronym_holonym_list
         player_games.at[index, 'troponym_entailment_measure'] = troponym_entailment_list
-        player_games.at[index, 'conceptual_linking_score'] = conceptual_linking_list
-        player_games.at[index, 'collocation_score'] = collocation_list
+
 
     return player_games
 
