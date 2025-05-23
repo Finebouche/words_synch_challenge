@@ -28,7 +28,7 @@ let MODELS = []
 let selectedModelName = null;
 
 const NUMBERS_OF_GAME_PER_CONFIG = 4;
-const CAN_SELECT_LLM = false;
+const CAN_SELECT_LLM = true;
 
 // based on gameConfigOrder, gamesCount and NUMBERS_OF_GAME_PER_CONFIG determines the next gameConfig
 function getNextGameConfig(gameConfigOrder, gamesCount) {
@@ -241,10 +241,11 @@ function initialiseGameSetup() {
         console.log('Game configuration order:', JSON.parse(localStorage.getItem('gameConfigOrder')));
         console.log('Games count:', JSON.parse(localStorage.getItem('gamesCount')));
 
-        nextGameConfig = getNextGameConfig(
-            JSON.parse(localStorage.getItem('gameConfigOrder')),
-            JSON.parse(localStorage.getItem('gamesCount')),
-        )
+        // nextGameConfig = getNextGameConfig(
+        //     JSON.parse(localStorage.getItem('gameConfigOrder')),
+        //     JSON.parse(localStorage.getItem('gamesCount')),
+        // )
+        nextGameConfig = "no_config"; // for display
         console.log('Next game configuration:', nextGameConfig);
 
         /**
@@ -281,6 +282,17 @@ function initialiseGameSetup() {
         } else if (nextGameConfig === 'all_games_played') {
             console.log('All games have been played');
             document.getElementById('returnToProlific').style.display = 'block';
+        }
+        else if (nextGameConfig === 'no_config') {
+            // Display both buttons with no deception
+            selectLLMGame.style.display = 'block';
+            selectHumanGame.style.display = 'block';
+            selectLLMGame.onclick = function () {
+                initialiseBotGame("human_vs_bot_(bot_shown)")
+            };
+            selectHumanGame.onclick = function () {
+                initialiseHumanGame("human_vs_human_(human_shown)")
+            };
         }
     })
 }

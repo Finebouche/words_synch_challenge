@@ -153,21 +153,18 @@ def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", gro
         strategy_list = row.get(strategy_col, None)
         freq_dict = {s: 0 for s in possible_strategies}
         total_count = 0
+        if not isinstance(strategy_list, list):
+            strategy_list = eval(strategy_list)
 
-        if isinstance(strategy_list, list) and len(strategy_list) > 0:
-            for round_labels in strategy_list:
-                if not round_labels:
-                    continue
-                if not isinstance(round_labels, list):
-                    round_labels = [round_labels]
-                total_count += len(round_labels)
-                for lab in round_labels:
-                    if lab in freq_dict:
-                        freq_dict[lab] += 1
-                    else:
-                        freq_dict["none"] += 1
-        else:
-            total_count = 0
+        for round_labels in list(strategy_list):
+            if not round_labels:
+                continue
+            if not isinstance(round_labels, list):
+                round_labels = [round_labels]
+            total_count += len(round_labels)
+            for lab in round_labels:
+                if lab in freq_dict:
+                    freq_dict[lab] += 1
 
         if total_count > 0:
             for s in possible_strategies:

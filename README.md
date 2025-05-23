@@ -42,6 +42,9 @@ The wordssynchchallenge project addresses the challenge of synchronizing word ch
 ## 📚 Publications
 
 ### **2025 (Upcoming)**
+- **[Human Alignment: How Much Do We Adapt to LLMs?](https://hcii2025.springer.com)**  
+  *Tanguy Cazalets, Ruben Janssens, Tony Belpaeme, Joni Dambre*  
+  *Accepted for presentation at ACL 2025 Main Conference*  
 
 - **[Word Synchronization Challenge: A Benchmark for Word Association Responses for Large Language Models](https://hcii2025.springer.com)**  
   *Tanguy Cazalets, Joni Dambre*  

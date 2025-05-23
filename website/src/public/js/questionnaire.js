@@ -33,7 +33,7 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
     // === VALIDATION SECTION ===
 
     // Retrieve radio buttons / checkboxes selections
-    const quantitativeStrategyUsed = document.querySelector('input[name="quantitativeStrategyUsed"]:checked');
+    const quantitativeStrategyUsed = Array.from(document.querySelector('input[name="quantitativeStrategyUsed"]:checked'));
     const qualitativeStrategyUsed = Array.from(document.querySelectorAll('input[name="qualitativeStrategyUsed"]:checked'));
     const quantitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]:checked'));
     const qualitativeOtherPlayerStrategy = Array.from(document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]:checked'));
@@ -92,9 +92,9 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             gameId: gameId,
             role: myRole,
             playerId: playerId,
-            quantitativeStrategyUsed: quantitativeStrategyUsed,
-            qualitativeStrategyUsed: qualitativeStrategyUsed.map(cb => cb.value),
+            quantitativeStrategyUsed: quantitativeStrategyUsed.map(cb => cb.value),
             quantitativeOtherPlayerStrategy: quantitativeOtherPlayerStrategy.map(cb => cb.value),
+            qualitativeStrategyUsed: qualitativeStrategyUsed.map(cb => cb.value),
             qualitativeOtherPlayerStrategy: qualitativeOtherPlayerStrategy.map(cb => cb.value),
             otherPlayerUnderstoodYourStrategies: otherPlayerUnderstood,
             didYouUnderstandOtherPlayerStrategy: didYouUnderstandOtherPlayerStrategy,
@@ -109,8 +109,8 @@ document.getElementById('submitQuestionnaire').addEventListener('click', functio
             // Reset the form after successful submission
             document.getElementById('questionnaireContainer').style.display = 'none';
             document.querySelectorAll('input[name="quantitativeStrategyUsed"]').forEach(input => input.checked = false);
-            document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="quantitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="qualitativeStrategyUsed"]').forEach(input => input.checked = false);
             document.querySelectorAll('input[name="qualitativeOtherPlayerStrategy"]').forEach(input => input.checked = false);
             document.getElementById('otherPlayerUnderstoodYourStrategies').value = '';
             document.getElementById('didYouUnderstandOtherPlayerStrategy').value = '';

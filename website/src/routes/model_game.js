@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { Game, Player } from '../database.js';
 import OpenAI from 'openai';
+import { HfInference } from "@huggingface/inference";
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ const __dirname = dirname(__filename);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || fs.readFileSync(path.join(__dirname, '..', 'open_ai_key.txt'), 'utf8').trim();
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN || fs.readFileSync(path.join(__dirname, '..', 'huggingface_api_token.txt'), 'utf8').trim();
 const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
+const client = new HfInference(HUGGINGFACE_API_TOKEN);
 
 const MAX_NUMBER_OF_ROUNDS = 15;
 
@@ -27,15 +29,17 @@ const MAX_NUMBER_OF_ROUNDS = 15;
 const availableModels = [
     // OPENAI
     { name: 'gpt-4o', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: false },
-    { name: 'gpt-4o-mini', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: true },
-    { name: 'gpt-4', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: true },
+    { name: 'gpt-4o-mini', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: false },
+    { name: 'gpt-4', type: 'chat-completion', languages: ['en', 'fr'], provider: "openai", disabled: false },
     // HUGGINGFACE
-    { name: 'meta-llama/Llama-3.2-3B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface", disabled: true  },
-    { name: 'meta-llama/Llama-3.2-1B', type: 'text-generation' , languages : ['en','fr', 'es'], provider: "huggingface", disabled: true  },
-    { name: 'openai-community/gpt2', type: 'text-generation', languages : ['en', 'fr'], provider: "huggingface", disabled: true  },
-    { name: 'google/flan-t5-large', type: 'text2text-generation' , languages : ['en'], provider: "huggingface", disabled: true   },
-    { name: 'google-bert/bert-base-uncased', type: 'fill-mask' , languages : ['en'] , mask_token: '[MASK]', provider: "huggingface", disabled: true  },
-    { name: 'distilbert/distilroberta-base', type: 'fill-mask' , languages : ['en'] , mask_token: "<mask>", provider: "huggingface", disabled: true  },
+    { name: 'google/gemma-2-2b-it', type: 'chat-completion' , languages : ['en','fr', 'es'], provider: "hf-inference", disabled: false  },
+    { name: 'meta-llama/Llama-3.2-1B', type: 'chat-completion' , languages : ['en','fr', 'es'], provider: "hf-inference", disabled: false  },
+    { name: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', type: 'chat-completion', languages : ['en', 'fr'], provider: "hf-inference", disabled: false  },
+    { name: 'microsoft/phi-4', type: 'chat-completion' , languages : ['en'], provider: "nebius", disabled: false   },
+    { name: 'deepseek-ai/DeepSeek-V3-0324', type: 'chat-completion' , languages : ['en'] , provider: "fireworks-ai", disabled: false  },
+    { name: 'google/flan-t5-large', type: 'text2text-generation' , languages : ['en'], provider: "hf-inference", disabled: true   },
+    { name: 'google-bert/bert-base-uncased', type: 'fill-mask' , languages : ['en'] , mask_token: '[MASK]', provider: "hf-inference", disabled: true  },
+    { name: 'FacebookAI/xlm-roberta-base', type: 'fill-mask' , languages : ['en'] , mask_token: "<mask>", provider: "hf-inference", disabled: false  },
 ];
 
 // Endpoint to get available models
@@ -74,36 +78,7 @@ router.post('/initialize-model', async (req, res) => {
     let token = "initialisation"
     let parameters;
 
-    if (model.type === 'text2text-generation') {
-        // Could specify parameters if needed
-    }
-
-    if (model.type === 'text-generation') {
-        parameters = {return_full_text:false, max_new_tokens: 6 }
-    }
-
-    if (model.type === 'fill-mask') {
-        token = token + " " + model.mask_token
-    }
-    if (model.provider === "huggingface") {
-        try {
-            const response = await axios.post(
-                `https://api-inference.huggingface.co/models/${model.name}`,
-                { inputs: token },
-                {
-                    headers: { Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}` }
-                }
-            );
-            res.json({ gameData: response.data, gameId: newGame.gameId });
-        } catch (error) {
-            console.error("Error calling the Hugging Face API", error);
-            if (error.response && error.response.status === 503) {
-                res.status(503).send("Model is loading");
-            } else {
-                res.status(500).send("Error calling the Hugging Face API");
-            }
-        }
-    } else if (model.provider === "openai") {
+    if (model.provider === "openai") {
         try {
             const response = await openaiClient.chat.completions.create({
                 model: model.name,
@@ -115,6 +90,33 @@ router.post('/initialize-model', async (req, res) => {
         } catch (error) {
             console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
             res.status(500).send("Error calling the OpenAI API");
+        }
+    } else {
+
+        if (model.type === 'text2text-generation') {
+            // Could specify parameters if needed
+        } else if (model.type === 'text-generation') {
+            parameters = {return_full_text:false, max_new_tokens: 6 }
+        } else if (model.type === 'fill-mask') {
+            token = token + " " + model.mask_token
+        } else if (model.type === 'chat-completion') {
+        }
+
+        try {
+            const response = await client.textGeneration({
+                inputs : token,
+                model: model.name,
+                provider: model.provider,
+            });
+
+            res.json({ gameData: response.data, gameId: newGame.gameId });
+        } catch (error) {
+            console.error("Error calling the Hugging Face API", error);
+            if (error.response && error.response.status === 503) {
+                res.status(503).send("Model is loading");
+            } else {
+                res.status(500).send("Error calling the Hugging Face API");
+            }
         }
     }
 
@@ -165,11 +167,24 @@ const RULE_TOKEN = "You are a helpful assistant playing a game where at each rou
     "The goal is to produce the same word than the other player based on previous words of the game."
 const ROUND_ONE = "Round 1. New game, please give your first (really random) word and only that word. You can be a bit creative but not too much. Be sure to finish your answer with it"
 
-const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
-    return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;
-};
+function roundTemplate(round_number, past_words_array, player_word, bot_word) {
+    if (round_number === 1) {
+        return ROUND_ONE;
+    } else {
+        return (
+            `${player_word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
+            `Based on previous words, what word would be most likely for next round given that my word was ${player_word} and your word was ${bot_word}` +
+            "Please give only your word for this round."
+        )
+    }
+}
 
 async function huggingfacecall(model, round, past_words_array, res) {
+
+    const huggingFaceRoundTemplate = (roundNumber, pastWords) => {
+        return `\nRound ${roundNumber}! Past words, forbidden to use are ${pastWords.join(', ')}. Please give your word for the current round.\n`;
+    };
+
     let interactionHistory = RULE_TOKEN + ROUND_ONE
     if (Array.isArray(past_words_array) && past_words_array.length > 0) {
         for (let i = 0; i < past_words_array.length; i++) {
@@ -227,11 +242,13 @@ async function huggingfacecall(model, round, past_words_array, res) {
     }
 
     try {
-        const response = await axios.post(
-            `https://api-inference.huggingface.co/models/${model.name}`,
-            { inputs: token, parameters: parameters, options: { wait_for_model: true } },
-            { headers: { Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}` } }
-        );
+        const response = await client.textGeneration({
+            model: model.name,
+            provider: model.provider,
+            inputs: token,
+            parameters: parameters,
+            options: { wait_for_model: true }
+        });
 
         let llmWord;
         if (model.type === "fill-mask") {
@@ -247,26 +264,10 @@ async function huggingfacecall(model, round, past_words_array, res) {
     }
 }
 
-async function openaicall(model, round, past_words_array, res) {
+async function chatCompletioncall(model, round, past_words_array, res) {
     let messages = [];
-    messages.push({role: "developer", content: RULE_TOKEN});
+    messages.push({role: "assistant", content: RULE_TOKEN});
     messages.push({role: "user", content: ROUND_ONE});
-
-    function openAIRoundTemplate(round_number, past_words_array, player_word, bot_word) {
-
-        if (round_number === 1) {
-            return ROUND_ONE;
-        } else {
-            return (
-                `${player_word}! We said different words, let's do another round. So far we have used the words: [${past_words_array.join(', ')}], they are now forbidden` +
-                `Based on previous words, what word would be most likely for next round given that my word was ${player_word} and your word was ${bot_word}` +
-                "Please give only your word for this round."
-            )
-        }
-    }
-
-    // select the i first elements of the array
-
 
     if (past_words_array && past_words_array.length > 0 && round > 1) {
         for (let i = 0; i < past_words_array.length; i++) {
@@ -274,21 +275,34 @@ async function openaicall(model, round, past_words_array, res) {
                 messages.push({role: "assistant", content: `'${past_words_array[i]}'`});
                 // console.log(past_words_array[i]) // that was to check that it was the right index (and it is)
             } else {
-                messages.push({role: "user", content: openAIRoundTemplate(round, past_words_array.slice(0, i), past_words_array[i], past_words_array[i - 1])});
+                messages.push({role: "user", content: roundTemplate(round, past_words_array.slice(0, i), past_words_array[i], past_words_array[i - 1])});
             }
         }
     }
 
+    let response;
     try {
         let temp = round === 1 ? 1.6 : 1.1;
         let max_tokens = round === 1 ? 50 : 20;
-        const response = await openaiClient.chat.completions.create({
-            model: model.name,
-            messages: messages,
-            max_tokens: max_tokens,
-            temperature: temp,
-        });
-
+        console.log("Max tokens: ", max_tokens);
+        console.log("Temperature: ", temp);
+        console.log("Messages: ", messages);
+        if (model.provider === "openai") {
+            response = await openaiClient.chat.completions.create({
+                model: model.name,
+                messages: messages,
+                max_tokens: max_tokens,
+                temperature: temp,
+            });
+        } else {
+            response = await client.chatCompletion({
+                model: model.name,
+                provider: model.provider,
+                messages: messages,
+                max_tokens: max_tokens,
+                temperature: temp,
+            });
+        }
 
         const fullText = response.choices[0].message.content.trim();
         console.log("Full reply: ", fullText);
@@ -302,8 +316,8 @@ async function openaicall(model, round, past_words_array, res) {
 
         return lastWord;
     } catch (error) {
-        console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
-        res.status(500).send("Error calling the OpenAI API");
+        console.error("Error calling the chatCompletion inference", error.response ? error.response.data : error);
+        res.status(500).send("Error calling the chatCompletion API");
     }
 }
 
@@ -324,12 +338,10 @@ router.post('/query-model', async (req, res) => {
 
     let llmWord;
     while (true) {
-        if (model.provider === "huggingface") {
-            llmWord = await huggingfacecall(model, round, past_words_array, res);
-        } else if (model.provider === "openai") {
-            llmWord = await openaicall(model, round, past_words_array, res);
+        if (model.type === "chat-completion") {
+            llmWord = await chatCompletioncall(model, round, past_words_array, res);
         } else {
-            return res.status(400).send("Invalid model provider");
+            llmWord = await huggingfacecall(model, round, past_words_array, res);
         }
 
         console.log(`Model ${model.name} returned word: ${llmWord}`);
