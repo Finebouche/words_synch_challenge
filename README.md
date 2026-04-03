@@ -56,7 +56,7 @@ The wordssynchchallenge project addresses the challenge of synchronizing word ch
 
 ## 🎗 License
 
-This project is protected under the [MIT License ](https://choosealicense.com/licenses/mit/) License.
+This project is protected under the [MIT License ](https://choosealicense.com/licenses/mit/).
 
 ---
 
