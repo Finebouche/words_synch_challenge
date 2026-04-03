@@ -34,14 +34,14 @@ The wordssynchchallenge project addresses the challenge of synchronizing word ch
 ---
 
 
-|      |    Subproject     | Summary                                                                                                                                                                                                                                                                                                                                                       |
-| :--- |:-----------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ⚙️  |    **Website**    | <ul><li>Utilizes a client-server model with a web application front-end and a backend for game logic and data management.</li><li>Integrates <code>OpenAI</code> and <code>Hugging Face</code> APIs for model interactions, enhancing game interactions</li><li>Database integration via <code>SQLite</code> managed by <code>Sequelize</code> ORM.</li></ul> |
-| 🔌 | **Data Analysis** | <ul><li>Dataset creation with <code>OpenAI</code> API.</li><li>Visualisation through OpenAI embeding and pyplot</li></ul>                                                                                                                                                                                                                                     |
+|      |    Subproject     | Summary                                                                                                                                                                                                                                                        |
+| :--- |:-----------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ⚙️  |    **Website**    | <ul><li>Web application made with express and plain javascript</li><li>Integrates <code>OpenAI</code> and <code>Hugging Face</code> APIs for model interactions</li><li>Database integration via <code>SQLite</code> and <code>Sequelize</code> ORM.</li></ul> |
+| 🔌 | **Data Analysis** | <ul><li>Dataset created with <code>chatpgt-4o</code> .</li><li>Visualisation through OpenAI embeding and pyplot</li></ul>                                                                                                                                      |
 
 ## 📚 Publications
 
-### **2025 (Upcoming)**
+### **2025**
 - **[Human Alignment: How Much Do We Adapt to LLMs?](https://aclanthology.org/2025.acl-short.47/)**  
   *Tanguy Cazalets, Ruben Janssens, Tony Belpaeme, Joni Dambre*  
   *Accepted for presentation at ACL 2025 Main Conference*  
