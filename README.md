@@ -44,12 +44,11 @@ The wordssynchchallenge project addresses the challenge of synchronizing word ch
 ### **2025**
 - **[Human Alignment: How Much Do We Adapt to LLMs?](https://aclanthology.org/2025.acl-short.47/)**  
   *Tanguy Cazalets, Ruben Janssens, Tony Belpaeme, Joni Dambre*  
-  *Accepted for presentation at ACL 2025 Main Conference*  
+  *Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), pages 603–613.*  
 
 - **[Word Synchronization Challenge: A Benchmark for Word Association Responses for Large Language Models](https://link.springer.com/chapter/10.1007/978-3-031-93864-1_1)**  
   *Tanguy Cazalets, Joni Dambre*  
-  *Accepted for presentation at HCII 2025 Conference*  
-  To be published in Springer’s HCII 2025 Proceedings.  
+  *Human-Computer Interaction, HCII 2025, Lecture Notes in Computer Science, volume 15770, pages 3–19.*  
   This paper introduces the Word Synchronization Challenge, a novel benchmark to evaluate word association responses in Large Language Models (LLMs). It discusses implementation insights, highlights human-LLM interaction mechanisms, and addresses ethical considerations, such as participant consent and data privacy, in studies involving human subjects. 
 
 ---
