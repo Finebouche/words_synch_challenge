@@ -1,3 +1,5 @@
+import ast
+
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -8,6 +10,13 @@ import matplotlib.ticker as mticker
 # External module imports
 from .quantitative_analysis import assign_quantitative_strategy, quantitative_analysis
 from .qualitative_analysis import assign_semantic_strategy, qualitative_analysis, colloquial_conceptual_linking_analysis
+
+
+def parse_sequence(value):
+    if isinstance(value, str):
+        return ast.literal_eval(value)
+    return value
+
 
 def strategy_analysis(games_df, embedding_model, use_pca=False, use_conceptual_linking_score=True):
     """
@@ -61,7 +70,10 @@ def strategy_analysis(games_df, embedding_model, use_pca=False, use_conceptual_l
         player_games = qualitative_analysis(player_games)
 
         # Scores for conceptual linking and collocation
-        player_games = colloquial_conceptual_linking_analysis(player_games, use_conceptual_linking_score=use_conceptual_linking_score)
+        player_games = colloquial_conceptual_linking_analysis(
+            player_games,
+            use_conceptual_linking_score=use_conceptual_linking_score,
+        )
 
         # 3) Decide winning strategies
         # Apply to each row
@@ -130,7 +142,7 @@ def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", gro
 
     # 2) Accumulate rows in "long" format.
     rows = []
-    for idx, row in results_df.iterrows():
+    for _, row in results_df.iterrows():
         # Determine the group value based on the chosen grouping method.
         if groupby == 'player':
             group_val = row.get("playerId", "Unknown")
@@ -153,8 +165,7 @@ def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", gro
         strategy_list = row.get(strategy_col, None)
         freq_dict = {s: 0 for s in possible_strategies}
         total_count = 0
-        if not isinstance(strategy_list, list):
-            strategy_list = eval(strategy_list)
+        strategy_list = parse_sequence(strategy_list)
 
         for round_labels in list(strategy_list):
             if not round_labels:
@@ -205,8 +216,6 @@ def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", gro
         cmap="coolwarm",
         aspect="auto",
         interpolation="nearest",
-        vmin=0.17,
-        vmax=0.51
     )
 
     cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
@@ -246,6 +255,7 @@ def plot_strategy_heatmap(results_df, strategy_col="semantic_strategy_name", gro
     plt.tight_layout()
     plt.show()
 
+
 def print_game_turns(results_df, n=5):
     """
     Example function that prints both words and
@@ -254,17 +264,11 @@ def print_game_turns(results_df, n=5):
 
     for idx, row in results_df.head(n).iterrows():
         print(f"Game {idx}:")
-        word_my = row["word_my"]
-        word_opponent = row["word_opponent"]
+        word_my = parse_sequence(row["word_my"])
+        word_opponent = parse_sequence(row["word_opponent"])
 
-        q_strats = row.get("semantic_strategy_name", [])
-        t_strats = row.get("quantitative_strategy_name", [])
-
-        # If these are strings, parse them:
-        if isinstance(word_my, str):
-            word_my = eval(word_my)
-        if isinstance(word_opponent, str):
-            word_opponent = eval(word_opponent)
+        q_strats = parse_sequence(row.get("semantic_strategy_name", []))
+        t_strats = parse_sequence(row.get("quantitative_strategy_name", []))
 
         num_rounds = min(len(word_my), len(word_opponent), len(q_strats), len(t_strats))
         if num_rounds < 2:

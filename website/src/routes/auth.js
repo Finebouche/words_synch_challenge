@@ -3,6 +3,12 @@ import { Player, Game } from '../database.js';
 import { Op } from 'sequelize';
 
 const router = express.Router();
+const GAME_CONFIGS = [
+    'human_vs_human_(bot_shown)',
+    'human_vs_bot_(bot_shown)',
+    'human_vs_human_(human_shown)',
+    'human_vs_bot_(human_shown)'
+];
 
 router.post('/login', async (req, res) => {
     const { playerId } = req.body;
@@ -10,13 +16,13 @@ router.post('/login', async (req, res) => {
         const player = await Player.findByPk(playerId);
         if (player) {
             res.json({
-            pseudonym: player.pseudonym,
-            playerId: player.playerId,
-            ageGroup: player.ageGroup,
-            gender: player.gender,
-            region: player.region,
-            llmKnowledge: player.llmKnowledge,
-            gameConfigOrder: player.gameConfigOrder
+                pseudonym: player.pseudonym,
+                playerId: player.playerId,
+                ageGroup: player.ageGroup,
+                gender: player.gender,
+                region: player.region,
+                llmKnowledge: player.llmKnowledge,
+                gameConfigOrder: player.gameConfigOrder
             });
         } else {
             res.status(404).send('User not found');
@@ -29,7 +35,7 @@ router.post('/login', async (req, res) => {
 router.post('/create', async (req, res) => {
     const { playerId, gameConfigOrder } = req.body;
     try {
-        const [player, created] = await Player.findOrCreate({
+        const [player] = await Player.findOrCreate({
             where: { playerId: playerId },
             defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
         });
@@ -92,13 +98,7 @@ router.post('/games-config-count/', async (req, res) => {
         }
         const gameConfigOrder = player.gameConfigOrder;
 
-        // Count the number of games played for each gameConfig 'human_vs_human_(bot_shown)', 'human_vs_bot_(bot_shown)', 'human_vs_human_(human_shown)', 'human_vs_bot_(human_shown)'
-        const gamesCount = {
-            'human_vs_human_(bot_shown)': 0,
-            'human_vs_bot_(bot_shown)': 0,
-            'human_vs_human_(human_shown)': 0,
-            'human_vs_bot_(human_shown)': 0
-        }
+        const gamesCount = Object.fromEntries(GAME_CONFIGS.map(config => [config, 0]));
         const games = await Game.findAll({
             where: {
                 [Op.or]: [
@@ -108,26 +108,9 @@ router.post('/games-config-count/', async (req, res) => {
             }
         });
         games.forEach(game => {
-            if (game.player1Id === playerId) {
-                if (game.gameConfigPlayer1 === 'human_vs_human_(bot_shown)') {
-                    gamesCount['human_vs_human_(bot_shown)']++;
-                } else if (game.gameConfigPlayer1 === 'human_vs_bot_(bot_shown)') {
-                    gamesCount['human_vs_bot_(bot_shown)']++;
-                } else if (game.gameConfigPlayer1 === 'human_vs_human_(human_shown)') {
-                    gamesCount['human_vs_human_(human_shown)']++;
-                } else if (game.gameConfigPlayer1 === 'human_vs_bot_(human_shown)') {
-                    gamesCount['human_vs_bot_(human_shown)']++;
-                }
-            } else {
-                if (game.gameConfigPlayer2 === 'human_vs_human_(bot_shown)') {
-                    gamesCount['human_vs_human_(bot_shown)']++;
-                } else if (game.gameConfigPlayer2 === 'human_vs_bot_(bot_shown)') {
-                    gamesCount['human_vs_bot_(bot_shown)']++;
-                } else if (game.gameConfigPlayer2 === 'human_vs_human_(human_shown)') {
-                    gamesCount['human_vs_human_(human_shown)']++;
-                } else if (game.gameConfigPlayer2 === 'human_vs_bot_(human_shown)') {
-                    gamesCount['human_vs_bot_(human_shown)']++;
-                }
+            const config = game.player1Id === playerId ? game.gameConfigPlayer1 : game.gameConfigPlayer2;
+            if (config in gamesCount) {
+                gamesCount[config]++;
             }
         });
 

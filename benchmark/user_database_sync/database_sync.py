@@ -1,7 +1,16 @@
-import os
-import requests
 from datetime import datetime
+from pathlib import Path
 import sqlite3
+
+import requests
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def quote_identifier(identifier):
+    return '"' + identifier.replace('"', '""') + '"'
+
 
 def download_database(url, token, directory):
     """
@@ -9,20 +18,22 @@ def download_database(url, token, directory):
     and save it to a subdirectory (with a timestamp).
     """
     # Ensure the subdirectory exists
-    os.makedirs(directory, exist_ok=True)
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
 
     # Generate a timestamped filename
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     db_filename = f"downloaded_word_sync_{timestamp}.db"
-    db_path = os.path.join(directory, db_filename)
+    db_path = directory / db_filename
 
     headers = {'x-download-token': token}
     response = requests.get(url, headers=headers, stream=True)
 
     if response.status_code == 200:
-        with open(db_path, 'wb') as f:
+        with db_path.open('wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+                if chunk:
+                    f.write(chunk)
         print(f"Database downloaded successfully and saved to: {db_path}")
     else:
         print("Failed to download database:", response.status_code, response.text)
@@ -35,59 +46,60 @@ def combine_databases(subdir, database1, database2, output_database):
     """
     Combine two SQLite databases into a single database.
     """
-    db1_path = os.path.join(subdir, database1)
-    db2_path = os.path.join(subdir, database2)
-    output_path = os.path.join(subdir, output_database)
+    subdir = Path(subdir)
+    db1_path = subdir / database1
+    db2_path = subdir / database2
+    output_path = subdir / output_database
 
-    # Create or connect to the output database
-    conn_out = sqlite3.connect(output_path)
-    cursor_out = conn_out.cursor()
+    with sqlite3.connect(output_path) as conn_out:
+        cursor_out = conn_out.cursor()
 
-    # Attach both source databases
-    cursor_out.execute(f"ATTACH DATABASE '{db1_path}' AS db1")
-    cursor_out.execute(f"ATTACH DATABASE '{db2_path}' AS db2")
+        cursor_out.execute("ATTACH DATABASE ? AS db1", (str(db1_path),))
+        cursor_out.execute("ATTACH DATABASE ? AS db2", (str(db2_path),))
 
-    # Function to handle table copying
-    def copy_tables(db_prefix):
-        cursor_tables = cursor_out.execute(f"SELECT name FROM {db_prefix}.sqlite_master WHERE type='table'")
-        tables = cursor_tables.fetchall()
+        def copy_tables(db_prefix):
+            cursor_tables = cursor_out.execute(
+                f"SELECT name FROM {quote_identifier(db_prefix)}.sqlite_master WHERE type = 'table'"
+            )
+            tables = cursor_tables.fetchall()
 
-        for table in tables:
-            table_name = table[0]
+            for (table_name,) in tables:
+                safe_table_name = quote_identifier(table_name)
 
-            # Check if table already exists in the output database
-            if cursor_out.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()[0] == 0:
-                schema_query = cursor_out.execute(
-                    f"SELECT sql FROM {db_prefix}.sqlite_master WHERE type='table' AND name='{table_name}'"
-                ).fetchone()
-                if schema_query:
-                    cursor_out.execute(schema_query[0])  # Create table in output DB
+                table_exists = cursor_out.execute(
+                    "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    (table_name,),
+                ).fetchone()[0]
 
-            # Insert data (avoid duplicates using INSERT OR IGNORE)
-            cursor_out.execute(f"INSERT OR IGNORE INTO {table_name} SELECT * FROM {db_prefix}.{table_name}")
+                if table_exists == 0:
+                    schema_query = cursor_out.execute(
+                        f"SELECT sql FROM {quote_identifier(db_prefix)}.sqlite_master "
+                        "WHERE type = 'table' AND name = ?",
+                        (table_name,),
+                    ).fetchone()
+                    if schema_query:
+                        cursor_out.execute(schema_query[0])
 
-    # Copy tables from both databases
-    copy_tables("db1")
-    copy_tables("db2")
+                cursor_out.execute(
+                    f"INSERT OR IGNORE INTO {safe_table_name} "
+                    f"SELECT * FROM {quote_identifier(db_prefix)}.{safe_table_name}"
+                )
 
-    # Commit changes and close connection
-    conn_out.commit()
-    conn_out.close()
+        copy_tables("db1")
+        copy_tables("db2")
 
     print(f"Databases {database1} and {database2} successfully merged into {output_database}")
 
 
 if __name__ == '__main__':
-    token_path = 'download_db_key.txt'  # Path to your local token file
-    # Read the token from the file
+    token_path = BASE_DIR / 'download_db_key.txt'
     try:
-        with open(token_path, 'r') as file:
-            token = file.read().strip()
+        token = token_path.read_text().strip()
     except FileNotFoundError:
         print("Token file not found.")
-        exit()
+        raise SystemExit(1)
 
-    subdir = 'databases'
+    subdir = BASE_DIR / 'databases'
 
     # merge two databases
     # database1 = "downloaded_word_sync_20250205_161200.db"
@@ -96,5 +108,5 @@ if __name__ == '__main__':
     # combine_databases(subdir, database1, database2, output_database)
 
     # # Download the database into the subdirectory
-    download_url = 'https://word-sync.games//database/download-database'  # URL to download the database
+    download_url = 'https://word-sync.games/database/download-database'
     download_database(download_url, token, subdir)

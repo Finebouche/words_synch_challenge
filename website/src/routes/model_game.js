@@ -2,7 +2,6 @@ import express from 'express';
 import path, { dirname } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import axios from 'axios';
 import { Game, Player } from '../database.js';
 import OpenAI from 'openai';
 import { HfInference } from "@huggingface/inference";
@@ -48,14 +47,19 @@ router.get('/available-models', (req, res) => {
 });
 
 router.post('/initialize-model', async (req, res) => {
-    const model = req.body.model; // Retrieve the model from the request body
+    const requestedModel = req.body.model;
     const playerId = req.body.player_id;
     const language = req.body.language;
     const gameConfig = req.body.game_config;
     const gameConfigOrder = req.body.game_config_order;
 
+    const model = availableModels.find(availableModel => availableModel.name === requestedModel?.name);
+    if (!model) {
+        return res.status(400).send("Invalid model name");
+    }
+
     // Initialize player and game
-    const [player, created] = await Player.findOrCreate({
+    await Player.findOrCreate({
         where: { playerId: playerId },
         defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder }
     });
@@ -70,11 +74,6 @@ router.post('/initialize-model', async (req, res) => {
 
     // Initialize LLM
 
-    const modelNames = availableModels.map(m => m.name);
-    if (!modelNames.includes(model.name)) {
-        return res.status(400).send("Invalid model name");
-    }
-
     let token = "initialisation"
     let parameters;
 
@@ -86,7 +85,7 @@ router.post('/initialize-model', async (req, res) => {
                 max_tokens: 20,
                 temperature: 1.2,
             });
-            res.json({ gameData: response.data, gameId: newGame.gameId });
+            res.json({ gameData: response, gameId: newGame.gameId });
         } catch (error) {
             console.error("Error calling the OpenAI API", error.response ? error.response.data : error);
             res.status(500).send("Error calling the OpenAI API");
@@ -127,7 +126,7 @@ router.post('/initialize-model', async (req, res) => {
 ///////////////////////
 
 async function checkIfWordExists(llmWord) {
-        const endpoint = `https://en.wiktionary.org/w/api.php`;
+        const endpoint = 'https://en.wiktionary.org/w/api.php';
 
         // Helper function to create parameters and make API request
         async function fetchWordInfo(variant) {
@@ -155,12 +154,7 @@ async function checkIfWordExists(llmWord) {
 }
 
 function checkIfWordPreviouslyUsed(newWord, pastWords) {
-    // iterate through past words and check if the new word has been used before
-    for (let i = 0; i < pastWords.length; i++) {
-        if (newWord.toLowerCase() === pastWords[i].toLowerCase()) {
-            return true;
-        }
-    }
+    return pastWords.some(pastWord => newWord.toLowerCase() === pastWord.toLowerCase());
 }
 
 const RULE_TOKEN = "You are a helpful assistant playing a game where at each round both player write a word. " +
@@ -325,12 +319,12 @@ async function chatCompletioncall(model, round, past_words_array, res) {
 
 router.post('/query-model', async (req, res) => {
     const past_words_array = req.body.previous_words;
-    const model = req.body.model;
+    const requestedModel = req.body.model;
     const gameId = req.body.game_id;
     const newWord = req.body.new_word;
 
-    const modelNames = availableModels.map(m => m.name);
-    if (!model || typeof model.name !== 'string' || !modelNames.includes(model.name)) {
+    const model = availableModels.find(availableModel => availableModel.name === requestedModel?.name);
+    if (!model) {
         return res.status(400).send("Invalid model name");
     }
 

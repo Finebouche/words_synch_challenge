@@ -27,17 +27,17 @@ router.post('/answers', async (req, res) => {
     }
 
     // 2) Determine if player is Player 1 or Player 2
-    let isPlayer1 = dbGame.player1Id === playerId;
-    let isPlayer2 = dbGame.player2Id === playerId;
+    const isPlayer1 = dbGame.player1Id === playerId;
+    const isPlayer2 = dbGame.player2Id === playerId;
 
     if (!isPlayer1 && !isPlayer2) {
       return res.status(403).json({ success: false, message: 'Player not part of this game.' });
     }
 
     // 3) Select the correct field (surveyAnswers1 or surveyAnswers2)
-    let answerField = isPlayer1 ? 'surveyAnswers1' : 'surveyAnswers2';
+    const answerField = isPlayer1 ? 'surveyAnswers1' : 'surveyAnswers2';
 
-    let existingAnswers = [];
+    const existingAnswers = dbGame[answerField] ? JSON.parse(dbGame[answerField]) : [];
 
     // 4) Append new answers
     existingAnswers.push({

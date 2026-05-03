@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import { Game, Player } from '../database.js';
-import { v4 as uuidv4 } from 'uuid';
 
 const MAX_NUMBER_OF_ROUNDS = 15;
 
@@ -8,10 +7,10 @@ export default function initPlayersSocket(server) {
   const io = new Server(server);
 
   // Keep a map of language -> waiting player
-  let waitingPlayers = {};
+  const waitingPlayers = {};
 
   // In-memory store of running games
-  let activeGames = {};
+  const activeGames = {};
 
   // Helper function to return how many players are waiting in total
   function getWaitingPlayersCount() {
@@ -32,7 +31,7 @@ export default function initPlayersSocket(server) {
       );
 
       // Validate that this player actually exists in the DB
-      const [player, created] = await Player.findOrCreate({
+      await Player.findOrCreate({
         where: { playerId },
         defaults: { playerId: playerId, gameConfigOrder: gameConfigOrder },
       });
@@ -79,6 +78,7 @@ export default function initPlayersSocket(server) {
             player2Socket: socket.id,
             player2Id: playerId,
             roundWords: { player1: null, player2: null },
+            roundCount: 0,
           };
 
           // Notify both players that the game has started
@@ -141,12 +141,14 @@ export default function initPlayersSocket(server) {
         const p1Word = gameObj.roundWords.player1;
         const p2Word = gameObj.roundWords.player2;
 
+        gameObj.roundCount += 1;
+
         let status = "in_progress";
 
         if (p1Word.toLowerCase() === p2Word.toLowerCase()) {
           status = "won";
           console.log(`Game ${gameId}: Both players submitted the same word!`);
-        } else if (gameObj.roundWords.length > MAX_NUMBER_OF_ROUNDS) {
+        } else if (gameObj.roundCount >= MAX_NUMBER_OF_ROUNDS) {
           status = "lost";
         }
 
@@ -173,7 +175,7 @@ export default function initPlayersSocket(server) {
 
           game.wordsPlayed1 = JSON.stringify(wordsPlayed1);
           game.wordsPlayed2 = JSON.stringify(wordsPlayed2);
-          game.roundCount = game.roundCount + 1;
+          game.roundCount = gameObj.roundCount;
           game.status = status;
           await game.save();
 

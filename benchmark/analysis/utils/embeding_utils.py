@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import ast
+from pathlib import Path
 
 from sklearn.decomposition import PCA
 
@@ -11,11 +12,13 @@ from sklearn.decomposition import PCA
 from scipy.spatial.distance import cosine
 import matplotlib.pyplot as plt
 
-# Get open_ai api key from open_ai_key.txt in ../../ directory
+
+BENCHMARK_DIR = Path(__file__).resolve().parents[2]
+
+
 def get_openai_key():
-    with open('../../open_ai_key.txt', 'r') as f:
-        key = f.readline().strip()
-    return key
+    return (BENCHMARK_DIR / 'open_ai_key.txt').read_text().strip()
+
 
 def get_openai_embedding(word):
     openai.api_key = get_openai_key()
@@ -25,11 +28,10 @@ def get_openai_embedding(word):
     )
     return response.data[0].embedding
 
+
 def get_openai_embeddings(words):
-    embeddings = []
-    for word in words:
-        embeddings.append(get_openai_embedding(word))
-    return embeddings
+    return [get_openai_embedding(word) for word in words]
+
 
 def load_model(model_name):
     """
@@ -46,8 +48,12 @@ def load_model(model_name):
         raise ValueError("Unsupported model. Choose 'word2vec' or 'glove'")
     return model
 
-def get_embeddings(words, model):
+
+def get_embeddings(words, model="word2vec"):
     embeddings = []
+    if isinstance(model, str):
+        # If model is a string, it means we need to load it
+        model = load_model(model_name=model)
     for word in words:
         try:
             embeddings.append(model[word.lower()].tolist())
@@ -56,6 +62,13 @@ def get_embeddings(words, model):
             # Handling out-of-vocabulary words
             embeddings.append([0] * model.vector_size)  # Return zero vector if word not found
     return embeddings
+
+
+def parse_sequence(value):
+    if isinstance(value, str):
+        return ast.literal_eval(value)
+    return value
+
 
 def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
     """
@@ -81,13 +94,9 @@ def get_embeddings_for_table(games_df: pd.DataFrame, model_name="openai"):
 
         # We'll store new rows in a list to merge later
         embeddings_list = []
-        for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Fetching Embeddings"):
-            if isinstance(row['wordsPlayed1'], str):
-                words_player1 = eval(row['wordsPlayed1'])
-                words_player2 = eval(row['wordsPlayed2'])
-            else:
-                words_player1 = row['wordsPlayed1']
-                words_player2 = row['wordsPlayed2']
+        for _, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Fetching Embeddings"):
+            words_player1 = parse_sequence(row['wordsPlayed1'])
+            words_player2 = parse_sequence(row['wordsPlayed2'])
 
             # Ensure both players have played words
             if len(words_player1) > 0 and len(words_player2) > 0:
@@ -147,12 +156,8 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
         index_info = []
 
         for idx, row in games_df.iterrows():
-            if isinstance(row[embed_col1], list):
-                emb1 = row[embed_col1]
-                emb2 = row[embed_col2]
-            else:
-                emb1 = eval(row[embed_col1])
-                emb2 = eval(row[embed_col2])
+            emb1 = parse_sequence(row[embed_col1])
+            emb2 = parse_sequence(row[embed_col2])
 
             # Convert to np.array if not empty
             emb1_arr = np.array(emb1, dtype=float) if len(emb1) > 0 else np.empty((0, 0))
@@ -199,8 +204,6 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
 
         else:
             # If no data, just create empty columns
-            new_col1 = f"{embed_col1}_pca"
-            new_col2 = f"{embed_col2}_pca"
             games_df[new_col1] = [[] for _ in range(len(games_df))]
             games_df[new_col2] = [[] for _ in range(len(games_df))]
 
@@ -208,7 +211,7 @@ def calculate_pca_for_embeddings(games_df: pd.DataFrame, model_name="openai", nu
 
 
 
-def plot_embedding_distance_during_game(games_df, distance_func = cosine, embedding_model = "openai",  use_pca= False, align_end = True):
+def plot_embedding_distance_during_game(games_df, distance_func=cosine, embedding_model="openai", use_pca=False, align_end=True):
     """
     Compute and plot the distance (by default, cosine) between the last words
     played by two players in each game (round by round).
@@ -239,14 +242,8 @@ def plot_embedding_distance_during_game(games_df, distance_func = cosine, embedd
 
     # Iterate through each game
     for index, row in tqdm(games_df.iterrows(), total=games_df.shape[0], desc="Analyzing Games"):
-        # Depending on how data is stored, we might need to parse strings to lists.
-        # If it's already a Python list, we can use them directly. If they're strings, we use eval:
-        if isinstance(row[col1], list):
-            embedding1 = row[col1]
-            embedding2 = row[col2]
-        else:
-            embedding1 = eval(row[col1])
-            embedding2 = eval(row[col2])
+        embedding1 = parse_sequence(row[col1])
+        embedding2 = parse_sequence(row[col2])
 
         if 0 < len(embedding1) == len(embedding2) > 0:
             distances = [distance_func(np.array(w1, dtype=float), np.array(w2, dtype=float)) for w1, w2 in
@@ -262,15 +259,18 @@ def plot_embedding_distance_during_game(games_df, distance_func = cosine, embedd
               f'({"PCA" if use_pca else "Original"}) - Embeddings: {embedding_model}')
     plt.xlabel('Round Number')
     plt.ylabel(f'{distance_func.__name__.capitalize()} Distance')
-    plt.legend()
     plt.grid(True)
     plt.show()
 
 
 
-def plot_distance_evolution_per_player(games_df: pd.DataFrame, distance_func: callable,
-                                       embedding_model: str = "openai", use_pca: bool = False,
-                                       last_rounds: int = 5):
+def plot_distance_evolution_per_player(
+    games_df: pd.DataFrame,
+    distance_func: callable,
+    embedding_model: str = "openai",
+    use_pca: bool = False,
+    last_rounds: int = 5,
+):
     """
     For each player, compute and plot the evolution of the distance between their
     embeddings and their opponent's embeddings over the last few rounds (averaged across games).
@@ -323,15 +323,13 @@ def plot_distance_evolution_per_player(games_df: pd.DataFrame, distance_func: ca
 
         # Dictionary to collect distances per relative round index for this player.
         rounds_data = {}  # keys: 1, 2, ..., last_rounds
-        for idx, row in player_games.iterrows():
+        for _, row in player_games.iterrows():
             # Retrieve the embedding sequences.
             # (If your embeddings are stored as strings, you might need to use eval())
             emb_my = row['embedding_my']
             emb_opp = row['embedding_opponent']
-            if not isinstance(emb_my, list):
-                emb_my = ast.literal_eval(emb_my) if isinstance(emb_my, str) else emb_my
-            if not isinstance(emb_opp, list):
-                emb_opp = ast.literal_eval(emb_opp) if isinstance(emb_opp, str) else emb_opp
+            emb_my = parse_sequence(emb_my)
+            emb_opp = parse_sequence(emb_opp)
 
             # Compute distances for each round in the game.
             distances = []
@@ -376,4 +374,3 @@ def plot_distance_evolution_per_player(games_df: pd.DataFrame, distance_func: ca
     plt.legend()
     plt.grid(True)
     plt.show()
-

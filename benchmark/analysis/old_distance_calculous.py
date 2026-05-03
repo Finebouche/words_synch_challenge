@@ -1,20 +1,20 @@
 from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
 import numpy as np
-from benchmark.analysis.utils.embeding_utils import get_embeddings
+import pandas as pd
 
-# Function to ensure the embeddings are properly formatted as numpy arrays
+from utils.embeding_utils import get_embeddings
+
+
 def ensure_numpy_array(embeddings):
-    # Convert to numpy array if not already
     return np.array(embeddings, dtype=float)
 
 
 def safe_calculate_distances(row):
     distances = calculate_distances(row)
-    # Ensure the result is a list or tuple
     if not isinstance(distances, (list, tuple)):
         distances = [distances]
-    # If fewer than 2 elements, pad with NaN; if more than 2, trim the list.
+
     if len(distances) < 2:
         distances = list(distances) + [np.nan] * (2 - len(distances))
     elif len(distances) > 2:
@@ -22,7 +22,6 @@ def safe_calculate_distances(row):
     return pd.Series(distances)
 
 
-# Function to calculate distances
 def calculate_distances(row):
     embeddings_current = get_embeddings(row['wordsPlayed1'])
     embeddings_other = get_embeddings(row['wordsPlayed2'])
@@ -42,16 +41,12 @@ def calculate_distances(row):
     return distances_to_prev, distances_to_avg
 
 def plot_distances(embeddings_1, embeddings_2, average_embeddings):
-    # Get the previous embeddings array (all but the last element)
-    previous_embeddings_1 = embeddings_1[:-1] if len(embeddings_1) > 1 else []  # All but the last, empty if only one word
-    previous_embeddings_2 = embeddings_2[:-1] if len(embeddings_2) > 1 else []  # All but the last, empty if only one word
+    previous_embeddings_1 = embeddings_1[:-1] if len(embeddings_1) > 1 else []
 
-    # Calculating distances
     distances_to_prev = [euclidean(embeddings_2[1:][i], previous_embeddings_1[i]) for i in range(len(previous_embeddings_1))]
     distances_to_avg = [euclidean(embeddings_2[i], average_embeddings[i]) for i in range(len(embeddings_2))]
     distance_of_words = [euclidean(embeddings_2[i], embeddings_1[i]) for i in range(len(embeddings_1))]
 
-    # Adjusting plots
     plt.figure(figsize=(10, 5))
     plt.plot(distances_to_prev, label='Distance to Model 1 previous word', marker='o')
     plt.plot(distances_to_avg, label='Distance to the Previous average of the two last words', marker='x')
