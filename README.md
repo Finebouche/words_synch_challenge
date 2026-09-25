@@ -18,21 +18,6 @@
 </p>
 <br>
 
-## 🔗 Table of Contents
-
-- [📍 Overview](#-overview)
-- [📚 Publications](#-publications)
-- [🎗 License](#-license)
-- [🙌 Acknowledgments](#-acknowledgments)
-
----
-
-## 📍 Overview
-
-The wordssynchchallenge project addresses the challenge of synchronizing word choices between AI models and users in a game-like setting. It offers seamless AI integration, multilingual support, and engaging user interactions. Ideal for AI enthusiasts and developers, it enhances understanding of AI model interactions and natural language processing through interactive gameplay.
-
----
-
 
 |      |    Subproject     | Summary                                                                                                                                                                                                                                                        |
 | :--- |:-----------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
